@@ -43,14 +43,14 @@ export function ThemeToggle() {
     <Button
       variant='ghost'
       size='sm'
-      className='w-9 px-0'
+      className='w-9 px-0 bg-white border border-grey-200 hover:bg-gray-100 dark:bg-black dark:border-white dark:hover:bg-gray-900 shadow-sm'
       onClick={toggleTheme}
       aria-label='Toggle theme'
     >
       {theme === 'dark' ? (
-        <Sun className='h-5 w-5' />
+        <Sun className='h-5 w-5 text-white' />
       ) : (
-        <Moon className='h-5 w-5' />
+        <Moon className='h-5 w-5 text-black' />
       )}
     </Button>
   )

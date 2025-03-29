@@ -52,13 +52,66 @@
   * {
     @apply border-gray-200 dark:border-white/10;
   }
+
   body {
     @apply bg-white text-black dark:bg-black dark:text-white;
   }
+
+  /* Button text should always be visible */
+  button,
+  a {
+    @apply text-current;
+  }
+
+  /* Button color rules */
+  .bg-black a {
+    @apply text-white;
+  }
+
+  .dark .bg-white a {
+    @apply text-black;
+  }
+
+  /* Signup button styles */
+  .bg-white.border-black a {
+    @apply text-black;
+  }
+
+  .dark .bg-black.border-white a {
+    @apply text-white;
+  }
+
+  /* Theme toggle button styles */
+  .bg-white.border-black svg {
+    @apply text-black;
+  }
+
+  .dark .bg-black.border-white svg {
+    @apply text-white;
+  }
+
+  /* Improved button visibility in light theme */
+  button {
+    @apply transition-all duration-200;
+  }
+
+  /* Add subtle hover effect to improve visibility */
+  .bg-white button:hover,
+  .bg-transparent button:hover {
+    @apply shadow-sm bg-gray-50;
+  }
+
+  /* Prevent light buttons from blending into background */
+  button.bg-white,
+  button.border-gray-200 {
+    @apply shadow-sm;
+  }
+
   /* Explicit placeholder styles */
   input::placeholder {
     @apply text-gray-400;
   }
+
   .dark input::placeholder {
     @apply text-gray-300;
   }

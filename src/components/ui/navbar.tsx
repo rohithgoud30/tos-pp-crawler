@@ -12,10 +12,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import {
-  NavigationMenu,
-  NavigationMenuList,
-} from '@/components/ui/navigation-menu'
 
 import * as React from 'react'
 
@@ -27,7 +23,7 @@ interface MenuItem {
   items?: MenuItem[]
 }
 
-interface Navbar1Props {
+interface NavbarProps {
   logo?: {
     url: string
     src: string
@@ -35,10 +31,6 @@ interface Navbar1Props {
     title: string
   }
   menu?: MenuItem[]
-  mobileExtraLinks?: {
-    name: string
-    url: string
-  }[]
   auth?: {
     login: {
       text: string
@@ -51,7 +43,7 @@ interface Navbar1Props {
   }
 }
 
-const Navbar1 = ({
+const Navbar = ({
   logo = {
     url: '/',
     src: '/favicon.ico',
@@ -62,59 +54,64 @@ const Navbar1 = ({
     { title: 'Home', url: '/' },
     { title: 'About', url: '/about' },
     { title: 'FAQ', url: '/faq' },
-    { title: 'Contact', url: '/contact' },
-  ],
-  mobileExtraLinks = [
-    { name: 'Terms', url: '/terms' },
-    { name: 'Privacy', url: '/privacy' },
   ],
   auth = {
     login: { text: 'Login', url: '/login' },
     signup: { text: 'Sign up', url: '/signup' },
   },
-}: Navbar1Props) => {
+}: NavbarProps) => {
   return (
     <section className='py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-black'>
-      <div className='container'>
-        <nav className='hidden justify-between lg:flex'>
-          <div className='flex items-center gap-6'>
+      <div className='container mx-auto px-4'>
+        {/* Desktop Navbar */}
+        <nav className='hidden lg:flex items-center w-full'>
+          {/* Left: Logo */}
+          <div className='flex-1 flex items-center justify-start'>
             <a href={logo.url} className='flex items-center gap-2'>
               <FileText className='h-6 w-6 text-black dark:text-white' />
-              <span className='text-4xl font-bold text-black dark:text-white'>
+              <span className='text-2xl font-bold text-black dark:text-white'>
                 {logo.title}
               </span>
             </a>
-            <div className='flex items-center'>
-              <NavigationMenu>
-                <NavigationMenuList>
-                  {menu.map((item) => (
-                    <a
-                      key={item.title}
-                      className='group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-accent-foreground'
-                      href={item.url}
-                    >
-                      {item.title}
-                    </a>
-                  ))}
-                </NavigationMenuList>
-              </NavigationMenu>
+          </div>
+
+          {/* Center: Menu */}
+          <div className='flex-1 flex items-center justify-center'>
+            <div className='flex space-x-6'>
+              {menu.map((item) => (
+                <a
+                  key={item.title}
+                  className='inline-flex h-10 items-center justify-center px-4 py-2 text-sm font-medium text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md'
+                  href={item.url}
+                >
+                  {item.title}
+                </a>
+              ))}
             </div>
           </div>
-          <div className='flex gap-2 items-center'>
+
+          {/* Right: Auth buttons */}
+          <div className='flex-1 flex items-center justify-end gap-2'>
             <ThemeToggle />
             <Button
               asChild
               variant='outline'
               size='sm'
-              className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+              className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
             >
               <a href={auth.login.url}>{auth.login.text}</a>
             </Button>
-            <Button asChild size='sm'>
+            <Button
+              asChild
+              size='sm'
+              className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
+            >
               <a href={auth.signup.url}>{auth.signup.text}</a>
             </Button>
           </div>
         </nav>
+
+        {/* Mobile Navbar */}
         <div className='block lg:hidden'>
           <div className='flex items-center justify-between'>
             <a href={logo.url} className='flex items-center gap-2'>
@@ -127,13 +124,17 @@ const Navbar1 = ({
               <ThemeToggle />
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant='outline' size='icon'>
-                    <Menu className='size-4' />
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  >
+                    <Menu className='h-5 w-5 text-black dark:text-white' />
                   </Button>
                 </SheetTrigger>
-                <SheetContent className='overflow-y-auto'>
+                <SheetContent className='overflow-y-auto bg-white dark:bg-black text-black dark:text-white'>
                   <SheetHeader>
-                    <SheetTitle>
+                    <SheetTitle className='text-black dark:text-white'>
                       <a href={logo.url} className='flex items-center gap-2'>
                         <FileText className='h-6 w-6 text-black dark:text-white' />
                         <span className='text-xl font-bold text-black dark:text-white'>
@@ -148,34 +149,24 @@ const Navbar1 = ({
                         <a
                           key={item.title}
                           href={item.url}
-                          className='font-semibold'
+                          className='font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md px-4 py-2'
                         >
                           {item.title}
                         </a>
                       ))}
                     </div>
-                    <div className='border-t py-4'>
-                      <div className='grid grid-cols-2 justify-start'>
-                        {mobileExtraLinks.map((link, idx) => (
-                          <a
-                            key={idx}
-                            className='inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-accent-foreground'
-                            href={link.url}
-                          >
-                            {link.name}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
                     <div className='flex flex-col gap-3'>
                       <Button
                         asChild
                         variant='outline'
-                        className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+                        className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
                       >
                         <a href={auth.login.url}>{auth.login.text}</a>
                       </Button>
-                      <Button asChild>
+                      <Button
+                        asChild
+                        className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
+                      >
                         <a href={auth.signup.url}>{auth.signup.text}</a>
                       </Button>
                     </div>
@@ -190,4 +181,4 @@ const Navbar1 = ({
   )
 }
 
-export { Navbar1 }
+export { Navbar }
