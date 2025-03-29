@@ -1,3 +1,5 @@
+'use client'
+
 import {
   ArrowLeft,
   Shield,
@@ -195,19 +197,6 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
   const analysis =
     mockAnalyses[params.id as keyof MockAnalyses] || mockAnalyses['1'] // Default to Twitter if ID not found
 
-  // Determine score colors
-  const getTosScoreColor = (score: number) => {
-    if (score >= 70) return 'bg-green-500'
-    if (score >= 50) return 'bg-yellow-500'
-    return 'bg-red-500'
-  }
-
-  const getPrivacyScoreColor = (score: number) => {
-    if (score >= 70) return 'bg-green-500'
-    if (score >= 50) return 'bg-yellow-500'
-    return 'bg-red-500'
-  }
-
   // Get badge color based on highlight type
   const getHighlightBadgeColor = (type: string) => {
     switch (type) {
@@ -308,14 +297,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
                   <Progress
                     value={analysis.tosScore}
                     className='h-3 bg-gray-100'
-                  >
-                    <div
-                      className={`h-full ${getTosScoreColor(
-                        analysis.tosScore
-                      )}`}
-                      style={{ width: `${analysis.tosScore}%` }}
-                    ></div>
-                  </Progress>
+                  />
                   <div className='flex justify-between mt-1 text-xs text-gray-500'>
                     <span>Poor</span>
                     <span>Average</span>
@@ -342,14 +324,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
                   <Progress
                     value={analysis.privacyScore}
                     className='h-3 bg-gray-100'
-                  >
-                    <div
-                      className={`h-full ${getPrivacyScoreColor(
-                        analysis.privacyScore
-                      )}`}
-                      style={{ width: `${analysis.privacyScore}%` }}
-                    ></div>
-                  </Progress>
+                  />
                   <div className='flex justify-between mt-1 text-xs text-gray-500'>
                     <span>Poor</span>
                     <span>Average</span>

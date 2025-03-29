@@ -118,13 +118,51 @@ export default function HeroSection() {
             </p>
           </div>
 
+          <div className='flex justify-center pt-2'>
+            <div className='inline-flex h-10 items-center rounded-md border border-gray-200 dark:border-white/10 p-1 text-sm font-medium'>
+              <button
+                type='button'
+                className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
+                  documentType === 'tos'
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+                onClick={() => setDocumentType('tos')}
+              >
+                Terms of Service
+              </button>
+              <button
+                type='button'
+                className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
+                  documentType === 'privacy'
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+                onClick={() => setDocumentType('privacy')}
+              >
+                Privacy Policy
+              </button>
+              <button
+                type='button'
+                className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
+                  documentType === 'both'
+                    ? 'bg-black text-white dark:bg-white dark:text-black'
+                    : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/10'
+                }`}
+                onClick={() => setDocumentType('both')}
+              >
+                Both
+              </button>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className='w-full space-y-6 relative'>
             <div className='relative'>
               <Search className='absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400' />
               <Input
                 type='text'
                 placeholder='Search by Product/Service Name or URL'
-                className='pl-10 pr-10 h-14 text-base border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-gray-400 dark:focus:ring-gray-500'
+                className='text-center pl-10 pr-10 h-14 text-base border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500 focus:ring-gray-400 dark:focus:ring-gray-500'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -138,44 +176,6 @@ export default function HeroSection() {
                   <span className='sr-only'>Clear search</span>
                 </button>
               )}
-            </div>
-
-            <div className='flex justify-center pt-2'>
-              <div className='inline-flex h-10 items-center rounded-md border border-gray-200 dark:border-white/10 p-1 text-sm font-medium'>
-                <button
-                  type='button'
-                  className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
-                    documentType === 'tos'
-                      ? 'bg-black text-white dark:bg-white dark:text-black'
-                      : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/10'
-                  }`}
-                  onClick={() => setDocumentType('tos')}
-                >
-                  Terms of Service
-                </button>
-                <button
-                  type='button'
-                  className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
-                    documentType === 'privacy'
-                      ? 'bg-black text-white dark:bg-white dark:text-black'
-                      : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/10'
-                  }`}
-                  onClick={() => setDocumentType('privacy')}
-                >
-                  Privacy Policy
-                </button>
-                <button
-                  type='button'
-                  className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
-                    documentType === 'both'
-                      ? 'bg-black text-white dark:bg-white dark:text-black'
-                      : 'bg-transparent hover:bg-gray-100 dark:hover:bg-white/10'
-                  }`}
-                  onClick={() => setDocumentType('both')}
-                >
-                  Both
-                </button>
-              </div>
             </div>
 
             <Button
