@@ -151,6 +151,8 @@ export default function ResultsPage() {
     if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
       setDocumentTypeFilter(typeParam)
     }
+
+    // No need to call handleSearch here as we don't want automatic searching
   }, [searchParams])
 
   // Filter results with improved matching
@@ -264,13 +266,13 @@ export default function ResultsPage() {
   const handleSearch = (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault()
+      setCurrentPage(1)
+      // Update URL with search parameters without page reload
+      const url = new URL(window.location.href)
+      url.searchParams.set('q', searchQuery)
+      url.searchParams.set('type', documentTypeFilter)
+      window.history.pushState({}, '', url.toString())
     }
-    setCurrentPage(1)
-    // Update URL with search parameters without page reload
-    const url = new URL(window.location.href)
-    url.searchParams.set('q', searchQuery)
-    url.searchParams.set('type', documentTypeFilter)
-    window.history.pushState({}, '', url.toString())
   }
 
   // Get document type label
@@ -322,9 +324,8 @@ export default function ResultsPage() {
                         />
                       </div>
                       <Button
-                        type='button'
+                        type='submit'
                         className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                        onClick={handleSearch}
                       >
                         Search
                       </Button>
