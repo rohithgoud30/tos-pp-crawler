@@ -34,6 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { allResults, type SearchResult } from '@/lib/data'
 import Image from 'next/image'
+
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
@@ -45,70 +46,7 @@ export default function ResultsPage() {
   const [filteredResults, setFilteredResults] = useState<SearchResult[]>([])
   const [hasSearched, setHasSearched] = useState(false)
 
-  // Load initial URL parameters
-  useEffect(() => {
-    const queryParam = searchParams.get('q')
-    const typeParam = searchParams.get('type') as string
-    const perPageParam = searchParams.get('perPage')
-    const sortParam = searchParams.get('sort')
-
-    // Track if we should perform a search after setting state
-    let shouldSearch = false
-
-    if (queryParam) {
-      setSearchQuery(queryParam)
-      shouldSearch = true
-    }
-
-    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
-      setDocumentTypeFilter(typeParam)
-    }
-
-    if (perPageParam) {
-      const perPageValue = parseInt(perPageParam, 10)
-      if ([6, 9, 12, 15].includes(perPageValue)) {
-        setResultsPerPage(perPageValue)
-      }
-    }
-
-    if (
-      sortParam &&
-      ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
-    ) {
-      setSortOption(sortParam)
-    }
-
-    // If we have a search query in the URL, automatically perform search
-    if (shouldSearch) {
-      setHasSearched(true)
-
-      // Use timeout to ensure state updates have been applied
-      setTimeout(() => {
-        performSearch()
-      }, 10)
-    }
-  }, [searchParams])
-
-  // Handle explicit search action
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault()
-    }
-
-    setCurrentPage(1)
-    setHasSearched(true)
-
-    // Update URL
-    const url = new URL(window.location.href)
-    url.searchParams.set('q', searchQuery)
-    url.searchParams.set('type', documentTypeFilter)
-    window.history.pushState({}, '', url.toString())
-
-    // Perform search
-    performSearch()
-  }
-
-  // Actual search logic separated from event handler
+  // Actual search logic - moved above the useEffect that needs it
   const performSearch = () => {
     console.log('Performing search with filter:', documentTypeFilter)
     // Filter results
@@ -161,6 +99,69 @@ export default function ResultsPage() {
     })
 
     setFilteredResults(sorted)
+  }
+
+  // Load initial URL parameters
+  useEffect(() => {
+    const queryParam = searchParams.get('q')
+    const typeParam = searchParams.get('type') as string
+    const perPageParam = searchParams.get('perPage')
+    const sortParam = searchParams.get('sort')
+
+    // Track if we should perform a search after setting state
+    let shouldSearch = false
+
+    if (queryParam) {
+      setSearchQuery(queryParam)
+      shouldSearch = true
+    }
+
+    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+      setDocumentTypeFilter(typeParam)
+    }
+
+    if (perPageParam) {
+      const perPageValue = parseInt(perPageParam, 10)
+      if ([6, 9, 12, 15].includes(perPageValue)) {
+        setResultsPerPage(perPageValue)
+      }
+    }
+
+    if (
+      sortParam &&
+      ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
+    ) {
+      setSortOption(sortParam)
+    }
+
+    // If we have a search query in the URL, automatically perform search
+    if (shouldSearch) {
+      setHasSearched(true)
+
+      // Use timeout to ensure state updates have been applied
+      setTimeout(() => {
+        performSearch()
+      }, 10)
+    }
+  }, [performSearch, searchParams])
+
+  // Handle explicit search action
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+
+    setCurrentPage(1)
+    setHasSearched(true)
+
+    // Update URL
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', searchQuery)
+    url.searchParams.set('type', documentTypeFilter)
+    window.history.pushState({}, '', url.toString())
+
+    // Perform search
+    performSearch()
   }
 
   // Update pagination when page changes or results are filtered
