@@ -1,8 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Filter, ArrowUpDown, ExternalLink } from 'lucide-react'
+import type React from 'react'
+
+import { useState, useEffect } from 'react'
+import {
+  Search,
+  Filter,
+  ArrowUpDown,
+  ExternalLink,
+  Globe,
+  Clock,
+  Eye,
+} from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -12,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
@@ -28,9 +38,7 @@ const allResults = [
     name: 'Twitter',
     url: 'twitter.com',
     lastAnalyzed: '2023-11-15',
-    tosScore: 45,
-    privacyScore: 60,
-    redFlags: 3,
+    views: 1250,
     category: 'Social Media',
   },
   {
@@ -38,9 +46,7 @@ const allResults = [
     name: 'Facebook',
     url: 'facebook.com',
     lastAnalyzed: '2023-11-10',
-    tosScore: 35,
-    privacyScore: 40,
-    redFlags: 5,
+    views: 2340,
     category: 'Social Media',
   },
   {
@@ -48,9 +54,7 @@ const allResults = [
     name: 'Instagram',
     url: 'instagram.com',
     lastAnalyzed: '2023-11-05',
-    tosScore: 40,
-    privacyScore: 45,
-    redFlags: 4,
+    views: 1890,
     category: 'Social Media',
   },
   {
@@ -58,9 +62,7 @@ const allResults = [
     name: 'Spotify',
     url: 'spotify.com',
     lastAnalyzed: '2023-10-28',
-    tosScore: 65,
-    privacyScore: 70,
-    redFlags: 1,
+    views: 980,
     category: 'Entertainment',
   },
   {
@@ -68,9 +70,7 @@ const allResults = [
     name: 'Netflix',
     url: 'netflix.com',
     lastAnalyzed: '2023-10-22',
-    tosScore: 55,
-    privacyScore: 60,
-    redFlags: 2,
+    views: 1560,
     category: 'Entertainment',
   },
   {
@@ -78,9 +78,7 @@ const allResults = [
     name: 'Amazon',
     url: 'amazon.com',
     lastAnalyzed: '2023-10-18',
-    tosScore: 40,
-    privacyScore: 45,
-    redFlags: 4,
+    views: 2100,
     category: 'E-commerce',
   },
   {
@@ -88,9 +86,7 @@ const allResults = [
     name: 'Google',
     url: 'google.com',
     lastAnalyzed: '2023-10-15',
-    tosScore: 50,
-    privacyScore: 55,
-    redFlags: 3,
+    views: 3200,
     category: 'Technology',
   },
   {
@@ -98,9 +94,7 @@ const allResults = [
     name: 'Microsoft',
     url: 'microsoft.com',
     lastAnalyzed: '2023-10-10',
-    tosScore: 60,
-    privacyScore: 65,
-    redFlags: 2,
+    views: 1450,
     category: 'Technology',
   },
   {
@@ -108,9 +102,7 @@ const allResults = [
     name: 'Apple',
     url: 'apple.com',
     lastAnalyzed: '2023-10-05',
-    tosScore: 65,
-    privacyScore: 70,
-    redFlags: 1,
+    views: 1870,
     category: 'Technology',
   },
   {
@@ -118,9 +110,7 @@ const allResults = [
     name: 'Reddit',
     url: 'reddit.com',
     lastAnalyzed: '2023-10-01',
-    tosScore: 55,
-    privacyScore: 50,
-    redFlags: 3,
+    views: 1320,
     category: 'Social Media',
   },
   {
@@ -128,9 +118,7 @@ const allResults = [
     name: 'YouTube',
     url: 'youtube.com',
     lastAnalyzed: '2023-09-28',
-    tosScore: 50,
-    privacyScore: 45,
-    redFlags: 4,
+    views: 2450,
     category: 'Entertainment',
   },
   {
@@ -138,73 +126,41 @@ const allResults = [
     name: 'LinkedIn',
     url: 'linkedin.com',
     lastAnalyzed: '2023-09-25',
-    tosScore: 60,
-    privacyScore: 55,
-    redFlags: 2,
+    views: 980,
     category: 'Social Media',
-  },
-  {
-    id: 13,
-    name: 'TikTok',
-    url: 'tiktok.com',
-    lastAnalyzed: '2023-09-20',
-    tosScore: 35,
-    privacyScore: 30,
-    redFlags: 6,
-    category: 'Social Media',
-  },
-  {
-    id: 14,
-    name: 'Uber',
-    url: 'uber.com',
-    lastAnalyzed: '2023-09-15',
-    tosScore: 45,
-    privacyScore: 40,
-    redFlags: 4,
-    category: 'Transportation',
-  },
-  {
-    id: 15,
-    name: 'Airbnb',
-    url: 'airbnb.com',
-    lastAnalyzed: '2023-09-10',
-    tosScore: 55,
-    privacyScore: 50,
-    redFlags: 3,
-    category: 'Travel',
-  },
-  {
-    id: 16,
-    name: 'Dropbox',
-    url: 'dropbox.com',
-    lastAnalyzed: '2023-09-05',
-    tosScore: 65,
-    privacyScore: 70,
-    redFlags: 1,
-    category: 'Technology',
   },
 ]
 
 export default function ResultsPage() {
+  const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('both') // Default to "both"
   const [sortOption, setSortOption] = useState('recent')
+  const [resultsPerPage, setResultsPerPage] = useState(6)
 
-  const resultsPerPage = 6
+  // Get search query and document type from URL parameters
+  useEffect(() => {
+    const queryParam = searchParams.get('q')
+    const typeParam = searchParams.get('type')
 
-  // Filter and sort results
+    if (queryParam) {
+      setSearchQuery(queryParam)
+    }
+
+    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+      setDocumentTypeFilter(typeParam)
+    }
+  }, [searchParams])
+
+  // Filter results
   const filteredResults = allResults.filter((result) => {
     const matchesSearch =
       searchQuery === '' ||
       result.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       result.url.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesCategory =
-      categoryFilter === 'all' ||
-      result.category.toLowerCase() === categoryFilter.toLowerCase()
-
-    return matchesSearch && matchesCategory
+    return matchesSearch
   })
 
   // Sort results
@@ -212,19 +168,14 @@ export default function ResultsPage() {
     switch (sortOption) {
       case 'name':
         return a.name.localeCompare(b.name)
-      case 'tos-high':
-        return b.tosScore - a.tosScore
-      case 'tos-low':
-        return a.tosScore - b.tosScore
-      case 'privacy-high':
-        return b.privacyScore - a.privacyScore
-      case 'privacy-low':
-        return a.privacyScore - b.privacyScore
-      case 'flags':
-        return b.redFlags - a.redFlags
+      case 'z-a':
+        return b.name.localeCompare(a.name)
+      case 'oldest':
+        return b.id - a.id
+      case 'most-viewed':
+        return b.views - a.views
       case 'recent':
       default:
-        // Assuming the most recent is at the top of our array
         return a.id - b.id
     }
   })
@@ -278,6 +229,32 @@ export default function ResultsPage() {
     window.scrollTo(0, 0)
   }
 
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+    setCurrentPage(1)
+    // Update URL with search parameters without page reload
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', searchQuery)
+    url.searchParams.set('type', documentTypeFilter)
+    window.history.pushState({}, '', url.toString())
+  }
+
+  // Get document type label
+  const getDocumentTypeLabel = () => {
+    switch (documentTypeFilter) {
+      case 'tos':
+        return 'Terms of Service'
+      case 'privacy':
+        return 'Privacy Policy'
+      case 'both':
+        return 'Terms of Service and Privacy Policy'
+      default:
+        return 'Terms of Service and Privacy Policy'
+    }
+  }
+
   return (
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1'>
@@ -285,17 +262,16 @@ export default function ResultsPage() {
           <div className='container px-4 md:px-6'>
             <div className='space-y-4 mb-8'>
               <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
-                Search Results
+                Search Results {`for "${searchQuery}"`}
               </h1>
               <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
-                Showing analysis results for Terms of Service and Privacy
-                Policies
+                Showing analysis results for {getDocumentTypeLabel()}
               </p>
             </div>
 
             <div className='flex flex-col gap-6'>
               {/* Search and filter bar */}
-              <div className='flex flex-col md:flex-row gap-4'>
+              <form onSubmit={handleSearch} className='flex flex-col gap-4'>
                 <div className='relative flex-1'>
                   <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
                   <Input
@@ -303,45 +279,43 @@ export default function ResultsPage() {
                     placeholder='Refine your search...'
                     className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
                     value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value)
-                      setCurrentPage(1)
-                    }}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
 
-                <div className='flex flex-col sm:flex-row gap-4'>
-                  <div className='flex items-center gap-2'>
+                <Button
+                  type='button'
+                  className='w-full md:w-auto bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                  onClick={handleSearch}
+                >
+                  Search
+                </Button>
+
+                {/* Filter and Sort section - stacked on mobile, side by side on larger screens */}
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  {/* Document Type Filter */}
+                  <div className='flex items-center gap-2 w-full'>
                     <Filter className='h-4 w-4 text-gray-500' />
                     <Select
-                      value={categoryFilter}
+                      value={documentTypeFilter}
                       onValueChange={(value) => {
-                        setCategoryFilter(value)
+                        setDocumentTypeFilter(value)
                         setCurrentPage(1)
                       }}
                     >
-                      <SelectTrigger className='w-[180px] border-gray-200'>
-                        <SelectValue placeholder='Category' />
+                      <SelectTrigger className='w-full border-gray-200'>
+                        <SelectValue placeholder='Document Type' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='all'>All Categories</SelectItem>
-                        <SelectItem value='social media'>
-                          Social Media
-                        </SelectItem>
-                        <SelectItem value='entertainment'>
-                          Entertainment
-                        </SelectItem>
-                        <SelectItem value='e-commerce'>E-commerce</SelectItem>
-                        <SelectItem value='technology'>Technology</SelectItem>
-                        <SelectItem value='transportation'>
-                          Transportation
-                        </SelectItem>
-                        <SelectItem value='travel'>Travel</SelectItem>
+                        <SelectItem value='both'>Both Documents</SelectItem>
+                        <SelectItem value='tos'>Terms of Service</SelectItem>
+                        <SelectItem value='privacy'>Privacy Policy</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className='flex items-center gap-2'>
+                  {/* Sort Options */}
+                  <div className='flex items-center gap-2 w-full'>
                     <ArrowUpDown className='h-4 w-4 text-gray-500' />
                     <Select
                       value={sortOption}
@@ -350,32 +324,20 @@ export default function ResultsPage() {
                         setCurrentPage(1)
                       }}
                     >
-                      <SelectTrigger className='w-[180px] border-gray-200'>
+                      <SelectTrigger className='w-full border-gray-200'>
                         <SelectValue placeholder='Sort by' />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value='recent'>Most Recent</SelectItem>
-                        <SelectItem value='name'>Name (A-Z)</SelectItem>
-                        <SelectItem value='tos-high'>
-                          TOS Score (High-Low)
-                        </SelectItem>
-                        <SelectItem value='tos-low'>
-                          TOS Score (Low-High)
-                        </SelectItem>
-                        <SelectItem value='privacy-high'>
-                          Privacy Score (High-Low)
-                        </SelectItem>
-                        <SelectItem value='privacy-low'>
-                          Privacy Score (Low-High)
-                        </SelectItem>
-                        <SelectItem value='flags'>
-                          Red Flags (Most-Least)
-                        </SelectItem>
+                        <SelectItem value='oldest'>Oldest First</SelectItem>
+                        <SelectItem value='name'>A to Z</SelectItem>
+                        <SelectItem value='z-a'>Alphabetical Z to A</SelectItem>
+                        <SelectItem value='most-viewed'>Most Viewed</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-              </div>
+              </form>
 
               {/* Results count */}
               <div className='text-sm text-gray-500'>
@@ -387,113 +349,60 @@ export default function ResultsPage() {
               {paginatedResults.length > 0 ? (
                 <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
                   {paginatedResults.map((result) => (
-                    <Card key={result.id} className='border border-gray-200'>
+                    <Card
+                      key={result.id}
+                      className='border border-gray-200 hover:border-gray-300 transition-colors'
+                    >
                       <CardHeader className='pb-3'>
-                        <div className='flex justify-between items-start'>
+                        <div className='flex items-start gap-4'>
+                          {/* Logo/Image */}
+                          <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
+                            <Globe className='h-6 w-6 text-gray-500' />
+                          </div>
                           <div>
                             <CardTitle className='text-xl'>
                               {result.name}
                             </CardTitle>
-                            <p className='text-sm text-gray-500'>
+                            <div className='flex items-center text-sm text-gray-500 mt-1'>
+                              <Globe className='h-3.5 w-3.5 mr-1' />
                               {result.url}
-                            </p>
+                            </div>
                           </div>
-                          <Badge className='bg-gray-100 text-gray-800 hover:bg-gray-200'>
-                            {result.category}
-                          </Badge>
                         </div>
                       </CardHeader>
                       <CardContent className='pb-3'>
                         <div className='space-y-3'>
-                          <div className='flex justify-between items-center'>
-                            <span className='text-sm text-gray-500'>
-                              Terms of Service
-                            </span>
-                            <div className='flex items-center gap-2'>
-                              <div className='w-24 h-2 bg-gray-100 rounded-full overflow-hidden'>
-                                <div
-                                  className={`h-full rounded-full ${
-                                    result.tosScore >= 70
-                                      ? 'bg-green-500'
-                                      : result.tosScore >= 50
-                                      ? 'bg-yellow-500'
-                                      : 'bg-red-500'
-                                  }`}
-                                  style={{ width: `${result.tosScore}%` }}
-                                ></div>
-                              </div>
-                              <span className='text-sm font-medium'>
-                                {result.tosScore}/100
-                              </span>
-                            </div>
+                          <div className='flex items-center text-sm text-gray-500'>
+                            <Clock className='h-4 w-4 mr-2' />
+                            <span>Last analyzed: {result.lastAnalyzed}</span>
                           </div>
-
-                          <div className='flex justify-between items-center'>
-                            <span className='text-sm text-gray-500'>
-                              Privacy Policy
-                            </span>
-                            <div className='flex items-center gap-2'>
-                              <div className='w-24 h-2 bg-gray-100 rounded-full overflow-hidden'>
-                                <div
-                                  className={`h-full rounded-full ${
-                                    result.privacyScore >= 70
-                                      ? 'bg-green-500'
-                                      : result.privacyScore >= 50
-                                      ? 'bg-yellow-500'
-                                      : 'bg-red-500'
-                                  }`}
-                                  style={{ width: `${result.privacyScore}%` }}
-                                ></div>
-                              </div>
-                              <span className='text-sm font-medium'>
-                                {result.privacyScore}/100
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className='flex justify-between items-center'>
-                            <span className='text-sm text-gray-500'>
-                              Red Flags
-                            </span>
-                            <Badge
-                              className={`${
-                                result.redFlags <= 1
-                                  ? 'bg-green-100 text-green-800'
-                                  : result.redFlags <= 3
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {result.redFlags}{' '}
-                              {result.redFlags === 1 ? 'issue' : 'issues'}
-                            </Badge>
+                          <div className='flex items-center text-sm text-gray-500'>
+                            <Eye className='h-4 w-4 mr-2' />
+                            <span>{result.views.toLocaleString()} views</span>
                           </div>
                         </div>
                       </CardContent>
                       <CardFooter className='pt-2'>
-                        <div className='w-full flex justify-between items-center'>
-                          <span className='text-xs text-gray-500'>
-                            Analyzed: {result.lastAnalyzed}
-                          </span>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='gap-1 border-gray-200'
-                            asChild
-                          >
-                            <Link href={`/analysis/${result.id}`}>
-                              View Analysis
-                              <ExternalLink className='h-3 w-3' />
-                            </Link>
-                          </Button>
-                        </div>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                          asChild
+                        >
+                          <Link href='/search'>
+                            View Analysis
+                            <ExternalLink className='h-3 w-3' />
+                          </Link>
+                        </Button>
                       </CardFooter>
                     </Card>
                   ))}
                 </div>
               ) : (
                 <div className='text-center py-12'>
-                  <p className='text-lg font-medium'>No results found</p>
+                  <p className='text-lg font-medium'>
+                    {`No results found for "${searchQuery}"`}
+                  </p>
                   <p className='text-gray-500 mt-2'>
                     Try adjusting your search or filters
                   </p>
@@ -502,16 +411,35 @@ export default function ResultsPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className='flex justify-center mt-8'>
-                  <nav className='flex items-center gap-1'>
+                <div className='flex justify-between items-center mt-8'>
+                  <div className='text-sm text-gray-500'>
+                    Page {currentPage} of {totalPages}
+                  </div>
+
+                  <div className='flex items-center gap-1'>
                     <Button
                       variant='outline'
-                      size='sm'
-                      className='border-gray-200'
+                      size='icon'
+                      className='h-10 w-10 border-gray-200 rounded-md'
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
-                      Previous
+                      <span className='sr-only'>Previous page</span>
+                      <svg
+                        width='15'
+                        height='15'
+                        viewBox='0 0 15 15'
+                        fill='none'
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-4 w-4'
+                      >
+                        <path
+                          d='M8.84182 3.13514C9.04327 3.32401 9.05348 3.64042 8.86462 3.84188L5.43521 7.49991L8.86462 11.1579C9.05348 11.3594 9.04327 11.6758 8.84182 11.8647C8.64036 12.0535 8.32394 12.0433 8.13508 11.8419L4.38508 7.84188C4.20477 7.64955 4.20477 7.35027 4.38508 7.15794L8.13508 3.15794C8.32394 2.95648 8.64036 2.94628 8.84182 3.13514Z'
+                          fill='currentColor'
+                          fillRule='evenodd'
+                          clipRule='evenodd'
+                        ></path>
+                      </svg>
                     </Button>
 
                     {pageNumbers.map((page, index) =>
@@ -525,10 +453,12 @@ export default function ResultsPage() {
                       ) : (
                         <Button
                           key={`page-${page}`}
-                          variant='outline'
-                          size='sm'
-                          className={`border-gray-200 ${
-                            currentPage === page ? 'bg-gray-100' : ''
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size='icon'
+                          className={`h-10 w-10 border-gray-200 rounded-md ${
+                            currentPage === page
+                              ? 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+                              : ''
                           }`}
                           onClick={() => handlePageChange(page as number)}
                         >
@@ -539,14 +469,50 @@ export default function ResultsPage() {
 
                     <Button
                       variant='outline'
-                      size='sm'
-                      className='border-gray-200'
+                      size='icon'
+                      className='h-10 w-10 border-gray-200 rounded-md'
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >
-                      Next
+                      <span className='sr-only'>Next page</span>
+                      <svg
+                        width='15'
+                        height='15'
+                        viewBox='0 0 15 15'
+                        fill='none'
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-4 w-4'
+                      >
+                        <path
+                          d='M6.1584 3.13514C5.95694 3.32401 5.94673 3.64042 6.13559 3.84188L9.565 7.49991L6.13559 11.1579C5.94673 11.3594 5.95694 11.6758 6.13559 11.8647C6.35986 12.0535 6.67627 12.0433 6.86514 11.8419L10.6151 7.84188C10.7954 7.64955 10.7954 7.35027 10.6151 7.15794L6.86514 3.15794C6.67627 2.95648 6.35986 2.94628 6.1584 3.13514Z'
+                          fill='currentColor'
+                          fillRule='evenodd'
+                          clipRule='evenodd'
+                        ></path>
+                      </svg>
                     </Button>
-                  </nav>
+
+                    <div className='ml-4'>
+                      <Select
+                        value={resultsPerPage.toString()}
+                        onValueChange={(value) => {
+                          const newResultsPerPage = Number.parseInt(value)
+                          setCurrentPage(1)
+                          setResultsPerPage(newResultsPerPage)
+                        }}
+                      >
+                        <SelectTrigger className='w-[130px] border-gray-200'>
+                          <SelectValue placeholder='Items per page' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='6'>6 / page</SelectItem>
+                          <SelectItem value='9'>9 / page</SelectItem>
+                          <SelectItem value='12'>12 / page</SelectItem>
+                          <SelectItem value='15'>15 / page</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
