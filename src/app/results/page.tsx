@@ -45,6 +45,28 @@ export default function ResultsPage() {
   const [filteredResults, setFilteredResults] = useState<SearchResult[]>([])
   const [hasSearched, setHasSearched] = useState(false)
 
+  // Load initial URL parameters
+  useEffect(() => {
+    const queryParam = searchParams.get('q')
+    const typeParam = searchParams.get('type') as string
+    const perPageParam = searchParams.get('perPage')
+
+    if (queryParam) {
+      setSearchQuery(queryParam)
+    }
+
+    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+      setDocumentTypeFilter(typeParam)
+    }
+
+    if (perPageParam) {
+      const perPageValue = parseInt(perPageParam, 10)
+      if ([6, 9, 12, 15].includes(perPageValue)) {
+        setResultsPerPage(perPageValue)
+      }
+    }
+  }, [searchParams])
+
   // Load initial URL parameters and search automatically
   useEffect(() => {
     const queryParam = searchParams.get('q')
@@ -574,6 +596,18 @@ export default function ResultsPage() {
                           const newResultsPerPage = Number.parseInt(value)
                           setCurrentPage(1)
                           setResultsPerPage(newResultsPerPage)
+
+                          // Update URL to preserve params
+                          const url = new URL(window.location.href)
+                          url.searchParams.set('perPage', value)
+                          // Preserve existing search and type params
+                          if (searchQuery)
+                            url.searchParams.set('q', searchQuery)
+                          url.searchParams.set('type', documentTypeFilter)
+                          window.history.pushState({}, '', url.toString())
+
+                          // Re-trigger search to preserve filters
+                          performSearch()
                         }}
                       >
                         <SelectTrigger className='w-[130px] border-gray-200'>
