@@ -11,6 +11,7 @@ import {
   Globe,
   Clock,
   Eye,
+  Tag,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -30,117 +31,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-
-// Mock data for search results
-const allResults = [
-  {
-    id: 1,
-    name: 'Twitter',
-    url: 'twitter.com',
-    lastAnalyzed: '2023-11-15',
-    views: 1250,
-    category: 'Social Media',
-  },
-  {
-    id: 2,
-    name: 'Facebook',
-    url: 'facebook.com',
-    lastAnalyzed: '2023-11-10',
-    views: 2340,
-    category: 'Social Media',
-  },
-  {
-    id: 3,
-    name: 'Instagram',
-    url: 'instagram.com',
-    lastAnalyzed: '2023-11-05',
-    views: 1890,
-    category: 'Social Media',
-  },
-  {
-    id: 4,
-    name: 'Spotify',
-    url: 'spotify.com',
-    lastAnalyzed: '2023-10-28',
-    views: 980,
-    category: 'Entertainment',
-  },
-  {
-    id: 5,
-    name: 'Netflix',
-    url: 'netflix.com',
-    lastAnalyzed: '2023-10-22',
-    views: 1560,
-    category: 'Entertainment',
-  },
-  {
-    id: 6,
-    name: 'Amazon',
-    url: 'amazon.com',
-    lastAnalyzed: '2023-10-18',
-    views: 2100,
-    category: 'E-commerce',
-  },
-  {
-    id: 7,
-    name: 'Google',
-    url: 'google.com',
-    lastAnalyzed: '2023-10-15',
-    views: 3200,
-    category: 'Technology',
-  },
-  {
-    id: 8,
-    name: 'Microsoft',
-    url: 'microsoft.com',
-    lastAnalyzed: '2023-10-10',
-    views: 1450,
-    category: 'Technology',
-  },
-  {
-    id: 9,
-    name: 'Apple',
-    url: 'apple.com',
-    lastAnalyzed: '2023-10-05',
-    views: 1870,
-    category: 'Technology',
-  },
-  {
-    id: 10,
-    name: 'Reddit',
-    url: 'reddit.com',
-    lastAnalyzed: '2023-10-01',
-    views: 1320,
-    category: 'Social Media',
-  },
-  {
-    id: 11,
-    name: 'YouTube',
-    url: 'youtube.com',
-    lastAnalyzed: '2023-09-28',
-    views: 2450,
-    category: 'Entertainment',
-  },
-  {
-    id: 12,
-    name: 'LinkedIn',
-    url: 'linkedin.com',
-    lastAnalyzed: '2023-09-25',
-    views: 980,
-    category: 'Social Media',
-  },
-]
-
-// Define the result type
-interface SearchResult {
-  id: number
-  name: string
-  url: string
-  lastAnalyzed: string
-  views: number
-  category: string
-}
-
+import { Badge } from '@/components/ui/badge'
+import { allResults, type SearchResult } from '@/lib/data'
+import Image from 'next/image'
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
@@ -152,19 +45,59 @@ export default function ResultsPage() {
   const [filteredResults, setFilteredResults] = useState<SearchResult[]>([])
   const [hasSearched, setHasSearched] = useState(false)
 
-  // Load initial URL parameters but don't search automatically
+  // Load initial URL parameters and search automatically
   useEffect(() => {
     const queryParam = searchParams.get('q')
     const typeParam = searchParams.get('type') as string
 
     if (queryParam) {
       setSearchQuery(queryParam)
-    }
 
-    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
-      setDocumentTypeFilter(typeParam)
+      if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+        setDocumentTypeFilter(typeParam)
+      }
+
+      // Automatically perform search when URL has query parameters
+      setHasSearched(true)
+
+      // Use setTimeout to ensure state updates have completed
+      setTimeout(() => {
+        // Filter results based on the query
+        const results = allResults.filter((result) => {
+          const query = queryParam.toLowerCase().trim()
+          const name = result.name.toLowerCase()
+          const url = result.url.toLowerCase()
+
+          return name.includes(query) || url.includes(query)
+        })
+
+        // Sort results based on the current sort option
+        const sorted = [...results].sort((a, b) => {
+          switch (sortOption) {
+            case 'name':
+              return a.name.localeCompare(b.name)
+            case 'z-a':
+              return b.name.localeCompare(a.name)
+            case 'oldest':
+              return (
+                new Date(b.lastAnalyzed).getTime() -
+                new Date(a.lastAnalyzed).getTime()
+              )
+            case 'most-viewed':
+              return b.views - a.views
+            case 'recent':
+            default:
+              return (
+                new Date(a.lastAnalyzed).getTime() -
+                new Date(b.lastAnalyzed).getTime()
+              )
+          }
+        })
+
+        setFilteredResults(sorted)
+      }, 0)
     }
-  }, [searchParams])
+  }, [searchParams, sortOption])
 
   // Handle explicit search action
   const handleSearch = (e?: React.FormEvent) => {
@@ -188,18 +121,30 @@ export default function ResultsPage() {
   // Actual search logic separated from event handler
   const performSearch = () => {
     // Filter results
-    const results = allResults.filter((result) => {
-      if (!searchQuery || searchQuery.trim() === '') {
+    const results = allResults
+      .filter((result) => {
+        if (!searchQuery || searchQuery.trim() === '') {
+          return true
+        }
+
+        const query = searchQuery.toLowerCase().trim()
+        const name = result.name.toLowerCase()
+        const url = result.url.toLowerCase()
+
+        // Simple matching for demo
+        return name.includes(query) || url.includes(query)
+      })
+      .filter((result) => {
+        // Filter by document type
+        if (documentTypeFilter === 'both') {
+          return true
+        } else if (documentTypeFilter === 'tos') {
+          return result.docType.includes('tos')
+        } else if (documentTypeFilter === 'privacy') {
+          return result.docType.includes('pp')
+        }
         return true
-      }
-
-      const query = searchQuery.toLowerCase().trim()
-      const name = result.name.toLowerCase()
-      const url = result.url.toLowerCase()
-
-      // Simple matching for demo
-      return name.includes(query) || url.includes(query)
-    })
+      })
 
     // Sort results
     const sorted = [...results].sort((a, b) => {
@@ -209,12 +154,18 @@ export default function ResultsPage() {
         case 'z-a':
           return b.name.localeCompare(a.name)
         case 'oldest':
-          return b.id - a.id
+          return (
+            new Date(b.lastAnalyzed).getTime() -
+            new Date(a.lastAnalyzed).getTime()
+          )
         case 'most-viewed':
           return b.views - a.views
         case 'recent':
         default:
-          return a.id - b.id
+          return (
+            new Date(a.lastAnalyzed).getTime() -
+            new Date(b.lastAnalyzed).getTime()
+          )
       }
     })
 
@@ -223,16 +174,20 @@ export default function ResultsPage() {
 
   // Update pagination when page changes or results are filtered
   useEffect(() => {
-    const paginatedResults = filteredResults.slice(
-      (currentPage - 1) * resultsPerPage,
-      currentPage * resultsPerPage
-    )
+    if (filteredResults.length === 0) {
+      setDisplayedResults([])
+      return
+    }
+
+    const startIndex = (currentPage - 1) * resultsPerPage
+    const endIndex = startIndex + resultsPerPage
+    const paginatedResults = filteredResults.slice(startIndex, endIndex)
     setDisplayedResults(paginatedResults)
   }, [currentPage, resultsPerPage, filteredResults])
 
   // Generate page numbers for pagination
   const totalPages = Math.ceil(filteredResults.length / resultsPerPage)
-  const pageNumbers = []
+  const pageNumbers: Array<number | 'ellipsis'> = []
   const maxPageButtons = 5
 
   if (totalPages <= maxPageButtons) {
@@ -264,7 +219,9 @@ export default function ResultsPage() {
   }
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page)
+    const maxPage = Math.max(1, totalPages)
+    const newPage = Math.min(Math.max(1, page), maxPage)
+    setCurrentPage(newPage)
     window.scrollTo(0, 0)
   }
 
@@ -279,6 +236,41 @@ export default function ResultsPage() {
       default:
         return 'Both Documents'
     }
+  }
+
+  // Get document type badges
+  const getDocumentTypeBadges = (result: SearchResult) => {
+    const hasTos = result.docType.includes('tos')
+    const hasPp = result.docType.includes('pp')
+
+    return (
+      <div className='flex gap-2'>
+        {hasTos && (
+          <Badge
+            className='cursor-pointer bg-blue-600 hover:bg-blue-700'
+            onClick={() => {
+              const url = `/analysis/${result.id}?docType=tos`
+              window.location.href = url
+            }}
+          >
+            <Tag className='h-3 w-3 mr-1' />
+            ToS
+          </Badge>
+        )}
+        {hasPp && (
+          <Badge
+            className='cursor-pointer bg-green-600 hover:bg-green-700'
+            onClick={() => {
+              const url = `/analysis/${result.id}?docType=privacy`
+              window.location.href = url
+            }}
+          >
+            <Tag className='h-3 w-3 mr-1' />
+            PP
+          </Badge>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -337,6 +329,7 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setDocumentTypeFilter(value)
                             setCurrentPage(1)
+                            setTimeout(() => performSearch(), 0)
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
@@ -362,6 +355,7 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setSortOption(value)
                             setCurrentPage(1)
+                            setTimeout(() => performSearch(), 0)
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
@@ -404,7 +398,17 @@ export default function ResultsPage() {
                           <div className='flex items-start gap-4'>
                             {/* Logo/Image */}
                             <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
-                              <Globe className='h-6 w-6 text-gray-500' />
+                              {result.logo ? (
+                                <Image
+                                  src={result.logo || '/placeholder.svg'}
+                                  alt={`${result.name} logo`}
+                                  className='h-8 w-8'
+                                  width={32}
+                                  height={32}
+                                />
+                              ) : (
+                                <Globe className='h-6 w-6 text-gray-500' />
+                              )}
                             </div>
                             <div>
                               <CardTitle className='text-xl'>
@@ -415,6 +419,10 @@ export default function ResultsPage() {
                                 {result.url}
                               </div>
                             </div>
+                          </div>
+                          {/* Add ToS/PP tags */}
+                          <div className='flex gap-2 mt-3'>
+                            {getDocumentTypeBadges(result)}
                           </div>
                         </CardHeader>
                         <CardContent className='pb-3'>
@@ -436,7 +444,7 @@ export default function ResultsPage() {
                             className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                             asChild
                           >
-                            <Link href='/search'>
+                            <Link href={`/analysis/${result.id}`}>
                               View Analysis
                               <ExternalLink className='h-3 w-3' />
                             </Link>
@@ -447,9 +455,7 @@ export default function ResultsPage() {
                   </div>
                 ) : (
                   <div className='text-center py-12'>
-                    <p className='text-lg font-medium'>
-                      {`No results found for "${searchQuery}"`}
-                    </p>
+                    <p className='text-lg font-medium'>{`No results found for "${searchQuery}"`}</p>
                     <p className='text-gray-500 mt-2'>
                       Try adjusting your search or filters
                     </p>
@@ -466,11 +472,11 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Pagination - only shown when we have multiple pages of results */}
-              {hasSearched && totalPages > 1 && (
+              {/* Pagination - only shown when we have results */}
+              {hasSearched && filteredResults.length > 0 && (
                 <div className='flex justify-between items-center mt-8'>
                   <div className='text-sm text-gray-500'>
-                    Page {currentPage} of {totalPages}
+                    Page {currentPage} of {Math.max(1, totalPages)}
                   </div>
 
                   <div className='flex items-center gap-1'>
@@ -499,29 +505,41 @@ export default function ResultsPage() {
                       </svg>
                     </Button>
 
-                    {pageNumbers.map((page, index) =>
-                      page === 'ellipsis' ? (
-                        <span
-                          key={`ellipsis-${index}`}
-                          className='px-2 text-gray-500'
-                        >
-                          ...
-                        </span>
-                      ) : (
-                        <Button
-                          key={`page-${page}`}
-                          variant={currentPage === page ? 'default' : 'outline'}
-                          size='icon'
-                          className={`h-10 w-10 border-gray-200 rounded-md ${
-                            currentPage === page
-                              ? 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
-                              : ''
-                          }`}
-                          onClick={() => handlePageChange(page as number)}
-                        >
-                          {page}
-                        </Button>
+                    {totalPages > 0 ? (
+                      pageNumbers.map((page, index) =>
+                        page === 'ellipsis' ? (
+                          <span
+                            key={`ellipsis-${index}`}
+                            className='px-2 text-gray-500'
+                          >
+                            ...
+                          </span>
+                        ) : (
+                          <Button
+                            key={`page-${page}`}
+                            variant={
+                              currentPage === page ? 'default' : 'outline'
+                            }
+                            size='icon'
+                            className={`h-10 w-10 border-gray-200 rounded-md ${
+                              currentPage === page
+                                ? 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+                                : ''
+                            }`}
+                            onClick={() => handlePageChange(page as number)}
+                          >
+                            {page}
+                          </Button>
+                        )
                       )
+                    ) : (
+                      <Button
+                        variant='default'
+                        size='icon'
+                        className='h-10 w-10 border-gray-200 rounded-md bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+                      >
+                        1
+                      </Button>
                     )}
 
                     <Button
@@ -529,7 +547,7 @@ export default function ResultsPage() {
                       size='icon'
                       className='h-10 w-10 border-gray-200 rounded-md'
                       onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
+                      disabled={currentPage >= Math.max(1, totalPages)}
                     >
                       <span className='sr-only'>Next page</span>
                       <svg
