@@ -271,6 +271,14 @@ export default function ResultsPage() {
     url.searchParams.set('q', searchQuery)
     url.searchParams.set('type', documentTypeFilter)
     window.history.pushState({}, '', url.toString())
+
+    // Keep focus on the input field
+    const searchInput = document.querySelector(
+      'input[type="text"]'
+    ) as HTMLInputElement
+    if (searchInput) {
+      searchInput.focus()
+    }
   }
 
   // Get document type label
@@ -322,9 +330,8 @@ export default function ResultsPage() {
                         />
                       </div>
                       <Button
-                        type='button'
+                        type='submit'
                         className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                        onClick={handleSearch}
                       >
                         Search
                       </Button>
@@ -340,8 +347,8 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setDocumentTypeFilter(value)
                             setCurrentPage(1)
-                            // Trigger search immediately after value change
-                            setTimeout(() => handleSearch(), 0)
+                            // Trigger search without setTimeout to avoid disrupting focus
+                            handleSearch()
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
