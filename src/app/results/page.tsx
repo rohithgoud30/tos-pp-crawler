@@ -65,61 +65,17 @@ export default function ResultsPage() {
         setResultsPerPage(perPageValue)
       }
     }
-  }, [searchParams])
 
-  // Load initial URL parameters and search automatically
-  useEffect(() => {
-    const queryParam = searchParams.get('q')
-    const typeParam = searchParams.get('type') as string
-
+    // If we have a search query in the URL, automatically perform search
     if (queryParam) {
-      setSearchQuery(queryParam)
-
-      if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
-        setDocumentTypeFilter(typeParam)
-      }
-
-      // Automatically perform search when URL has query parameters
       setHasSearched(true)
 
-      // Use setTimeout to ensure state updates have completed
+      // Use timeout to ensure state updates have been applied
       setTimeout(() => {
-        // Filter results based on the query
-        const results = allResults.filter((result) => {
-          const query = queryParam.toLowerCase().trim()
-          const name = result.name.toLowerCase()
-          const url = result.url.toLowerCase()
-
-          return name.includes(query) || url.includes(query)
-        })
-
-        // Sort results based on the current sort option
-        const sorted = [...results].sort((a, b) => {
-          switch (sortOption) {
-            case 'name':
-              return a.name.localeCompare(b.name)
-            case 'z-a':
-              return b.name.localeCompare(a.name)
-            case 'oldest':
-              return (
-                new Date(b.lastAnalyzed).getTime() -
-                new Date(a.lastAnalyzed).getTime()
-              )
-            case 'most-viewed':
-              return b.views - a.views
-            case 'recent':
-            default:
-              return (
-                new Date(a.lastAnalyzed).getTime() -
-                new Date(b.lastAnalyzed).getTime()
-              )
-          }
-        })
-
-        setFilteredResults(sorted)
+        performSearch()
       }, 0)
     }
-  }, [searchParams, sortOption])
+  }, [searchParams])
 
   // Handle explicit search action
   const handleSearch = (e?: React.FormEvent) => {
@@ -603,11 +559,15 @@ export default function ResultsPage() {
                           // Preserve existing search and type params
                           if (searchQuery)
                             url.searchParams.set('q', searchQuery)
+                          // Always set the document type filter to maintain current selection
                           url.searchParams.set('type', documentTypeFilter)
                           window.history.pushState({}, '', url.toString())
 
-                          // Re-trigger search to preserve filters
-                          performSearch()
+                          // Use immediate function to ensure we're using the latest state
+                          setTimeout(() => {
+                            // Re-trigger search to preserve filters with current values
+                            performSearch()
+                          }, 0)
                         }}
                       >
                         <SelectTrigger className='w-[130px] border-gray-200'>
