@@ -302,26 +302,26 @@ export default function ResultsPage() {
             <div className='flex flex-col gap-6'>
               {/* Search and filter bar */}
               <div className='mb-4 space-y-4'>
-                <div className='relative w-full'>
-                  <div className='flex flex-col gap-4'>
+                <div className='relative w-full max-w-full'>
+                  <div className='flex flex-col gap-4 w-full'>
                     {/* Search input */}
                     <form
                       onSubmit={handleSearch}
                       className='flex flex-row gap-2 w-full'
                     >
-                      <div className='relative flex-1'>
+                      <div className='relative flex-1 w-full min-w-0'>
                         <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
                         <Input
                           type='text'
                           placeholder='Search for a service...'
-                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
+                          className='pl-10 w-full border-gray-200 focus:border-gray-400 focus:ring-gray-400'
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
                       <Button
                         type='submit'
-                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200 whitespace-nowrap'
                       >
                         Search
                       </Button>
@@ -456,7 +456,7 @@ export default function ResultsPage() {
                   </div>
                 )
               ) : (
-                <div className='text-center py-12'>
+                <div className='text-center py-12 border rounded-lg border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-800'>
                   <p className='text-lg font-medium'>
                     Enter a search term and click Search
                   </p>
