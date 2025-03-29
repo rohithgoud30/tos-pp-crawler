@@ -341,12 +341,14 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setDocumentTypeFilter(value)
                             setCurrentPage(1)
+                            // Trigger search with new filter
+                            handleSearch()
                           }}
                         >
-                          <SelectTrigger className='w-full border-gray-200 z-50'>
+                          <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Document Type' />
                           </SelectTrigger>
-                          <SelectContent className='z-50'>
+                          <SelectContent>
                             <SelectItem value='both'>Both Documents</SelectItem>
                             <SelectItem value='tos'>
                               Terms of Service
@@ -368,10 +370,10 @@ export default function ResultsPage() {
                             setCurrentPage(1)
                           }}
                         >
-                          <SelectTrigger className='w-full border-gray-200 z-40'>
+                          <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Sort by' />
                           </SelectTrigger>
-                          <SelectContent className='z-40'>
+                          <SelectContent>
                             <SelectItem value='recent'>Most Recent</SelectItem>
                             <SelectItem value='oldest'>Oldest First</SelectItem>
                             <SelectItem value='name'>A to Z</SelectItem>
@@ -389,8 +391,8 @@ export default function ResultsPage() {
 
               {/* Results count */}
               <div className='text-sm text-gray-500 mb-4 mt-2'>
-                Showing {Math.min(paginatedResults.length, resultsPerPage)} of{' '}
-                {filteredResults.length} results
+                Showing {paginatedResults.length} of {filteredResults.length}{' '}
+                results
               </div>
 
               {/* Results grid */}
