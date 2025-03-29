@@ -34,7 +34,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { allResults, type SearchResult } from '@/lib/data'
 import Image from 'next/image'
-
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
@@ -46,7 +45,151 @@ export default function ResultsPage() {
   const [filteredResults, setFilteredResults] = useState<SearchResult[]>([])
   const [hasSearched, setHasSearched] = useState(false)
 
-  // Actual search logic - moved above the useEffect that needs it
+  // Load initial URL parameters
+  useEffect(() => {
+    const queryParam = searchParams.get('q')
+    const typeParam = searchParams.get('type') as string
+    const perPageParam = searchParams.get('perPage')
+    const sortParam = searchParams.get('sort')
+
+    console.log('Initial URL parameters:', {
+      queryParam,
+      typeParam,
+      perPageParam,
+      sortParam,
+    })
+
+    // Track if we should perform a search after setting state
+    let shouldSearch = false
+
+    if (queryParam) {
+      setSearchQuery(queryParam)
+      shouldSearch = true
+    }
+
+    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+      console.log('Setting document type filter to:', typeParam)
+      setDocumentTypeFilter(typeParam)
+    }
+
+    if (perPageParam) {
+      const perPageValue = parseInt(perPageParam, 10)
+      if ([6, 9, 12, 15].includes(perPageValue)) {
+        setResultsPerPage(perPageValue)
+      }
+    }
+
+    if (
+      sortParam &&
+      ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
+    ) {
+      setSortOption(sortParam)
+    }
+
+    // If we have a search query in the URL, automatically perform search
+    if (shouldSearch) {
+      setHasSearched(true)
+
+      // Use timeout to ensure state updates have been applied
+      setTimeout(() => {
+        console.log('Performing search with document type:', documentTypeFilter)
+        // Use URL parameter directly for initial search
+        const actualTypeFilter =
+          typeParam && ['tos', 'privacy', 'both'].includes(typeParam)
+            ? typeParam
+            : 'both'
+        const actualSortOption =
+          sortParam &&
+          ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
+            ? sortParam
+            : 'recent'
+
+        performSearchWithParams(queryParam, actualTypeFilter, actualSortOption)
+      }, 100) // Increased timeout for state updates
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  // Function that uses direct parameters instead of relying on state
+  const performSearchWithParams = (
+    query: string | null,
+    docType: string,
+    sort: string
+  ) => {
+    console.log('Search with direct params:', { query, docType, sort })
+
+    // Filter results
+    const results = allResults
+      .filter((result) => {
+        if (!query || query.trim() === '') {
+          return true
+        }
+
+        const queryLower = query.toLowerCase().trim()
+        const name = result.name.toLowerCase()
+        const url = result.url.toLowerCase()
+
+        // Simple matching for demo
+        return name.includes(queryLower) || url.includes(queryLower)
+      })
+      .filter((result) => {
+        // Filter by document type
+        if (docType === 'both') {
+          return true
+        } else if (docType === 'tos') {
+          return result.docType.includes('tos')
+        } else if (docType === 'privacy') {
+          return result.docType.includes('pp')
+        }
+        return true
+      })
+
+    // Sort results
+    const sorted = [...results].sort((a, b) => {
+      switch (sort) {
+        case 'name':
+          return a.name.localeCompare(b.name)
+        case 'z-a':
+          return b.name.localeCompare(a.name)
+        case 'oldest':
+          return (
+            new Date(b.lastAnalyzed).getTime() -
+            new Date(a.lastAnalyzed).getTime()
+          )
+        case 'most-viewed':
+          return b.views - a.views
+        case 'recent':
+        default:
+          return (
+            new Date(a.lastAnalyzed).getTime() -
+            new Date(b.lastAnalyzed).getTime()
+          )
+      }
+    })
+
+    setFilteredResults(sorted)
+  }
+
+  // Handle explicit search action
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+
+    setCurrentPage(1)
+    setHasSearched(true)
+
+    // Update URL
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', searchQuery)
+    url.searchParams.set('type', documentTypeFilter)
+    window.history.pushState({}, '', url.toString())
+
+    // Perform search
+    performSearch()
+  }
+
+  // Actual search logic separated from event handler
   const performSearch = () => {
     console.log('Performing search with filter:', documentTypeFilter)
     // Filter results
@@ -99,69 +242,6 @@ export default function ResultsPage() {
     })
 
     setFilteredResults(sorted)
-  }
-
-  // Load initial URL parameters
-  useEffect(() => {
-    const queryParam = searchParams.get('q')
-    const typeParam = searchParams.get('type') as string
-    const perPageParam = searchParams.get('perPage')
-    const sortParam = searchParams.get('sort')
-
-    // Track if we should perform a search after setting state
-    let shouldSearch = false
-
-    if (queryParam) {
-      setSearchQuery(queryParam)
-      shouldSearch = true
-    }
-
-    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
-      setDocumentTypeFilter(typeParam)
-    }
-
-    if (perPageParam) {
-      const perPageValue = parseInt(perPageParam, 10)
-      if ([6, 9, 12, 15].includes(perPageValue)) {
-        setResultsPerPage(perPageValue)
-      }
-    }
-
-    if (
-      sortParam &&
-      ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
-    ) {
-      setSortOption(sortParam)
-    }
-
-    // If we have a search query in the URL, automatically perform search
-    if (shouldSearch) {
-      setHasSearched(true)
-
-      // Use timeout to ensure state updates have been applied
-      setTimeout(() => {
-        performSearch()
-      }, 10)
-    }
-  }, [performSearch, searchParams])
-
-  // Handle explicit search action
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault()
-    }
-
-    setCurrentPage(1)
-    setHasSearched(true)
-
-    // Update URL
-    const url = new URL(window.location.href)
-    url.searchParams.set('q', searchQuery)
-    url.searchParams.set('type', documentTypeFilter)
-    window.history.pushState({}, '', url.toString())
-
-    // Perform search
-    performSearch()
   }
 
   // Update pagination when page changes or results are filtered
