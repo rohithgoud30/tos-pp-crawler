@@ -194,8 +194,9 @@ const mockAnalyses: MockAnalyses = {
 
 export default function AnalysisPage({ params }: { params: { id: string } }) {
   // Get the analysis data based on the ID from the URL
-  const analysis =
-    mockAnalyses[params.id as keyof MockAnalyses] || mockAnalyses['1'] // Default to Twitter if ID not found
+  // Use type assertion to tell TypeScript that params.id is definitely defined
+  const id = String(params.id)
+  const analysis = mockAnalyses[id as keyof MockAnalyses] || mockAnalyses['1'] // Default to Twitter if ID not found
 
   // Get badge color based on highlight type
   const getHighlightBadgeColor = (type: string) => {
