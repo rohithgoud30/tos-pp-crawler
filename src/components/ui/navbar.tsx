@@ -26,13 +26,13 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 
-import React from 'react'
+import * as React from 'react'
 
 interface MenuItem {
   title: string
   url: string
   description?: string
-  icon?: JSX.Element
+  icon?: React.ReactElement
   items?: MenuItem[]
 }
 
