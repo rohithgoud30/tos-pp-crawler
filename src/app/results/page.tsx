@@ -153,14 +153,46 @@ export default function ResultsPage() {
     }
   }, [searchParams])
 
-  // Filter results
+  // Filter results with improved matching
   const filteredResults = allResults.filter((result) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      result.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      result.url.toLowerCase().includes(searchQuery.toLowerCase())
+    if (!searchQuery || searchQuery.trim() === '') {
+      // Show all results if no search query
+      return true
+    }
 
-    return matchesSearch
+    const query = searchQuery.toLowerCase().trim()
+    const name = result.name.toLowerCase()
+    const url = result.url.toLowerCase()
+
+    // Exact match
+    if (name.includes(query) || url.includes(query)) {
+      return true
+    }
+
+    // Check for typos - calculate similarity using Levenshtein-like approach
+    // This helps match "Facbbook" to "Facebook"
+    function isSimilar(a: string, b: string, threshold = 0.7): boolean {
+      // Very simple similarity check - more than 70% of characters match
+      const longer = a.length > b.length ? a : b
+      const shorter = a.length > b.length ? b : a
+
+      if (shorter.length === 0) return longer.length === 0
+
+      // If either string contains the other, it's very similar
+      if (longer.includes(shorter)) return true
+
+      // Count matching characters
+      let matches = 0
+      for (let i = 0; i < shorter.length; i++) {
+        if (longer.includes(shorter[i])) {
+          matches++
+        }
+      }
+
+      return matches / shorter.length >= threshold
+    }
+
+    return isSimilar(name, query) || isSimilar(url, query)
   })
 
   // Sort results
