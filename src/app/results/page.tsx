@@ -282,17 +282,17 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className='min-h-screen flex flex-col bg-black text-white'>
+    <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1'>
         <section className='w-full py-12 md:py-24'>
           <div className='container px-4 md:px-6'>
-            <div className='space-y-4 mb-8 text-center'>
-              <h1 className='text-4xl font-bold tracking-tighter sm:text-5xl text-white'>
+            <div className='space-y-4 mb-8'>
+              <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
                 {hasSearched && searchQuery
                   ? `Search Results for "${searchQuery}"`
                   : 'Search'}
               </h1>
-              <p className='text-gray-400 dark:text-gray-400 md:text-lg max-w-[870px] mx-auto'>
+              <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
                 {hasSearched
                   ? `Showing analysis results for ${getDocumentTypeLabel()}`
                   : 'Search for Terms of Service and Privacy Policy analyses'}
@@ -307,31 +307,31 @@ export default function ResultsPage() {
                     {/* Search input */}
                     <form
                       onSubmit={handleSearch}
-                      className='flex flex-row gap-2 w-full max-w-[870px] mx-auto'
+                      className='flex flex-row gap-2 w-full'
                     >
-                      <div className='relative flex-1 w-full min-w-0'>
+                      <div className='relative flex-1'>
                         <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
                         <Input
                           type='text'
                           placeholder='Search for a service...'
-                          className='pl-10 w-full h-12 rounded-md text-base border-gray-200 focus:border-gray-400 focus:ring-gray-400 dark:bg-black dark:border-gray-800'
+                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
                       <Button
                         type='submit'
-                        className='h-12 px-6 bg-white text-black border border-gray-200 dark:bg-black dark:text-white dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-900 whitespace-nowrap rounded-md'
+                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                       >
                         Search
                       </Button>
                     </form>
 
                     {/* Filter controls */}
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-[870px] mx-auto'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
                       {/* Document Type Filter */}
                       <div className='flex items-center gap-2 w-full'>
-                        <Filter className='h-4 w-4 text-gray-400' />
+                        <Filter className='h-4 w-4 text-gray-500' />
                         <Select
                           value={documentTypeFilter}
                           onValueChange={(value) => {
@@ -339,10 +339,10 @@ export default function ResultsPage() {
                             setCurrentPage(1)
                           }}
                         >
-                          <SelectTrigger className='w-full h-11 border-gray-200 dark:border-gray-800 dark:bg-black'>
+                          <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Document Type' />
                           </SelectTrigger>
-                          <SelectContent className='bg-white dark:bg-black border border-gray-200 dark:border-gray-800 shadow-md'>
+                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
                             <SelectItem value='both'>Both Documents</SelectItem>
                             <SelectItem value='tos'>
                               Terms of Service
@@ -356,7 +356,7 @@ export default function ResultsPage() {
 
                       {/* Sort Options */}
                       <div className='flex items-center gap-2 w-full'>
-                        <ArrowUpDown className='h-4 w-4 text-gray-400' />
+                        <ArrowUpDown className='h-4 w-4 text-gray-500' />
                         <Select
                           value={sortOption}
                           onValueChange={(value) => {
@@ -364,10 +364,10 @@ export default function ResultsPage() {
                             setCurrentPage(1)
                           }}
                         >
-                          <SelectTrigger className='w-full h-11 border-gray-200 dark:border-gray-800 dark:bg-black'>
+                          <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Sort by' />
                           </SelectTrigger>
-                          <SelectContent className='bg-white dark:bg-black border border-gray-200 dark:border-gray-800 shadow-md'>
+                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
                             <SelectItem value='recent'>Most Recent</SelectItem>
                             <SelectItem value='oldest'>Oldest First</SelectItem>
                             <SelectItem value='name'>A to Z</SelectItem>
@@ -385,7 +385,7 @@ export default function ResultsPage() {
 
               {/* Results count - only shown after search */}
               {hasSearched && (
-                <div className='text-sm text-gray-400 mb-4 mt-2 max-w-[870px] mx-auto'>
+                <div className='text-sm text-gray-500 mb-4 mt-2'>
                   Showing {displayedResults.length} of {filteredResults.length}{' '}
                   results
                 </div>
@@ -394,23 +394,23 @@ export default function ResultsPage() {
               {/* Results grid - only shown after search */}
               {hasSearched ? (
                 displayedResults.length > 0 ? (
-                  <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3 max-w-[1200px] mx-auto'>
+                  <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
                     {displayedResults.map((result) => (
                       <Card
                         key={result.id}
-                        className='border border-gray-800 hover:border-gray-700 transition-colors bg-black text-white'
+                        className='border border-gray-200 hover:border-gray-300 transition-colors'
                       >
                         <CardHeader className='pb-3'>
                           <div className='flex items-start gap-4'>
                             {/* Logo/Image */}
-                            <div className='w-12 h-12 bg-gray-900 rounded-md flex items-center justify-center flex-shrink-0'>
-                              <Globe className='h-6 w-6 text-gray-400' />
+                            <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
+                              <Globe className='h-6 w-6 text-gray-500' />
                             </div>
                             <div>
-                              <CardTitle className='text-xl text-white'>
+                              <CardTitle className='text-xl'>
                                 {result.name}
                               </CardTitle>
-                              <div className='flex items-center text-sm text-gray-400 mt-1'>
+                              <div className='flex items-center text-sm text-gray-500 mt-1'>
                                 <Globe className='h-3.5 w-3.5 mr-1' />
                                 {result.url}
                               </div>
@@ -419,11 +419,11 @@ export default function ResultsPage() {
                         </CardHeader>
                         <CardContent className='pb-3'>
                           <div className='space-y-3'>
-                            <div className='flex items-center text-sm text-gray-400'>
+                            <div className='flex items-center text-sm text-gray-500'>
                               <Clock className='h-4 w-4 mr-2' />
                               <span>Last analyzed: {result.lastAnalyzed}</span>
                             </div>
-                            <div className='flex items-center text-sm text-gray-400'>
+                            <div className='flex items-center text-sm text-gray-500'>
                               <Eye className='h-4 w-4 mr-2' />
                               <span>{result.views.toLocaleString()} views</span>
                             </div>
@@ -433,7 +433,7 @@ export default function ResultsPage() {
                           <Button
                             variant='outline'
                             size='sm'
-                            className='w-full gap-1 border-gray-800 bg-white text-black hover:bg-gray-100'
+                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                             asChild
                           >
                             <Link href='/search'>
@@ -446,21 +446,21 @@ export default function ResultsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className='text-center py-12 border rounded-lg border-gray-800 bg-gray-900 text-white max-w-[870px] mx-auto'>
+                  <div className='text-center py-12'>
                     <p className='text-lg font-medium'>
                       {`No results found for "${searchQuery}"`}
                     </p>
-                    <p className='text-gray-400 mt-2'>
+                    <p className='text-gray-500 mt-2'>
                       Try adjusting your search or filters
                     </p>
                   </div>
                 )
               ) : (
-                <div className='text-center py-12 border rounded-lg border-gray-800 bg-gray-900 text-white max-w-[870px] mx-auto'>
+                <div className='text-center py-12'>
                   <p className='text-lg font-medium'>
                     Enter a search term and click Search
                   </p>
-                  <p className='text-gray-400 mt-2'>
+                  <p className='text-gray-500 mt-2'>
                     Search for privacy policies and terms of service
                   </p>
                 </div>
@@ -468,8 +468,8 @@ export default function ResultsPage() {
 
               {/* Pagination - only shown when we have multiple pages of results */}
               {hasSearched && totalPages > 1 && (
-                <div className='flex justify-between items-center mt-8 max-w-[870px] mx-auto'>
-                  <div className='text-sm text-gray-400'>
+                <div className='flex justify-between items-center mt-8'>
+                  <div className='text-sm text-gray-500'>
                     Page {currentPage} of {totalPages}
                   </div>
 
@@ -477,7 +477,7 @@ export default function ResultsPage() {
                     <Button
                       variant='outline'
                       size='icon'
-                      className='h-10 w-10 border-gray-800 rounded-md bg-black text-white'
+                      className='h-10 w-10 border-gray-200 rounded-md'
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
@@ -503,7 +503,7 @@ export default function ResultsPage() {
                       page === 'ellipsis' ? (
                         <span
                           key={`ellipsis-${index}`}
-                          className='px-2 text-gray-400'
+                          className='px-2 text-gray-500'
                         >
                           ...
                         </span>
@@ -512,10 +512,10 @@ export default function ResultsPage() {
                           key={`page-${page}`}
                           variant={currentPage === page ? 'default' : 'outline'}
                           size='icon'
-                          className={`h-10 w-10 border-gray-800 rounded-md ${
+                          className={`h-10 w-10 border-gray-200 rounded-md ${
                             currentPage === page
-                              ? 'bg-white text-black hover:bg-gray-200'
-                              : 'bg-black text-white'
+                              ? 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
+                              : ''
                           }`}
                           onClick={() => handlePageChange(page as number)}
                         >
@@ -527,7 +527,7 @@ export default function ResultsPage() {
                     <Button
                       variant='outline'
                       size='icon'
-                      className='h-10 w-10 border-gray-800 rounded-md bg-black text-white'
+                      className='h-10 w-10 border-gray-200 rounded-md'
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
                     >
@@ -558,10 +558,10 @@ export default function ResultsPage() {
                           setResultsPerPage(newResultsPerPage)
                         }}
                       >
-                        <SelectTrigger className='w-[130px] border-gray-800 bg-black text-white'>
+                        <SelectTrigger className='w-[130px] border-gray-200'>
                           <SelectValue placeholder='Items per page' />
                         </SelectTrigger>
-                        <SelectContent className='bg-black text-white border border-gray-800 shadow-md'>
+                        <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
                           <SelectItem value='6'>6 / page</SelectItem>
                           <SelectItem value='9'>9 / page</SelectItem>
                           <SelectItem value='12'>12 / page</SelectItem>
