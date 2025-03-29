@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import { ChevronRight, BarChart3, ExternalLink, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -10,15 +9,11 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
-import { useSearchParams, useParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { getResultById, type SearchResult } from '@/lib/data'
 
-export default function AnalysisPage() {
-  // Use the useParams hook to get route parameters
-  const params = useParams()
-  const id = params.id as string
-
+export default function AnalysisPage({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('tos')
   const [analysisItem, setAnalysisItem] = useState<SearchResult | null>(null)
@@ -28,7 +23,7 @@ export default function AnalysisPage() {
   // Get document type from URL parameters and load data
   useEffect(() => {
     // Find the analysis item by ID
-    const item = getResultById(id)
+    const item = getResultById(params.id)
     setAnalysisItem(item || null)
 
     // Set active tab based on URL parameter or available data
@@ -40,7 +35,7 @@ export default function AnalysisPage() {
     } else if (item?.docType.includes('pp')) {
       setActiveTab('privacy')
     }
-  }, [id, searchParams])
+  }, [params.id, searchParams])
 
   // Handle tag click to navigate to the appropriate section
   const handleTagClick = (docType: string) => {
@@ -50,6 +45,89 @@ export default function AnalysisPage() {
     } else if (docType === 'privacy') {
       ppRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
+  }
+
+  // Render analysis content based on document type
+  const renderAnalysisContent = (docType: 'tos' | 'privacy') => {
+    if (!analysisItem) return null
+
+    const isTos = docType === 'tos'
+    const summarization = isTos
+      ? analysisItem.tos_summarization
+      : analysisItem.pp_summarization
+    const textMining = isTos
+      ? analysisItem.tos_text_mining
+      : analysisItem.pp_text_mining
+    const wordFrequency = isTos
+      ? analysisItem.tos_word_frequency
+      : analysisItem.pp_word_frequency
+    const docLink = isTos ? analysisItem.tos_link : analysisItem.pp_link
+
+    return (
+      <>
+        {/* One-Sentence Summary */}
+        <div className='mb-8'>
+          <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
+            One-Sentence Summary
+          </h2>
+          <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
+            <p className='text-gray-900 dark:text-gray-100 font-medium'>
+              {summarization.one_sentence || 'No summary available'}
+            </p>
+          </div>
+        </div>
+
+        {/* 100-Word Summary */}
+        <div className='mb-8'>
+          <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
+            100-Word Summary
+          </h2>
+          <Card className='p-4'>
+            <p className='text-gray-700 dark:text-gray-300'>
+              {summarization.hundred_words || 'No detailed summary available'}
+            </p>
+          </Card>
+        </div>
+
+        <Separator className='my-8' />
+
+        {/* Word Frequency Analysis - Now first */}
+        <div className='mb-8'>
+          <h2 className='text-xl font-semibold mb-6 text-black dark:text-white'>
+            Word Frequency Analysis
+          </h2>
+          <WordFrequencyChart wordFrequencies={wordFrequency} />
+        </div>
+
+        <Separator className='my-8' />
+
+        {/* Text Mining Measurements - Now second */}
+        <div className='mb-8'>
+          <div className='flex items-center gap-2 mb-4'>
+            <BarChart3 className='h-5 w-5 text-gray-700 dark:text-gray-300' />
+            <h2 className='text-xl font-semibold text-black dark:text-white'>
+              Text Mining Measurements
+            </h2>
+          </div>
+          <TextMetricsGrid metrics={textMining} />
+        </div>
+
+        {/* Navigation Buttons - View Original Source */}
+        <div className='flex flex-col sm:flex-row justify-center gap-4 mt-12'>
+          {docLink && (
+            <Button
+              className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
+              asChild
+            >
+              <a href={docLink} target='_blank' rel='noopener noreferrer'>
+                View Original Source
+                <ExternalLink className='h-4 w-4' />
+              </a>
+            </Button>
+          )}
+        </div>
+      </>
+    )
   }
 
   if (!analysisItem) {
@@ -67,21 +145,21 @@ export default function AnalysisPage() {
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {/* Breadcrumb */}
-        <nav className='flex items-center text-sm text-gray-500 mb-6'>
+        <nav className='flex items-center text-sm mb-6'>
           <Link
             href='/'
-            className='hover:text-gray-700 dark:hover:text-gray-300'
+            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           >
             Home
           </Link>
-          <ChevronRight className='h-4 w-4 mx-2' />
+          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
           <Link
             href='/results'
-            className='hover:text-gray-700 dark:hover:text-gray-300'
+            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           >
             Search Results
           </Link>
-          <ChevronRight className='h-4 w-4 mx-2' />
+          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
           <span className='text-gray-900 dark:text-white font-medium'>
             {analysisItem.name}
           </span>
@@ -135,152 +213,14 @@ export default function AnalysisPage() {
 
           {hasTos && (
             <TabsContent value='tos' className='pt-6'>
-              <div ref={tosRef}>
-                {/* One-Sentence Summary */}
-                <div className='mb-8'>
-                  <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
-                    One-Sentence Summary
-                  </h2>
-                  <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
-                    <p className='text-gray-900 dark:text-gray-100 font-medium'>
-                      {analysisItem.tos_summarization.one_sentence ||
-                        'No summary available'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 100-Word Summary */}
-                <div className='mb-8'>
-                  <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
-                    100-Word Summary
-                  </h2>
-                  <Card className='p-4'>
-                    <p className='text-gray-700 dark:text-gray-300'>
-                      {analysisItem.tos_summarization.hundred_words ||
-                        'No detailed summary available'}
-                    </p>
-                  </Card>
-                </div>
-
-                <Separator className='my-8' />
-
-                {/* Text Mining Measurements */}
-                <div className='mb-8'>
-                  <div className='flex items-center gap-2 mb-4'>
-                    <BarChart3 className='h-5 w-5 text-gray-700 dark:text-gray-300' />
-                    <h2 className='text-xl font-semibold text-black dark:text-white'>
-                      Text Mining Measurements
-                    </h2>
-                  </div>
-                  <TextMetricsGrid metrics={analysisItem.tos_text_mining} />
-                </div>
-
-                <Separator className='my-8' />
-
-                {/* Word Frequency Analysis */}
-                <div className='mb-8'>
-                  <h2 className='text-xl font-semibold mb-6 text-black dark:text-white'>
-                    Word Frequency Analysis
-                  </h2>
-                  <WordFrequencyChart
-                    wordFrequencies={analysisItem.tos_word_frequency}
-                  />
-                </div>
-
-                {/* Navigation Buttons - View Original Source */}
-                <div className='flex flex-col sm:flex-row justify-center gap-4 mt-12'>
-                  {analysisItem.tos_link && (
-                    <Button
-                      className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
-                      asChild
-                    >
-                      <a
-                        href={analysisItem.tos_link}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        View Original Source
-                        <ExternalLink className='h-4 w-4' />
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <div ref={tosRef}>{renderAnalysisContent('tos')}</div>
             </TabsContent>
           )}
 
           {hasPp && (
             <TabsContent value='privacy'>
               <div ref={ppRef} className='pt-6'>
-                {/* One-Sentence Summary */}
-                <div className='mb-8'>
-                  <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
-                    One-Sentence Summary
-                  </h2>
-                  <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
-                    <p className='text-gray-900 dark:text-gray-100 font-medium'>
-                      {analysisItem.pp_summarization.one_sentence ||
-                        'No summary available'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 100-Word Summary */}
-                <div className='mb-8'>
-                  <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
-                    100-Word Summary
-                  </h2>
-                  <Card className='p-4'>
-                    <p className='text-gray-700 dark:text-gray-300'>
-                      {analysisItem.pp_summarization.hundred_words ||
-                        'No detailed summary available'}
-                    </p>
-                  </Card>
-                </div>
-
-                <Separator className='my-8' />
-
-                {/* Text Mining Measurements */}
-                <div className='mb-8'>
-                  <div className='flex items-center gap-2 mb-4'>
-                    <BarChart3 className='h-5 w-5 text-gray-700 dark:text-gray-300' />
-                    <h2 className='text-xl font-semibold text-black dark:text-white'>
-                      Text Mining Measurements
-                    </h2>
-                  </div>
-                  <TextMetricsGrid metrics={analysisItem.pp_text_mining} />
-                </div>
-
-                <Separator className='my-8' />
-
-                {/* Word Frequency Analysis */}
-                <div className='mb-8'>
-                  <h2 className='text-xl font-semibold mb-6 text-black dark:text-white'>
-                    Word Frequency Analysis
-                  </h2>
-                  <WordFrequencyChart
-                    wordFrequencies={analysisItem.pp_word_frequency}
-                  />
-                </div>
-
-                {/* Navigation Buttons - View Original Source */}
-                <div className='flex flex-col sm:flex-row justify-center gap-4 mt-12'>
-                  {analysisItem.pp_link && (
-                    <Button
-                      className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
-                      asChild
-                    >
-                      <a
-                        href={analysisItem.pp_link}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      >
-                        View Original Source
-                        <ExternalLink className='h-4 w-4' />
-                      </a>
-                    </Button>
-                  )}
-                </div>
+                {renderAnalysisContent('privacy')}
               </div>
             </TabsContent>
           )}
