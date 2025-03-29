@@ -281,9 +281,8 @@ export default function ResultsPage() {
       case 'privacy':
         return 'Privacy Policy'
       case 'both':
-        return 'Terms of Service and Privacy Policy'
       default:
-        return 'Terms of Service and Privacy Policy'
+        return 'Both Documents'
     }
   }
 
@@ -341,8 +340,8 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setDocumentTypeFilter(value)
                             setCurrentPage(1)
-                            // Trigger search with new filter
-                            handleSearch()
+                            // Trigger search immediately after value change
+                            setTimeout(() => handleSearch(), 0)
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
