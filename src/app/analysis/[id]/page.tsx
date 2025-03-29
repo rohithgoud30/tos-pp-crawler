@@ -188,7 +188,7 @@ export default function AnalysisPage() {
                 </div>
 
                 {/* Navigation Buttons - View Original Source */}
-                <div className='flex flex-col sm:flex-row gap-4 mt-12'>
+                <div className='flex flex-col items-center gap-4 mt-12'>
                   {analysisItem.tos_link && (
                     <Button
                       className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
@@ -264,7 +264,7 @@ export default function AnalysisPage() {
                 </div>
 
                 {/* Navigation Buttons - View Original Source */}
-                <div className='flex flex-col sm:flex-row gap-4 mt-12'>
+                <div className='flex flex-col items-center gap-4 mt-12'>
                   {analysisItem.pp_link && (
                     <Button
                       className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
