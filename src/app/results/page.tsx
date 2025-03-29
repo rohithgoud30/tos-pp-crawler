@@ -537,17 +537,34 @@ export default function ResultsPage() {
                           </div>
                         </CardContent>
                         <CardFooter className='pt-2'>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                            asChild
-                          >
-                            <Link href={`/analysis/${result.id}`}>
-                              View Analysis
-                              <ExternalLink className='h-3 w-3' />
-                            </Link>
-                          </Button>
+                          <div className='flex gap-2 w-full'>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='flex-1 gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                              asChild
+                            >
+                              <Link href={`/analysis/${result.id}`}>
+                                View Analysis
+                                <ExternalLink className='h-3 w-3' />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='flex-1 gap-1 border-gray-200'
+                              asChild
+                            >
+                              <a
+                                href={result.url}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                              >
+                                View Original Source
+                                <ExternalLink className='h-3 w-3' />
+                              </a>
+                            </Button>
+                          </div>
                         </CardFooter>
                       </Card>
                     ))}
@@ -709,6 +726,28 @@ export default function ResultsPage() {
           </div>
         </section>
       </main>
+
+      {/* Floating action button for viewing source */}
+      {displayedResults.length > 0 && (
+        <div className='fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50'>
+          <Button
+            className='shadow-lg bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200 px-4 py-2 rounded-full'
+            onClick={() => {
+              // Open original source of first result in new tab
+              if (displayedResults.length > 0) {
+                window.open(
+                  displayedResults[0].url,
+                  '_blank',
+                  'noopener,noreferrer'
+                )
+              }
+            }}
+          >
+            View Original Source
+            <ExternalLink className='ml-2 h-4 w-4' />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
