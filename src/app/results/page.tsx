@@ -343,10 +343,10 @@ export default function ResultsPage() {
                             setCurrentPage(1)
                           }}
                         >
-                          <SelectTrigger className='w-full border-gray-200'>
+                          <SelectTrigger className='w-full border-gray-200 z-50'>
                             <SelectValue placeholder='Document Type' />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className='z-50'>
                             <SelectItem value='both'>Both Documents</SelectItem>
                             <SelectItem value='tos'>
                               Terms of Service
@@ -368,10 +368,10 @@ export default function ResultsPage() {
                             setCurrentPage(1)
                           }}
                         >
-                          <SelectTrigger className='w-full border-gray-200'>
+                          <SelectTrigger className='w-full border-gray-200 z-40'>
                             <SelectValue placeholder='Sort by' />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className='z-40'>
                             <SelectItem value='recent'>Most Recent</SelectItem>
                             <SelectItem value='oldest'>Oldest First</SelectItem>
                             <SelectItem value='name'>A to Z</SelectItem>
@@ -389,8 +389,8 @@ export default function ResultsPage() {
 
               {/* Results count */}
               <div className='text-sm text-gray-500 mb-4 mt-2'>
-                Showing {paginatedResults.length} of {filteredResults.length}{' '}
-                results
+                Showing {Math.min(paginatedResults.length, resultsPerPage)} of{' '}
+                {filteredResults.length} results
               </div>
 
               {/* Results grid */}
