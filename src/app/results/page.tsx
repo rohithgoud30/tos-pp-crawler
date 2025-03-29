@@ -302,80 +302,93 @@ export default function ResultsPage() {
             </div>
 
             <div className='flex flex-col gap-6'>
-              {/* Search and filter bar */}
-              <form
-                onSubmit={handleSearch}
-                className='flex flex-col sm:flex-row gap-4'
-              >
-                <div className='relative flex-1'>
-                  <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
-                  <Input
-                    type='text'
-                    placeholder='Refine your search...'
-                    className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-
-                <Button
-                  type='button'
-                  className='w-full sm:w-auto bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                  onClick={handleSearch}
-                >
-                  Search
-                </Button>
-
-                {/* Filter and Sort section - stacked on mobile, side by side on larger screens */}
-                <div className='flex flex-col sm:flex-row gap-4'>
-                  {/* Document Type Filter */}
-                  <div className='flex items-center gap-2 w-full sm:w-auto'>
-                    <Filter className='h-4 w-4 text-gray-500' />
-                    <Select
-                      value={documentTypeFilter}
-                      onValueChange={(value) => {
-                        setDocumentTypeFilter(value)
-                        setCurrentPage(1)
-                      }}
+              {/* Search and filter bar - New compact design */}
+              <div className='mb-4 space-y-4'>
+                {/* Search button that expands to show all controls */}
+                <div className='relative w-full'>
+                  <div className='flex flex-col gap-4'>
+                    {/* Search input always visible */}
+                    <form
+                      onSubmit={handleSearch}
+                      className='flex flex-row gap-2 w-full'
                     >
-                      <SelectTrigger className='w-full sm:w-[180px] border-gray-200'>
-                        <SelectValue placeholder='Document Type' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='both'>Both Documents</SelectItem>
-                        <SelectItem value='tos'>Terms of Service</SelectItem>
-                        <SelectItem value='privacy'>Privacy Policy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className='relative flex-1'>
+                        <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
+                        <Input
+                          type='text'
+                          placeholder='Search for a service...'
+                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        type='button'
+                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                        onClick={handleSearch}
+                      >
+                        Search
+                      </Button>
+                    </form>
 
-                  {/* Sort Options */}
-                  <div className='flex items-center gap-2 w-full sm:w-auto'>
-                    <ArrowUpDown className='h-4 w-4 text-gray-500' />
-                    <Select
-                      value={sortOption}
-                      onValueChange={(value) => {
-                        setSortOption(value)
-                        setCurrentPage(1)
-                      }}
-                    >
-                      <SelectTrigger className='w-full sm:w-[180px] border-gray-200'>
-                        <SelectValue placeholder='Sort by' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='recent'>Most Recent</SelectItem>
-                        <SelectItem value='oldest'>Oldest First</SelectItem>
-                        <SelectItem value='name'>A to Z</SelectItem>
-                        <SelectItem value='z-a'>Alphabetical Z to A</SelectItem>
-                        <SelectItem value='most-viewed'>Most Viewed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Filter controls in a more compact layout */}
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+                      {/* Document Type Filter */}
+                      <div className='flex items-center gap-2 w-full'>
+                        <Filter className='h-4 w-4 text-gray-500' />
+                        <Select
+                          value={documentTypeFilter}
+                          onValueChange={(value) => {
+                            setDocumentTypeFilter(value)
+                            setCurrentPage(1)
+                          }}
+                        >
+                          <SelectTrigger className='w-full border-gray-200'>
+                            <SelectValue placeholder='Document Type' />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='both'>Both Documents</SelectItem>
+                            <SelectItem value='tos'>
+                              Terms of Service
+                            </SelectItem>
+                            <SelectItem value='privacy'>
+                              Privacy Policy
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Sort Options */}
+                      <div className='flex items-center gap-2 w-full'>
+                        <ArrowUpDown className='h-4 w-4 text-gray-500' />
+                        <Select
+                          value={sortOption}
+                          onValueChange={(value) => {
+                            setSortOption(value)
+                            setCurrentPage(1)
+                          }}
+                        >
+                          <SelectTrigger className='w-full border-gray-200'>
+                            <SelectValue placeholder='Sort by' />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='recent'>Most Recent</SelectItem>
+                            <SelectItem value='oldest'>Oldest First</SelectItem>
+                            <SelectItem value='name'>A to Z</SelectItem>
+                            <SelectItem value='z-a'>Z to A</SelectItem>
+                            <SelectItem value='most-viewed'>
+                              Most Viewed
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </form>
+              </div>
 
               {/* Results count */}
-              <div className='text-sm text-gray-500'>
+              <div className='text-sm text-gray-500 mb-4 mt-2'>
                 Showing {paginatedResults.length} of {filteredResults.length}{' '}
                 results
               </div>
