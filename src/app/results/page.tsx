@@ -271,14 +271,6 @@ export default function ResultsPage() {
     url.searchParams.set('q', searchQuery)
     url.searchParams.set('type', documentTypeFilter)
     window.history.pushState({}, '', url.toString())
-
-    // Keep focus on the input field
-    const searchInput = document.querySelector(
-      'input[type="text"]'
-    ) as HTMLInputElement
-    if (searchInput) {
-      searchInput.focus()
-    }
   }
 
   // Get document type label
@@ -330,8 +322,9 @@ export default function ResultsPage() {
                         />
                       </div>
                       <Button
-                        type='submit'
+                        type='button'
                         className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                        onClick={handleSearch}
                       >
                         Search
                       </Button>
@@ -347,8 +340,7 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setDocumentTypeFilter(value)
                             setCurrentPage(1)
-                            // Trigger search without setTimeout to avoid disrupting focus
-                            handleSearch()
+                            // Don't trigger search automatically
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
@@ -374,6 +366,7 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setSortOption(value)
                             setCurrentPage(1)
+                            // Don't trigger search automatically
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
@@ -555,6 +548,7 @@ export default function ResultsPage() {
                           const newResultsPerPage = Number.parseInt(value)
                           setCurrentPage(1)
                           setResultsPerPage(newResultsPerPage)
+                          // Don't trigger search automatically
                         }}
                       >
                         <SelectTrigger className='w-[130px] border-gray-200'>
