@@ -67,21 +67,21 @@ export default function AnalysisPage() {
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {/* Breadcrumb */}
-        <nav className='flex items-center text-sm text-gray-500 mb-6'>
+        <nav className='flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6'>
           <Link
             href='/'
-            className='hover:text-gray-700 dark:hover:text-gray-300'
+            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           >
             Home
           </Link>
-          <ChevronRight className='h-4 w-4 mx-2' />
+          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
           <Link
             href='/results'
-            className='hover:text-gray-700 dark:hover:text-gray-300'
+            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           >
             Search Results
           </Link>
-          <ChevronRight className='h-4 w-4 mx-2' />
+          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
           <span className='text-gray-900 dark:text-white font-medium'>
             {analysisItem.name}
           </span>
