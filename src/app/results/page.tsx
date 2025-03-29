@@ -271,7 +271,10 @@ export default function ResultsPage() {
 
             <div className='flex flex-col gap-6'>
               {/* Search and filter bar */}
-              <form onSubmit={handleSearch} className='flex flex-col gap-4'>
+              <form
+                onSubmit={handleSearch}
+                className='flex flex-col sm:flex-row gap-4'
+              >
                 <div className='relative flex-1'>
                   <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
                   <Input
@@ -285,16 +288,16 @@ export default function ResultsPage() {
 
                 <Button
                   type='button'
-                  className='w-full md:w-auto bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                  className='w-full sm:w-auto bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                   onClick={handleSearch}
                 >
                   Search
                 </Button>
 
                 {/* Filter and Sort section - stacked on mobile, side by side on larger screens */}
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='flex flex-col sm:flex-row gap-4'>
                   {/* Document Type Filter */}
-                  <div className='flex items-center gap-2 w-full'>
+                  <div className='flex items-center gap-2 w-full sm:w-auto'>
                     <Filter className='h-4 w-4 text-gray-500' />
                     <Select
                       value={documentTypeFilter}
@@ -303,7 +306,7 @@ export default function ResultsPage() {
                         setCurrentPage(1)
                       }}
                     >
-                      <SelectTrigger className='w-full border-gray-200'>
+                      <SelectTrigger className='w-full sm:w-[180px] border-gray-200'>
                         <SelectValue placeholder='Document Type' />
                       </SelectTrigger>
                       <SelectContent>
@@ -315,7 +318,7 @@ export default function ResultsPage() {
                   </div>
 
                   {/* Sort Options */}
-                  <div className='flex items-center gap-2 w-full'>
+                  <div className='flex items-center gap-2 w-full sm:w-auto'>
                     <ArrowUpDown className='h-4 w-4 text-gray-500' />
                     <Select
                       value={sortOption}
@@ -324,7 +327,7 @@ export default function ResultsPage() {
                         setCurrentPage(1)
                       }}
                     >
-                      <SelectTrigger className='w-full border-gray-200'>
+                      <SelectTrigger className='w-full sm:w-[180px] border-gray-200'>
                         <SelectValue placeholder='Sort by' />
                       </SelectTrigger>
                       <SelectContent>
