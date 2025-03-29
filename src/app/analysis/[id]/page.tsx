@@ -482,16 +482,6 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       </main>
-
-      <footer className='w-full border-t border-gray-100 py-6'>
-        <div className='container px-4 md:px-6'>
-          <div className='flex flex-col items-center justify-center gap-4 md:flex-row md:gap-6'>
-            <p className='text-center text-sm text-gray-500'>
-              © {new Date().getFullYear()} CRWLR. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

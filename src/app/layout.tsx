@@ -2,7 +2,7 @@ import type React from 'react'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { Navbar } from '@/components/ui/navbar'
+import { Navbar1 } from '@/components/ui/navbar'
 import ThemeProvider from '@/components/theme-provider'
 const inter = Inter({ subsets: ['latin'] })
 
@@ -49,7 +49,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className='min-h-screen flex flex-col'>
-            <Navbar />
+            <Navbar1 />
             <main className='flex-1 bg-white dark:bg-black text-black dark:text-white'>
               {children}
             </main>
