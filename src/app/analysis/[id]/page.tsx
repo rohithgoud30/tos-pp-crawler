@@ -9,11 +9,13 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { getResultById, type SearchResult } from '@/lib/data'
 
-export default function AnalysisPage({ params }: { params: { id: string } }) {
+export default function AnalysisPage() {
+  const params = useParams()
+  const id = params.id as string
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('tos')
   const [analysisItem, setAnalysisItem] = useState<SearchResult | null>(null)
@@ -23,7 +25,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
   // Get document type from URL parameters and load data
   useEffect(() => {
     // Find the analysis item by ID
-    const item = getResultById(params.id)
+    const item = getResultById(id)
     setAnalysisItem(item || null)
 
     // Set active tab based on URL parameter or available data
@@ -35,7 +37,7 @@ export default function AnalysisPage({ params }: { params: { id: string } }) {
     } else if (item?.docType.includes('pp')) {
       setActiveTab('privacy')
     }
-  }, [params.id, searchParams])
+  }, [id, searchParams])
 
   // Handle tag click to navigate to the appropriate section
   const handleTagClick = (docType: string) => {
