@@ -41,10 +41,11 @@ export default function HeroSection() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // Navigate to results page with the search query
+      // Navigate to results page with the search query and document type
+      // Also include perPage parameter for consistency
       window.location.href = `/results?q=${encodeURIComponent(
         searchQuery
-      )}&type=${documentType}`
+      )}&type=${documentType}&perPage=6&sort=recent`
     }
   }
 

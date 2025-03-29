@@ -50,9 +50,14 @@ export default function ResultsPage() {
     const queryParam = searchParams.get('q')
     const typeParam = searchParams.get('type') as string
     const perPageParam = searchParams.get('perPage')
+    const sortParam = searchParams.get('sort')
+
+    // Track if we should perform a search after setting state
+    let shouldSearch = false
 
     if (queryParam) {
       setSearchQuery(queryParam)
+      shouldSearch = true
     }
 
     if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
@@ -66,14 +71,21 @@ export default function ResultsPage() {
       }
     }
 
+    if (
+      sortParam &&
+      ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
+    ) {
+      setSortOption(sortParam)
+    }
+
     // If we have a search query in the URL, automatically perform search
-    if (queryParam) {
+    if (shouldSearch) {
       setHasSearched(true)
 
       // Use timeout to ensure state updates have been applied
       setTimeout(() => {
         performSearch()
-      }, 0)
+      }, 10)
     }
   }, [searchParams])
 
@@ -98,6 +110,7 @@ export default function ResultsPage() {
 
   // Actual search logic separated from event handler
   const performSearch = () => {
+    console.log('Performing search with filter:', documentTypeFilter)
     // Filter results
     const results = allResults
       .filter((result) => {
@@ -251,6 +264,41 @@ export default function ResultsPage() {
     )
   }
 
+  // Fix issue with document type not being recognized when coming from hero section
+  const handleDocumentTypeChange = (value: string) => {
+    setDocumentTypeFilter(value)
+    setCurrentPage(1)
+
+    // Update URL with all current parameters
+    const url = new URL(window.location.href)
+    url.searchParams.set('type', value)
+    // Preserve other parameters
+    if (searchQuery) url.searchParams.set('q', searchQuery)
+    url.searchParams.set('perPage', resultsPerPage.toString())
+    window.history.pushState({}, '', url.toString())
+
+    // Perform search with the updated filter
+    setTimeout(() => performSearch(), 0)
+  }
+
+  // Fix issue with sort option changes
+  const handleSortOptionChange = (value: string) => {
+    setSortOption(value)
+    setCurrentPage(1)
+
+    // Update URL with all current parameters
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', value)
+    // Preserve other parameters
+    if (searchQuery) url.searchParams.set('q', searchQuery)
+    url.searchParams.set('type', documentTypeFilter)
+    url.searchParams.set('perPage', resultsPerPage.toString())
+    window.history.pushState({}, '', url.toString())
+
+    // Perform search with the updated sort option
+    setTimeout(() => performSearch(), 0)
+  }
+
   return (
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1'>
@@ -304,11 +352,7 @@ export default function ResultsPage() {
                         <Filter className='h-4 w-4 text-gray-500' />
                         <Select
                           value={documentTypeFilter}
-                          onValueChange={(value) => {
-                            setDocumentTypeFilter(value)
-                            setCurrentPage(1)
-                            setTimeout(() => performSearch(), 0)
-                          }}
+                          onValueChange={handleDocumentTypeChange}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Document Type' />
@@ -330,11 +374,7 @@ export default function ResultsPage() {
                         <ArrowUpDown className='h-4 w-4 text-gray-500' />
                         <Select
                           value={sortOption}
-                          onValueChange={(value) => {
-                            setSortOption(value)
-                            setCurrentPage(1)
-                            setTimeout(() => performSearch(), 0)
-                          }}
+                          onValueChange={handleSortOptionChange}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Sort by' />
