@@ -79,6 +79,8 @@ export default function AnalysisPage() {
           </div>
         </div>
 
+        <Separator className='my-8' />
+
         {/* 100-Word Summary */}
         <div className='mb-8'>
           <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
