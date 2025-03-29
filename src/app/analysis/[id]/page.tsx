@@ -15,7 +15,7 @@ import { useEffect, useState, useRef } from 'react'
 import { getResultById, type SearchResult } from '@/lib/data'
 
 export default function AnalysisPage() {
-  // Use useParams hook to get the dynamic route parameter
+  // Use the useParams hook to get route parameters
   const params = useParams()
   const id = params.id as string
 
@@ -67,21 +67,21 @@ export default function AnalysisPage() {
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {/* Breadcrumb */}
-        <nav className='flex items-center text-sm text-gray-500 dark:text-gray-400 mb-6'>
+        <nav className='flex items-center text-sm text-gray-500 mb-6'>
           <Link
             href='/'
-            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            className='hover:text-gray-700 dark:hover:text-gray-300'
           >
             Home
           </Link>
-          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
+          <ChevronRight className='h-4 w-4 mx-2' />
           <Link
             href='/results'
-            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            className='hover:text-gray-700 dark:hover:text-gray-300'
           >
             Search Results
           </Link>
-          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
+          <ChevronRight className='h-4 w-4 mx-2' />
           <span className='text-gray-900 dark:text-white font-medium'>
             {analysisItem.name}
           </span>
@@ -143,7 +143,7 @@ export default function AnalysisPage() {
                   </h2>
                   <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
                     <p className='text-gray-900 dark:text-gray-100 font-medium'>
-                      {analysisItem.summarization.one_sentence ||
+                      {analysisItem.tos_summarization.one_sentence ||
                         'No summary available'}
                     </p>
                   </div>
@@ -156,7 +156,7 @@ export default function AnalysisPage() {
                   </h2>
                   <Card className='p-4'>
                     <p className='text-gray-700 dark:text-gray-300'>
-                      {analysisItem.summarization.hundred_words ||
+                      {analysisItem.tos_summarization.hundred_words ||
                         'No detailed summary available'}
                     </p>
                   </Card>
@@ -172,7 +172,7 @@ export default function AnalysisPage() {
                       Text Mining Measurements
                     </h2>
                   </div>
-                  <TextMetricsGrid metrics={analysisItem.text_mining} />
+                  <TextMetricsGrid metrics={analysisItem.tos_text_mining} />
                 </div>
 
                 <Separator className='my-8' />
@@ -183,12 +183,12 @@ export default function AnalysisPage() {
                     Word Frequency Analysis
                   </h2>
                   <WordFrequencyChart
-                    wordFrequencies={analysisItem.word_frequency}
+                    wordFrequencies={analysisItem.tos_word_frequency}
                   />
                 </div>
 
                 {/* Navigation Buttons - View Original Source */}
-                <div className='flex flex-col items-center gap-4 mt-12'>
+                <div className='flex flex-col sm:flex-row gap-4 mt-12'>
                   {analysisItem.tos_link && (
                     <Button
                       className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
@@ -219,7 +219,7 @@ export default function AnalysisPage() {
                   </h2>
                   <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
                     <p className='text-gray-900 dark:text-gray-100 font-medium'>
-                      {analysisItem.summarization.one_sentence ||
+                      {analysisItem.pp_summarization.one_sentence ||
                         'No summary available'}
                     </p>
                   </div>
@@ -232,7 +232,7 @@ export default function AnalysisPage() {
                   </h2>
                   <Card className='p-4'>
                     <p className='text-gray-700 dark:text-gray-300'>
-                      {analysisItem.summarization.hundred_words ||
+                      {analysisItem.pp_summarization.hundred_words ||
                         'No detailed summary available'}
                     </p>
                   </Card>
@@ -248,7 +248,7 @@ export default function AnalysisPage() {
                       Text Mining Measurements
                     </h2>
                   </div>
-                  <TextMetricsGrid metrics={analysisItem.text_mining} />
+                  <TextMetricsGrid metrics={analysisItem.pp_text_mining} />
                 </div>
 
                 <Separator className='my-8' />
@@ -259,12 +259,12 @@ export default function AnalysisPage() {
                     Word Frequency Analysis
                   </h2>
                   <WordFrequencyChart
-                    wordFrequencies={analysisItem.word_frequency}
+                    wordFrequencies={analysisItem.pp_word_frequency}
                   />
                 </div>
 
                 {/* Navigation Buttons - View Original Source */}
-                <div className='flex flex-col items-center gap-4 mt-12'>
+                <div className='flex flex-col sm:flex-row gap-4 mt-12'>
                   {analysisItem.pp_link && (
                     <Button
                       className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
