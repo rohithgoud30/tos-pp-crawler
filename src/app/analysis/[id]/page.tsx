@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { useState } from 'react'
+import { useState, use } from 'react'
 
 // Define the type for the mock analyses
 type Analysis = {
@@ -192,10 +192,16 @@ const mockAnalyses: MockAnalyses = {
   },
 }
 
-export default function AnalysisPage({ params }: { params: { id: string } }) {
-  // Get the analysis data based on the ID from the URL
-  // Use type assertion to tell TypeScript that params.id is definitely defined
-  const id = String(params.id)
+export default function AnalysisPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  // Properly unwrap the params promise using React.use()
+  const unwrappedParams = use(params)
+
+  // Now we can safely access properties
+  const id = String(unwrappedParams.id)
   const analysis = mockAnalyses[id as keyof MockAnalyses] || mockAnalyses['1'] // Default to Twitter if ID not found
 
   // Get badge color based on highlight type
