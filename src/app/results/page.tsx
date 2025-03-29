@@ -131,18 +131,31 @@ const allResults = [
   },
 ]
 
+// Define the result type
+interface SearchResult {
+  id: number
+  name: string
+  url: string
+  lastAnalyzed: string
+  views: number
+  category: string
+}
+
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const [documentTypeFilter, setDocumentTypeFilter] = useState('both') // Default to "both"
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('both')
   const [sortOption, setSortOption] = useState('recent')
   const [resultsPerPage, setResultsPerPage] = useState(6)
+  const [displayedResults, setDisplayedResults] = useState<SearchResult[]>([])
+  const [filteredResults, setFilteredResults] = useState<SearchResult[]>([])
+  const [hasSearched, setHasSearched] = useState(false)
 
-  // Get search query and document type from URL parameters
+  // Load initial URL parameters but don't search automatically
   useEffect(() => {
     const queryParam = searchParams.get('q')
-    const typeParam = searchParams.get('type')
+    const typeParam = searchParams.get('type') as string
 
     if (queryParam) {
       setSearchQuery(queryParam)
@@ -151,103 +164,95 @@ export default function ResultsPage() {
     if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
       setDocumentTypeFilter(typeParam)
     }
-
-    // No need to call handleSearch here as we don't want automatic searching
   }, [searchParams])
 
-  // Filter results with improved matching
-  const filteredResults = allResults.filter((result) => {
-    if (!searchQuery || searchQuery.trim() === '') {
-      // Show all results if no search query
-      return true
+  // Handle explicit search action
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
     }
 
-    const query = searchQuery.toLowerCase().trim()
-    const name = result.name.toLowerCase()
-    const url = result.url.toLowerCase()
+    setCurrentPage(1)
+    setHasSearched(true)
 
-    // Exact match
-    if (name.includes(query) || url.includes(query)) {
-      return true
-    }
+    // Update URL
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', searchQuery)
+    url.searchParams.set('type', documentTypeFilter)
+    window.history.pushState({}, '', url.toString())
 
-    // Check for typos - calculate similarity using Levenshtein-like approach
-    // This helps match "Facbbook" to "Facebook"
-    function isSimilar(a: string, b: string, threshold = 0.7): boolean {
-      // Very simple similarity check - more than 70% of characters match
-      const longer = a.length > b.length ? a : b
-      const shorter = a.length > b.length ? b : a
+    // Perform search
+    performSearch()
+  }
 
-      if (shorter.length === 0) return longer.length === 0
-
-      // If either string contains the other, it's very similar
-      if (longer.includes(shorter)) return true
-
-      // Count matching characters
-      let matches = 0
-      for (let i = 0; i < shorter.length; i++) {
-        if (longer.includes(shorter[i])) {
-          matches++
-        }
+  // Actual search logic separated from event handler
+  const performSearch = () => {
+    // Filter results
+    const results = allResults.filter((result) => {
+      if (!searchQuery || searchQuery.trim() === '') {
+        return true
       }
 
-      return matches / shorter.length >= threshold
-    }
+      const query = searchQuery.toLowerCase().trim()
+      const name = result.name.toLowerCase()
+      const url = result.url.toLowerCase()
 
-    return isSimilar(name, query) || isSimilar(url, query)
-  })
+      // Simple matching for demo
+      return name.includes(query) || url.includes(query)
+    })
 
-  // Sort results
-  const sortedResults = [...filteredResults].sort((a, b) => {
-    switch (sortOption) {
-      case 'name':
-        return a.name.localeCompare(b.name)
-      case 'z-a':
-        return b.name.localeCompare(a.name)
-      case 'oldest':
-        return b.id - a.id
-      case 'most-viewed':
-        return b.views - a.views
-      case 'recent':
-      default:
-        return a.id - b.id
-    }
-  })
+    // Sort results
+    const sorted = [...results].sort((a, b) => {
+      switch (sortOption) {
+        case 'name':
+          return a.name.localeCompare(b.name)
+        case 'z-a':
+          return b.name.localeCompare(a.name)
+        case 'oldest':
+          return b.id - a.id
+        case 'most-viewed':
+          return b.views - a.views
+        case 'recent':
+        default:
+          return a.id - b.id
+      }
+    })
 
-  // Paginate results
-  const totalPages = Math.ceil(sortedResults.length / resultsPerPage)
-  const paginatedResults = sortedResults.slice(
-    (currentPage - 1) * resultsPerPage,
-    currentPage * resultsPerPage
-  )
+    setFilteredResults(sorted)
+  }
+
+  // Update pagination when page changes or results are filtered
+  useEffect(() => {
+    const paginatedResults = filteredResults.slice(
+      (currentPage - 1) * resultsPerPage,
+      currentPage * resultsPerPage
+    )
+    setDisplayedResults(paginatedResults)
+  }, [currentPage, resultsPerPage, filteredResults])
 
   // Generate page numbers for pagination
+  const totalPages = Math.ceil(filteredResults.length / resultsPerPage)
   const pageNumbers = []
   const maxPageButtons = 5
 
   if (totalPages <= maxPageButtons) {
-    // Show all page numbers
     for (let i = 1; i <= totalPages; i++) {
       pageNumbers.push(i)
     }
   } else {
-    // Show limited page numbers with ellipsis
     if (currentPage <= 3) {
-      // Near the start
       for (let i = 1; i <= 4; i++) {
         pageNumbers.push(i)
       }
       pageNumbers.push('ellipsis')
       pageNumbers.push(totalPages)
     } else if (currentPage >= totalPages - 2) {
-      // Near the end
       pageNumbers.push(1)
       pageNumbers.push('ellipsis')
       for (let i = totalPages - 3; i <= totalPages; i++) {
         pageNumbers.push(i)
       }
     } else {
-      // Middle
       pageNumbers.push(1)
       pageNumbers.push('ellipsis')
       pageNumbers.push(currentPage - 1)
@@ -261,18 +266,6 @@ export default function ResultsPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
     window.scrollTo(0, 0)
-  }
-
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault()
-      setCurrentPage(1)
-      // Update URL with search parameters without page reload
-      const url = new URL(window.location.href)
-      url.searchParams.set('q', searchQuery)
-      url.searchParams.set('type', documentTypeFilter)
-      window.history.pushState({}, '', url.toString())
-    }
   }
 
   // Get document type label
@@ -295,20 +288,23 @@ export default function ResultsPage() {
           <div className='container px-4 md:px-6'>
             <div className='space-y-4 mb-8'>
               <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
-                Search Results {`for "${searchQuery}"`}
+                {hasSearched && searchQuery
+                  ? `Search Results for "${searchQuery}"`
+                  : 'Search'}
               </h1>
               <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
-                Showing analysis results for {getDocumentTypeLabel()}
+                {hasSearched
+                  ? `Showing analysis results for ${getDocumentTypeLabel()}`
+                  : 'Search for Terms of Service and Privacy Policy analyses'}
               </p>
             </div>
 
             <div className='flex flex-col gap-6'>
-              {/* Search and filter bar - New compact design */}
+              {/* Search and filter bar */}
               <div className='mb-4 space-y-4'>
-                {/* Search button that expands to show all controls */}
                 <div className='relative w-full'>
                   <div className='flex flex-col gap-4'>
-                    {/* Search input always visible */}
+                    {/* Search input */}
                     <form
                       onSubmit={handleSearch}
                       className='flex flex-row gap-2 w-full'
@@ -331,7 +327,7 @@ export default function ResultsPage() {
                       </Button>
                     </form>
 
-                    {/* Filter controls in a more compact layout */}
+                    {/* Filter controls */}
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
                       {/* Document Type Filter */}
                       <div className='flex items-center gap-2 w-full'>
@@ -341,7 +337,6 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setDocumentTypeFilter(value)
                             setCurrentPage(1)
-                            // Don't trigger search automatically
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
@@ -367,7 +362,6 @@ export default function ResultsPage() {
                           onValueChange={(value) => {
                             setSortOption(value)
                             setCurrentPage(1)
-                            // Don't trigger search automatically
                           }}
                         >
                           <SelectTrigger className='w-full border-gray-200'>
@@ -389,78 +383,91 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              {/* Results count */}
-              <div className='text-sm text-gray-500 mb-4 mt-2'>
-                Showing {paginatedResults.length} of {filteredResults.length}{' '}
-                results
-              </div>
+              {/* Results count - only shown after search */}
+              {hasSearched && (
+                <div className='text-sm text-gray-500 mb-4 mt-2'>
+                  Showing {displayedResults.length} of {filteredResults.length}{' '}
+                  results
+                </div>
+              )}
 
-              {/* Results grid */}
-              {paginatedResults.length > 0 ? (
-                <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-                  {paginatedResults.map((result) => (
-                    <Card
-                      key={result.id}
-                      className='border border-gray-200 hover:border-gray-300 transition-colors'
-                    >
-                      <CardHeader className='pb-3'>
-                        <div className='flex items-start gap-4'>
-                          {/* Logo/Image */}
-                          <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
-                            <Globe className='h-6 w-6 text-gray-500' />
-                          </div>
-                          <div>
-                            <CardTitle className='text-xl'>
-                              {result.name}
-                            </CardTitle>
-                            <div className='flex items-center text-sm text-gray-500 mt-1'>
-                              <Globe className='h-3.5 w-3.5 mr-1' />
-                              {result.url}
+              {/* Results grid - only shown after search */}
+              {hasSearched ? (
+                displayedResults.length > 0 ? (
+                  <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+                    {displayedResults.map((result) => (
+                      <Card
+                        key={result.id}
+                        className='border border-gray-200 hover:border-gray-300 transition-colors'
+                      >
+                        <CardHeader className='pb-3'>
+                          <div className='flex items-start gap-4'>
+                            {/* Logo/Image */}
+                            <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
+                              <Globe className='h-6 w-6 text-gray-500' />
+                            </div>
+                            <div>
+                              <CardTitle className='text-xl'>
+                                {result.name}
+                              </CardTitle>
+                              <div className='flex items-center text-sm text-gray-500 mt-1'>
+                                <Globe className='h-3.5 w-3.5 mr-1' />
+                                {result.url}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className='pb-3'>
-                        <div className='space-y-3'>
-                          <div className='flex items-center text-sm text-gray-500'>
-                            <Clock className='h-4 w-4 mr-2' />
-                            <span>Last analyzed: {result.lastAnalyzed}</span>
+                        </CardHeader>
+                        <CardContent className='pb-3'>
+                          <div className='space-y-3'>
+                            <div className='flex items-center text-sm text-gray-500'>
+                              <Clock className='h-4 w-4 mr-2' />
+                              <span>Last analyzed: {result.lastAnalyzed}</span>
+                            </div>
+                            <div className='flex items-center text-sm text-gray-500'>
+                              <Eye className='h-4 w-4 mr-2' />
+                              <span>{result.views.toLocaleString()} views</span>
+                            </div>
                           </div>
-                          <div className='flex items-center text-sm text-gray-500'>
-                            <Eye className='h-4 w-4 mr-2' />
-                            <span>{result.views.toLocaleString()} views</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter className='pt-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                          asChild
-                        >
-                          <Link href='/search'>
-                            View Analysis
-                            <ExternalLink className='h-3 w-3' />
-                          </Link>
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
+                        </CardContent>
+                        <CardFooter className='pt-2'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                            asChild
+                          >
+                            <Link href='/search'>
+                              View Analysis
+                              <ExternalLink className='h-3 w-3' />
+                            </Link>
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className='text-center py-12'>
+                    <p className='text-lg font-medium'>
+                      {`No results found for "${searchQuery}"`}
+                    </p>
+                    <p className='text-gray-500 mt-2'>
+                      Try adjusting your search or filters
+                    </p>
+                  </div>
+                )
               ) : (
                 <div className='text-center py-12'>
                   <p className='text-lg font-medium'>
-                    {`No results found for "${searchQuery}"`}
+                    Enter a search term and click Search
                   </p>
                   <p className='text-gray-500 mt-2'>
-                    Try adjusting your search or filters
+                    Search for privacy policies and terms of service
                   </p>
                 </div>
               )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+              {/* Pagination - only shown when we have multiple pages of results */}
+              {hasSearched && totalPages > 1 && (
                 <div className='flex justify-between items-center mt-8'>
                   <div className='text-sm text-gray-500'>
                     Page {currentPage} of {totalPages}
@@ -549,7 +556,6 @@ export default function ResultsPage() {
                           const newResultsPerPage = Number.parseInt(value)
                           setCurrentPage(1)
                           setResultsPerPage(newResultsPerPage)
-                          // Don't trigger search automatically
                         }}
                       >
                         <SelectTrigger className='w-[130px] border-gray-200'>
