@@ -347,7 +347,7 @@ export default function ResultsPage() {
                           <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Document Type' />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
                             <SelectItem value='both'>Both Documents</SelectItem>
                             <SelectItem value='tos'>
                               Terms of Service
@@ -372,7 +372,7 @@ export default function ResultsPage() {
                           <SelectTrigger className='w-full border-gray-200'>
                             <SelectValue placeholder='Sort by' />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
                             <SelectItem value='recent'>Most Recent</SelectItem>
                             <SelectItem value='oldest'>Oldest First</SelectItem>
                             <SelectItem value='name'>A to Z</SelectItem>
@@ -553,7 +553,7 @@ export default function ResultsPage() {
                         <SelectTrigger className='w-[130px] border-gray-200'>
                           <SelectValue placeholder='Items per page' />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
                           <SelectItem value='6'>6 / page</SelectItem>
                           <SelectItem value='9'>9 / page</SelectItem>
                           <SelectItem value='12'>12 / page</SelectItem>
