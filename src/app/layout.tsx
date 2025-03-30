@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: 'CRWLR - Terms of Service & Privacy Policy Analyzer',
   description:
     "Analyze Terms of Service and Privacy Policies to understand what you're agreeing to",
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/icon.png',
+  },
 }
 
 export default function RootLayout({
@@ -19,17 +24,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider
-      appearance={{
-        elements: {
-          // Hide clerk's sign-in button
-          rootBox: 'hidden',
-        },
-      }}
-      afterSignOutUrl='/'
-    >
+    <ClerkProvider afterSignOutUrl='/'>
       <html lang='en' suppressHydrationWarning>
         <head>
+          <link rel='icon' href='/favicon.ico' sizes='any' />
           <script
             dangerouslySetInnerHTML={{
               __html: `

@@ -38,7 +38,7 @@ export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const [documentTypeFilter, setDocumentTypeFilter] = useState('both')
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('all')
   const [sortOption, setSortOption] = useState('recent')
   const [resultsPerPage, setResultsPerPage] = useState(6)
   const [displayedResults, setDisplayedResults] = useState<SearchResult[]>([])
@@ -62,7 +62,7 @@ export default function ResultsPage() {
     // Track if we should perform a search after setting state
     let shouldSearch = false
     let shouldUpdateUrl = false
-    let actualTypeFilter = 'both'
+    let actualTypeFilter = 'all'
     let actualSortOption = 'recent'
     let actualPerPage = 6
 
@@ -72,7 +72,7 @@ export default function ResultsPage() {
       shouldUpdateUrl = true
     }
 
-    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+    if (typeParam && ['tos', 'privacy', 'all'].includes(typeParam)) {
       console.log('Setting document type filter to:', typeParam)
       setDocumentTypeFilter(typeParam)
       actualTypeFilter = typeParam
@@ -151,7 +151,7 @@ export default function ResultsPage() {
       })
       .filter((result) => {
         // Filter by document type
-        if (docType === 'both') {
+        if (docType === 'all') {
           return true
         } else if (docType === 'tos') {
           return result.docType.includes('tos')
@@ -227,7 +227,7 @@ export default function ResultsPage() {
       })
       .filter((result) => {
         // Filter by document type
-        if (documentTypeFilter === 'both') {
+        if (documentTypeFilter === 'all') {
           return true
         } else if (documentTypeFilter === 'tos') {
           return result.docType.includes('tos')
@@ -323,9 +323,9 @@ export default function ResultsPage() {
         return 'Terms of Service'
       case 'privacy':
         return 'Privacy Policy'
-      case 'both':
+      case 'all':
       default:
-        return 'Both Documents'
+        return 'All Documents'
     }
   }
 
@@ -404,22 +404,17 @@ export default function ResultsPage() {
       <main className='flex-1'>
         <section className='w-full py-12 md:py-24'>
           <div className='container px-4 md:px-6'>
-            <div className='flex justify-between items-center mb-8'>
-              <div className='space-y-4'>
-                <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
-                  {hasSearched && searchQuery
-                    ? `Search Results for "${searchQuery}"`
-                    : 'Search'}
-                </h1>
-                <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
-                  {hasSearched
-                    ? `Showing analysis results for ${getDocumentTypeLabel()}`
-                    : 'Search for Terms of Service and Privacy Policy analyses'}
-                </p>
-              </div>
-              <Button variant='outline' className='border-gray-200' asChild>
-                <Link href='/'>← Back to Home</Link>
-              </Button>
+            <div className='space-y-4 mb-8'>
+              <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
+                {hasSearched && searchQuery
+                  ? `Search Results for "${searchQuery}"`
+                  : 'Search'}
+              </h1>
+              <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
+                {hasSearched
+                  ? `Showing analysis results for ${getDocumentTypeLabel()}`
+                  : 'Search for Terms of Service and Privacy Policy analyses'}
+              </p>
             </div>
 
             <div className='flex flex-col gap-6'>
@@ -463,7 +458,7 @@ export default function ResultsPage() {
                             <SelectValue placeholder='Document Type' />
                           </SelectTrigger>
                           <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                            <SelectItem value='both'>Both Documents</SelectItem>
+                            <SelectItem value='all'>All Documents</SelectItem>
                             <SelectItem value='tos'>
                               Terms of Service
                             </SelectItem>
