@@ -404,7 +404,8 @@ export default function ResultsPage() {
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
       <main className='flex-1'>
         <section className='w-full py-12 md:py-24'>
-          <div className='container px-4 md:px-6'>
+          {/* Fixed outer container */}
+          <div className='container mx-auto px-4 md:px-6'>
             <div className='space-y-4 mb-8'>
               <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
                 {hasSearched && searchQuery
@@ -418,10 +419,13 @@ export default function ResultsPage() {
               </p>
             </div>
 
-            {/* Consistent width wrapper that doesn't depend on results state */}
-            <div className='flex flex-col gap-6 max-w-5xl mx-auto'>
+            {/* Consistent fixed-width content wrapper */}
+            <div
+              className='w-full max-w-3xl mx-auto'
+              style={{ minHeight: '500px' }}
+            >
               {/* Search and filter bar */}
-              <div className='mb-4 space-y-4 w-full'>
+              <div className='mb-6 w-full'>
                 <div className='w-full'>
                   <div className='flex flex-col gap-4'>
                     {/* Search input */}
@@ -499,13 +503,13 @@ export default function ResultsPage() {
 
               {/* Results count - only shown after search */}
               {hasSearched && (
-                <div className='text-sm text-gray-500 mb-4 mt-2'>
+                <div className='text-sm text-gray-500 mb-4'>
                   Showing {displayedResults.length} of {filteredResults.length}{' '}
                   results
                 </div>
               )}
 
-              {/* Results area within same container */}
+              {/* Results area with fixed dimensions */}
               <div className='w-full'>
                 {/* Results grid - only shown after search */}
                 {hasSearched ? (
@@ -580,7 +584,7 @@ export default function ResultsPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className='text-center py-12'>
+                    <div className='text-center py-12 border border-gray-100 rounded-lg'>
                       <p className='text-lg font-medium'>{`No results found for "${searchQuery}"`}</p>
                       <p className='text-gray-500 mt-2'>
                         Try adjusting your search or filters
@@ -588,7 +592,7 @@ export default function ResultsPage() {
                     </div>
                   )
                 ) : (
-                  <div className='text-center py-12'>
+                  <div className='text-center py-12 border border-gray-100 rounded-lg'>
                     <p className='text-lg font-medium'>
                       Enter a search term and click Search
                     </p>
