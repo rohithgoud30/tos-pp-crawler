@@ -34,6 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { allResults, type SearchResult } from '@/lib/data'
 import Image from 'next/image'
+
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
@@ -80,7 +81,7 @@ export default function ResultsPage() {
     }
 
     if (perPageParam) {
-      const perPageValue = parseInt(perPageParam, 10)
+      const perPageValue = Number.parseInt(perPageParam, 10)
       if ([6, 9, 12, 15].includes(perPageValue)) {
         setResultsPerPage(perPageValue)
         actualPerPage = perPageValue
@@ -417,10 +418,11 @@ export default function ResultsPage() {
               </p>
             </div>
 
-            <div className='flex flex-col gap-6'>
+            {/* Consistent width wrapper that doesn't depend on results state */}
+            <div className='flex flex-col gap-6 max-w-5xl mx-auto'>
               {/* Search and filter bar */}
-              <div className='mb-4 space-y-4'>
-                <div className='relative w-full'>
+              <div className='mb-4 space-y-4 w-full'>
+                <div className='w-full'>
                   <div className='flex flex-col gap-4'>
                     {/* Search input */}
                     <form
@@ -503,92 +505,99 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Results grid - only shown after search */}
-              {hasSearched ? (
-                displayedResults.length > 0 ? (
-                  <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-                    {displayedResults.map((result) => (
-                      <Card
-                        key={result.id}
-                        className='border border-gray-200 hover:border-gray-300 transition-colors'
-                      >
-                        <CardHeader className='pb-3'>
-                          <div className='flex items-start gap-4'>
-                            {/* Logo/Image */}
-                            <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
-                              {result.logo ? (
-                                <Image
-                                  src={result.logo || '/placeholder.svg'}
-                                  alt={`${result.name} logo`}
-                                  className='h-8 w-8'
-                                  width={32}
-                                  height={32}
-                                />
-                              ) : (
-                                <Globe className='h-6 w-6 text-gray-500' />
-                              )}
-                            </div>
-                            <div>
-                              <CardTitle className='text-xl'>
-                                {result.name}
-                              </CardTitle>
-                              <div className='flex items-center text-sm text-gray-500 mt-1'>
-                                <Globe className='h-3.5 w-3.5 mr-1' />
-                                {result.url}
+              {/* Results area within same container */}
+              <div className='w-full'>
+                {/* Results grid - only shown after search */}
+                {hasSearched ? (
+                  displayedResults.length > 0 ? (
+                    <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+                      {displayedResults.map((result) => (
+                        <Card
+                          key={result.id}
+                          className='border border-gray-200 hover:border-gray-300 transition-colors'
+                        >
+                          <CardHeader className='pb-3 overflow-hidden'>
+                            <div className='flex items-start gap-4'>
+                              {/* Logo/Image */}
+                              <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
+                                {result.logo ? (
+                                  <Image
+                                    src={result.logo || '/placeholder.svg'}
+                                    alt={`${result.name} logo`}
+                                    className='h-8 w-8'
+                                    width={32}
+                                    height={32}
+                                  />
+                                ) : (
+                                  <Globe className='h-6 w-6 text-gray-500' />
+                                )}
+                              </div>
+                              <div className='min-w-0 flex-1'>
+                                <CardTitle className='text-xl truncate'>
+                                  {result.name}
+                                </CardTitle>
+                                <div className='flex items-center text-sm text-gray-500 mt-1 truncate'>
+                                  <Globe className='h-3.5 w-3.5 mr-1 flex-shrink-0' />
+                                  <span className='truncate'>{result.url}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          {/* Add ToS/PP tags */}
-                          <div className='flex gap-2 mt-3'>
-                            {getDocumentTypeBadges(result)}
-                          </div>
-                        </CardHeader>
-                        <CardContent className='pb-3'>
-                          <div className='space-y-3'>
-                            <div className='flex items-center text-sm text-gray-500'>
-                              <Clock className='h-4 w-4 mr-2' />
-                              <span>Last analyzed: {result.lastAnalyzed}</span>
+                            {/* Add ToS/PP tags */}
+                            <div className='flex gap-2 mt-3'>
+                              {getDocumentTypeBadges(result)}
                             </div>
-                            <div className='flex items-center text-sm text-gray-500'>
-                              <Eye className='h-4 w-4 mr-2' />
-                              <span>{result.views.toLocaleString()} views</span>
+                          </CardHeader>
+                          <CardContent className='pb-3'>
+                            <div className='space-y-3'>
+                              <div className='flex items-center text-sm text-gray-500'>
+                                <Clock className='h-4 w-4 mr-2' />
+                                <span>
+                                  Last analyzed: {result.lastAnalyzed}
+                                </span>
+                              </div>
+                              <div className='flex items-center text-sm text-gray-500'>
+                                <Eye className='h-4 w-4 mr-2' />
+                                <span>
+                                  {result.views.toLocaleString()} views
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className='pt-2'>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                            asChild
-                          >
-                            <Link href={`/analysis/${result.id}`}>
-                              View Analysis
-                              <ExternalLink className='h-3 w-3' />
-                            </Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
+                          </CardContent>
+                          <CardFooter className='pt-2'>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                              asChild
+                            >
+                              <Link href={`/analysis/${result.id}`}>
+                                View Analysis
+                                <ExternalLink className='h-3 w-3' />
+                              </Link>
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className='text-center py-12'>
+                      <p className='text-lg font-medium'>{`No results found for "${searchQuery}"`}</p>
+                      <p className='text-gray-500 mt-2'>
+                        Try adjusting your search or filters
+                      </p>
+                    </div>
+                  )
                 ) : (
                   <div className='text-center py-12'>
-                    <p className='text-lg font-medium'>{`No results found for "${searchQuery}"`}</p>
+                    <p className='text-lg font-medium'>
+                      Enter a search term and click Search
+                    </p>
                     <p className='text-gray-500 mt-2'>
-                      Try adjusting your search or filters
+                      Search for privacy policies and terms of service
                     </p>
                   </div>
-                )
-              ) : (
-                <div className='text-center py-12'>
-                  <p className='text-lg font-medium'>
-                    Enter a search term and click Search
-                  </p>
-                  <p className='text-gray-500 mt-2'>
-                    Search for privacy policies and terms of service
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Pagination - only shown when we have results */}
               {hasSearched && filteredResults.length > 0 && (
@@ -701,7 +710,7 @@ export default function ResultsPage() {
                             url.searchParams.set('q', searchQuery)
                           // Always set the document type filter to maintain current selection
                           url.searchParams.set('type', documentTypeFilter)
-                          window.history.replaceState({}, '', url.toString())
+                          window.history.pushState({}, '', url.toString())
 
                           // Use immediate function to ensure we're using the latest state
                           setTimeout(() => {
