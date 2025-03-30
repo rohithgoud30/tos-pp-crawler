@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/ui/navbar'
 import ThemeProvider from '@/components/theme-provider'
+import { ClerkProvider } from '@clerk/nextjs'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -18,11 +19,19 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang='en' suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
+    <ClerkProvider
+      appearance={{
+        elements: {
+          // Hide clerk's sign-in button
+          rootBox: 'hidden',
+        },
+      }}
+    >
+      <html lang='en' suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
               (function() {
                 try {
                   const savedTheme = localStorage.getItem('theme');
@@ -38,33 +47,34 @@ export default function RootLayout({
                 }
               })();
             `,
-          }}
-        />
-      </head>
-      <body className={`${inter.className} bg-white dark:bg-black`}>
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className='min-h-screen flex flex-col'>
-            <Navbar />
-            <main className='flex-1 bg-white dark:bg-black text-black dark:text-white mx-auto'>
-              {children}
-            </main>
-            <footer className='w-full border-t border-gray-100 dark:border-white/10 py-6 bg-white dark:bg-black'>
-              <div className='w-full max-w-screen-xl mx-auto px-4 md:px-6'>
-                <div className='flex flex-col items-center justify-center text-center'>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    © {new Date().getFullYear()} CRWLR. All rights reserved.
-                  </p>
+            }}
+          />
+        </head>
+        <body className={`${inter.className} bg-white dark:bg-black`}>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='system'
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className='min-h-screen flex flex-col'>
+              <Navbar />
+              <main className='flex-1 bg-white dark:bg-black text-black dark:text-white mx-auto'>
+                {children}
+              </main>
+              <footer className='w-full border-t border-gray-100 dark:border-white/10 py-6 bg-white dark:bg-black'>
+                <div className='w-full max-w-screen-xl mx-auto px-4 md:px-6'>
+                  <div className='flex flex-col items-center justify-center text-center'>
+                    <p className='text-sm text-gray-500 dark:text-gray-400'>
+                      © {new Date().getFullYear()} CRWLR. All rights reserved.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </footer>
-          </div>
-        </ThemeProvider>
-      </body>
-    </html>
+              </footer>
+            </div>
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }
