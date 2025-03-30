@@ -26,6 +26,7 @@ export default function RootLayout({
           rootBox: 'hidden',
         },
       }}
+      afterSignOutUrl='/'
     >
       <html lang='en' suppressHydrationWarning>
         <head>
