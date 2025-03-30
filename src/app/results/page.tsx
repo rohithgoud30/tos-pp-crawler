@@ -61,21 +61,30 @@ export default function ResultsPage() {
 
     // Track if we should perform a search after setting state
     let shouldSearch = false
+    let shouldUpdateUrl = false
+    let actualTypeFilter = 'both'
+    let actualSortOption = 'recent'
+    let actualPerPage = 6
 
     if (queryParam) {
       setSearchQuery(queryParam)
       shouldSearch = true
+      shouldUpdateUrl = true
     }
 
     if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
       console.log('Setting document type filter to:', typeParam)
       setDocumentTypeFilter(typeParam)
+      actualTypeFilter = typeParam
+      shouldUpdateUrl = true
     }
 
     if (perPageParam) {
       const perPageValue = parseInt(perPageParam, 10)
       if ([6, 9, 12, 15].includes(perPageValue)) {
         setResultsPerPage(perPageValue)
+        actualPerPage = perPageValue
+        shouldUpdateUrl = true
       }
     }
 
@@ -84,6 +93,25 @@ export default function ResultsPage() {
       ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
     ) {
       setSortOption(sortParam)
+      actualSortOption = sortParam
+      shouldUpdateUrl = true
+    }
+
+    // Update URL to ensure a consistent state
+    if (shouldUpdateUrl) {
+      const url = new URL(window.location.href)
+
+      // Only include parameters with actual values
+      if (queryParam) {
+        url.searchParams.set('q', queryParam)
+      }
+
+      url.searchParams.set('type', actualTypeFilter)
+      url.searchParams.set('perPage', actualPerPage.toString())
+      url.searchParams.set('sort', actualSortOption)
+
+      // Replace current state to prevent multiple history entries
+      window.history.replaceState({}, '', url.toString())
     }
 
     // If we have a search query in the URL, automatically perform search
@@ -92,18 +120,7 @@ export default function ResultsPage() {
 
       // Use timeout to ensure state updates have been applied
       setTimeout(() => {
-        console.log('Performing search with document type:', documentTypeFilter)
-        // Use URL parameter directly for initial search
-        const actualTypeFilter =
-          typeParam && ['tos', 'privacy', 'both'].includes(typeParam)
-            ? typeParam
-            : 'both'
-        const actualSortOption =
-          sortParam &&
-          ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
-            ? sortParam
-            : 'recent'
-
+        console.log('Performing search with document type:', actualTypeFilter)
         performSearchWithParams(queryParam, actualTypeFilter, actualSortOption)
       }, 100) // Increased timeout for state updates
     }
@@ -183,7 +200,9 @@ export default function ResultsPage() {
     const url = new URL(window.location.href)
     url.searchParams.set('q', searchQuery)
     url.searchParams.set('type', documentTypeFilter)
-    window.history.pushState({}, '', url.toString())
+    url.searchParams.set('perPage', resultsPerPage.toString())
+    url.searchParams.set('sort', sortOption)
+    window.history.replaceState({}, '', url.toString())
 
     // Perform search
     performSearch()
@@ -356,7 +375,7 @@ export default function ResultsPage() {
     // Preserve other parameters
     if (searchQuery) url.searchParams.set('q', searchQuery)
     url.searchParams.set('perPage', resultsPerPage.toString())
-    window.history.pushState({}, '', url.toString())
+    window.history.replaceState({}, '', url.toString())
 
     // Perform search with the updated filter
     setTimeout(() => performSearch(), 0)
@@ -374,7 +393,7 @@ export default function ResultsPage() {
     if (searchQuery) url.searchParams.set('q', searchQuery)
     url.searchParams.set('type', documentTypeFilter)
     url.searchParams.set('perPage', resultsPerPage.toString())
-    window.history.pushState({}, '', url.toString())
+    window.history.replaceState({}, '', url.toString())
 
     // Perform search with the updated sort option
     setTimeout(() => performSearch(), 0)
@@ -385,17 +404,22 @@ export default function ResultsPage() {
       <main className='flex-1'>
         <section className='w-full py-12 md:py-24'>
           <div className='container px-4 md:px-6'>
-            <div className='space-y-4 mb-8'>
-              <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
-                {hasSearched && searchQuery
-                  ? `Search Results for "${searchQuery}"`
-                  : 'Search'}
-              </h1>
-              <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
-                {hasSearched
-                  ? `Showing analysis results for ${getDocumentTypeLabel()}`
-                  : 'Search for Terms of Service and Privacy Policy analyses'}
-              </p>
+            <div className='flex justify-between items-center mb-8'>
+              <div className='space-y-4'>
+                <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
+                  {hasSearched && searchQuery
+                    ? `Search Results for "${searchQuery}"`
+                    : 'Search'}
+                </h1>
+                <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
+                  {hasSearched
+                    ? `Showing analysis results for ${getDocumentTypeLabel()}`
+                    : 'Search for Terms of Service and Privacy Policy analyses'}
+                </p>
+              </div>
+              <Button variant='outline' className='border-gray-200' asChild>
+                <Link href='/'>← Back to Home</Link>
+              </Button>
             </div>
 
             <div className='flex flex-col gap-6'>
@@ -537,34 +561,17 @@ export default function ResultsPage() {
                           </div>
                         </CardContent>
                         <CardFooter className='pt-2'>
-                          <div className='flex gap-2 w-full'>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='flex-1 gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                              asChild
-                            >
-                              <Link href={`/analysis/${result.id}`}>
-                                View Analysis
-                                <ExternalLink className='h-3 w-3' />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='flex-1 gap-1 border-gray-200'
-                              asChild
-                            >
-                              <a
-                                href={result.url}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                              >
-                                View Original Source
-                                <ExternalLink className='h-3 w-3' />
-                              </a>
-                            </Button>
-                          </div>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                            asChild
+                          >
+                            <Link href={`/analysis/${result.id}`}>
+                              View Analysis
+                              <ExternalLink className='h-3 w-3' />
+                            </Link>
+                          </Button>
                         </CardFooter>
                       </Card>
                     ))}
@@ -699,7 +706,7 @@ export default function ResultsPage() {
                             url.searchParams.set('q', searchQuery)
                           // Always set the document type filter to maintain current selection
                           url.searchParams.set('type', documentTypeFilter)
-                          window.history.pushState({}, '', url.toString())
+                          window.history.replaceState({}, '', url.toString())
 
                           // Use immediate function to ensure we're using the latest state
                           setTimeout(() => {
@@ -726,28 +733,6 @@ export default function ResultsPage() {
           </div>
         </section>
       </main>
-
-      {/* Floating action button for viewing source */}
-      {displayedResults.length > 0 && (
-        <div className='fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50'>
-          <Button
-            className='shadow-lg bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200 px-4 py-2 rounded-full'
-            onClick={() => {
-              // Open original source of first result in new tab
-              if (displayedResults.length > 0) {
-                window.open(
-                  displayedResults[0].url,
-                  '_blank',
-                  'noopener,noreferrer'
-                )
-              }
-            }}
-          >
-            View Original Source
-            <ExternalLink className='ml-2 h-4 w-4' />
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

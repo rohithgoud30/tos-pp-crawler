@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 // Example services that can be searched
 const searchExamples = [
@@ -24,6 +25,7 @@ const searchExamples = [
 ]
 
 export default function HeroSection() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [documentType, setDocumentType] = useState('both')
   const [placeholder, setPlaceholder] = useState(
@@ -41,11 +43,12 @@ export default function HeroSection() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // Navigate to results page with the search query and document type
-      // Also include perPage parameter for consistency
-      window.location.href = `/results?q=${encodeURIComponent(
-        searchQuery
-      )}&type=${documentType}&perPage=6&sort=recent`
+      // Use Next.js router for better browser history support
+      router.push(
+        `/results?q=${encodeURIComponent(
+          searchQuery
+        )}&type=${documentType}&perPage=6&sort=recent`
+      )
     }
   }
 
