@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   '/auth/login(.*)',
   '/auth/signup(.*)',
   '/analysis(.*)',
+  '/summerize(.*)',
 ])
 
 // Define admin-only routes
