@@ -400,12 +400,22 @@ export default function ResultsPage() {
     setTimeout(() => performSearch(), 0)
   }
 
+  // Add this useEffect to maintain scroll position and prevent layout shifts
+  useEffect(() => {
+    // Store the current scroll position
+    const scrollPosition = window.scrollY
+
+    // After the component updates, restore the scroll position
+    return () => {
+      window.scrollTo(0, scrollPosition)
+    }
+  }, [displayedResults])
+
   return (
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
-      <main className='flex-1'>
+      <main className='flex-1 w-full'>
         <section className='w-full py-12 md:py-24'>
-          {/* Fixed outer container */}
-          <div className='container mx-auto px-4 md:px-6'>
+          <div className='container px-4 md:px-6 max-w-7xl mx-auto'>
             <div className='space-y-4 mb-8'>
               <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
                 {hasSearched && searchQuery
@@ -419,82 +429,86 @@ export default function ResultsPage() {
               </p>
             </div>
 
-            {/* Consistent fixed-width content wrapper */}
-            <div
-              className='w-full max-w-3xl mx-auto'
-              style={{ minHeight: '500px' }}
-            >
+            <div className='flex flex-col gap-6'>
               {/* Search and filter bar */}
-              <div className='mb-6 w-full'>
-                <div className='w-full'>
+              <div className='mb-4 space-y-4'>
+                <div className='relative w-full'>
                   <div className='flex flex-col gap-4'>
                     {/* Search input */}
                     <form
                       onSubmit={handleSearch}
                       className='flex flex-row gap-2 w-full'
                     >
-                      <div className='relative flex-1'>
+                      <div className='relative flex-1 min-w-0'>
                         <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
                         <Input
                           type='text'
                           placeholder='Search for a service...'
-                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
+                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400 w-full'
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
                       <Button
                         type='submit'
-                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200 whitespace-nowrap'
                       >
                         Search
                       </Button>
                     </form>
 
                     {/* Filter controls */}
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full'>
                       {/* Document Type Filter */}
                       <div className='flex items-center gap-2 w-full'>
-                        <Filter className='h-4 w-4 text-gray-500' />
-                        <Select
-                          value={documentTypeFilter}
-                          onValueChange={handleDocumentTypeChange}
-                        >
-                          <SelectTrigger className='w-full border-gray-200'>
-                            <SelectValue placeholder='Document Type' />
-                          </SelectTrigger>
-                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                            <SelectItem value='all'>All Documents</SelectItem>
-                            <SelectItem value='tos'>
-                              Terms of Service
-                            </SelectItem>
-                            <SelectItem value='privacy'>
-                              Privacy Policy
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Filter className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                        <div className='w-full'>
+                          <Select
+                            value={documentTypeFilter}
+                            onValueChange={handleDocumentTypeChange}
+                          >
+                            <SelectTrigger className='w-full border-gray-200'>
+                              <SelectValue placeholder='Document Type' />
+                            </SelectTrigger>
+                            <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
+                              <SelectItem value='all'>All Documents</SelectItem>
+                              <SelectItem value='tos'>
+                                Terms of Service
+                              </SelectItem>
+                              <SelectItem value='privacy'>
+                                Privacy Policy
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       {/* Sort Options */}
                       <div className='flex items-center gap-2 w-full'>
-                        <ArrowUpDown className='h-4 w-4 text-gray-500' />
-                        <Select
-                          value={sortOption}
-                          onValueChange={handleSortOptionChange}
-                        >
-                          <SelectTrigger className='w-full border-gray-200'>
-                            <SelectValue placeholder='Sort by' />
-                          </SelectTrigger>
-                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                            <SelectItem value='recent'>Most Recent</SelectItem>
-                            <SelectItem value='oldest'>Oldest First</SelectItem>
-                            <SelectItem value='name'>A to Z</SelectItem>
-                            <SelectItem value='z-a'>Z to A</SelectItem>
-                            <SelectItem value='most-viewed'>
-                              Most Viewed
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <ArrowUpDown className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                        <div className='w-full'>
+                          <Select
+                            value={sortOption}
+                            onValueChange={handleSortOptionChange}
+                          >
+                            <SelectTrigger className='w-full border-gray-200'>
+                              <SelectValue placeholder='Sort by' />
+                            </SelectTrigger>
+                            <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
+                              <SelectItem value='recent'>
+                                Most Recent
+                              </SelectItem>
+                              <SelectItem value='oldest'>
+                                Oldest First
+                              </SelectItem>
+                              <SelectItem value='name'>A to Z</SelectItem>
+                              <SelectItem value='z-a'>Z to A</SelectItem>
+                              <SelectItem value='most-viewed'>
+                                Most Viewed
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -503,114 +517,119 @@ export default function ResultsPage() {
 
               {/* Results count - only shown after search */}
               {hasSearched && (
-                <div className='text-sm text-gray-500 mb-4'>
+                <div className='text-sm text-gray-500 mb-4 mt-2'>
                   Showing {displayedResults.length} of {filteredResults.length}{' '}
                   results
                 </div>
               )}
 
-              {/* Results area with fixed dimensions */}
-              <div className='w-full'>
-                {/* Results grid - only shown after search */}
-                {hasSearched ? (
-                  displayedResults.length > 0 ? (
-                    <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-                      {displayedResults.map((result) => (
-                        <Card
-                          key={result.id}
-                          className='border border-gray-200 hover:border-gray-300 transition-colors'
-                        >
-                          <CardHeader className='pb-3 overflow-hidden'>
-                            <div className='flex items-start gap-4'>
-                              {/* Logo/Image */}
-                              <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
-                                {result.logo ? (
-                                  <Image
-                                    src={result.logo || '/placeholder.svg'}
-                                    alt={`${result.name} logo`}
-                                    className='h-8 w-8'
-                                    width={32}
-                                    height={32}
-                                  />
-                                ) : (
-                                  <Globe className='h-6 w-6 text-gray-500' />
-                                )}
-                              </div>
-                              <div className='min-w-0 flex-1'>
-                                <CardTitle className='text-xl truncate'>
-                                  {result.name}
-                                </CardTitle>
-                                <div className='flex items-center text-sm text-gray-500 mt-1 truncate'>
-                                  <Globe className='h-3.5 w-3.5 mr-1 flex-shrink-0' />
-                                  <span className='truncate'>{result.url}</span>
-                                </div>
+              {/* Results grid - only shown after search */}
+              {hasSearched ? (
+                displayedResults.length > 0 ? (
+                  <div
+                    className='grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full'
+                    style={{ minHeight: hasSearched ? '200px' : 'auto' }}
+                  >
+                    {displayedResults.map((result) => (
+                      <Card
+                        key={result.id}
+                        className='border border-gray-200 hover:border-gray-300 transition-colors h-full flex flex-col'
+                      >
+                        <CardHeader className='pb-3 overflow-hidden flex-shrink-0'>
+                          <div className='flex items-start gap-4'>
+                            {/* Logo/Image */}
+                            <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
+                              {result.logo ? (
+                                <Image
+                                  src={result.logo || '/placeholder.svg'}
+                                  alt={`${result.name} logo`}
+                                  className='h-8 w-8'
+                                  width={32}
+                                  height={32}
+                                />
+                              ) : (
+                                <Globe className='h-6 w-6 text-gray-500' />
+                              )}
+                            </div>
+                            <div className='min-w-0 flex-1'>
+                              <CardTitle className='text-xl truncate'>
+                                {result.name}
+                              </CardTitle>
+                              <div className='flex items-center text-sm text-gray-500 mt-1 truncate'>
+                                <Globe className='h-3.5 w-3.5 mr-1 flex-shrink-0' />
+                                <span className='truncate'>{result.url}</span>
                               </div>
                             </div>
-                            {/* Add ToS/PP tags */}
-                            <div className='flex gap-2 mt-3'>
-                              {getDocumentTypeBadges(result)}
+                          </div>
+                          {/* Add ToS/PP tags */}
+                          <div className='flex gap-2 mt-3'>
+                            {getDocumentTypeBadges(result)}
+                          </div>
+                        </CardHeader>
+                        <CardContent className='pb-3 flex-1'>
+                          <div className='space-y-3'>
+                            <div className='flex items-center text-sm text-gray-500'>
+                              <Clock className='h-4 w-4 mr-2' />
+                              <span>Last analyzed: {result.lastAnalyzed}</span>
                             </div>
-                          </CardHeader>
-                          <CardContent className='pb-3'>
-                            <div className='space-y-3'>
-                              <div className='flex items-center text-sm text-gray-500'>
-                                <Clock className='h-4 w-4 mr-2' />
-                                <span>
-                                  Last analyzed: {result.lastAnalyzed}
-                                </span>
-                              </div>
-                              <div className='flex items-center text-sm text-gray-500'>
-                                <Eye className='h-4 w-4 mr-2' />
-                                <span>
-                                  {result.views.toLocaleString()} views
-                                </span>
-                              </div>
+                            <div className='flex items-center text-sm text-gray-500'>
+                              <Eye className='h-4 w-4 mr-2' />
+                              <span>{result.views.toLocaleString()} views</span>
                             </div>
-                          </CardContent>
-                          <CardFooter className='pt-2'>
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                              asChild
-                            >
-                              <Link href={`/analysis/${result.id}`}>
-                                View Analysis
-                                <ExternalLink className='h-3 w-3' />
-                              </Link>
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className='text-center py-12 border border-gray-100 rounded-lg'>
-                      <p className='text-lg font-medium'>{`No results found for "${searchQuery}"`}</p>
-                      <p className='text-gray-500 mt-2'>
-                        Try adjusting your search or filters
-                      </p>
-                    </div>
-                  )
+                          </div>
+                        </CardContent>
+                        <CardFooter className='pt-2 flex-shrink-0'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                            asChild
+                          >
+                            <Link href={`/analysis/${result.id}`}>
+                              View Analysis
+                              <ExternalLink className='h-3 w-3' />
+                            </Link>
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
                 ) : (
-                  <div className='text-center py-12 border border-gray-100 rounded-lg'>
-                    <p className='text-lg font-medium'>
-                      Enter a search term and click Search
-                    </p>
-                    <p className='text-gray-500 mt-2'>
-                      Search for privacy policies and terms of service
+                  <div
+                    className='text-center py-12 w-full'
+                    style={{ minHeight: '200px' }}
+                  >
+                    <p className='text-lg font-medium text-black dark:text-white'>{`No results found for "${searchQuery}"`}</p>
+                    <p className='text-gray-500 dark:text-gray-400 mt-2'>
+                      Try adjusting your search or filters
                     </p>
                   </div>
-                )}
-              </div>
+                )
+              ) : (
+                <div
+                  className='text-center py-12 w-full'
+                  style={{ minHeight: '200px' }}
+                >
+                  <p className='text-lg font-medium'>
+                    Enter a search term and click Search
+                  </p>
+                  <p className='text-gray-500 mt-2'>
+                    Search for privacy policies and terms of service
+                  </p>
+                </div>
+              )}
 
               {/* Pagination - only shown when we have results */}
               {hasSearched && filteredResults.length > 0 && (
-                <div className='flex justify-between items-center mt-8'>
+                <div
+                  className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-8 w-full'
+                  style={{ minHeight: '60px' }}
+                >
                   <div className='text-sm text-gray-500'>
                     Page {currentPage} of {Math.max(1, totalPages)}
                   </div>
 
-                  <div className='flex items-center gap-1'>
+                  <div className='flex flex-wrap items-center gap-1 justify-center sm:justify-end'>
                     <Button
                       variant='outline'
                       size='icon'
@@ -714,7 +733,7 @@ export default function ResultsPage() {
                             url.searchParams.set('q', searchQuery)
                           // Always set the document type filter to maintain current selection
                           url.searchParams.set('type', documentTypeFilter)
-                          window.history.pushState({}, '', url.toString())
+                          window.history.replaceState({}, '', url.toString())
 
                           // Use immediate function to ensure we're using the latest state
                           setTimeout(() => {

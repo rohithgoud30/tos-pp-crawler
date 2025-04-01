@@ -188,7 +188,7 @@ const Navbar = ({
                         <Link href={auth.login.url}>
                           <Button
                             variant='outline'
-                            className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                            className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
                           >
                             {auth.login.text}
                           </Button>
