@@ -8,9 +8,9 @@ export const metadata = {
 
 export default function SummarizePage() {
   return (
-    <div className='container mx-auto py-8 px-4'>
+    <div className='container mx-auto py-8 px-4 '>
       <div className='max-w-3xl mx-auto text-center'>
-        <p className='text-gray-600 dark:text-gray-300'>
+        <p className='text-gray-600 dark:text-gray-300 mb-8'>
           Submit a website or app link to get summaries of Terms of Service or
           Privacy Policy documents. Our system will automatically find the
           documents, extract the content, and provide easy-to-read summaries.
