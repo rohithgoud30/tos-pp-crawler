@@ -1,9 +1,8 @@
-// import Link from 'next/link'
-// import { FileText } from 'lucide-react'
-// import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { FileText, Menu } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { UserButton, SignedIn, SignedOut, SignOutButton } from '@clerk/nextjs'
+import Link from 'next/link'
 
 import {
   Sheet,
@@ -56,8 +55,8 @@ const Navbar = ({
     { title: 'FAQ', url: '/faq' },
   ],
   auth = {
-    login: { text: 'Login', url: '/login' },
-    signup: { text: 'Sign up', url: '/signup' },
+    login: { text: 'Login', url: '/auth/login' },
+    signup: { text: 'Sign up', url: '/auth/signup' },
   },
 }: NavbarProps) => {
   return (
@@ -67,25 +66,25 @@ const Navbar = ({
         <nav className='hidden lg:flex items-center w-full'>
           {/* Left: Logo */}
           <div className='flex-1 flex items-center justify-start'>
-            <a href={logo.url} className='flex items-center gap-2'>
+            <Link href={logo.url} className='flex items-center gap-2'>
               <FileText className='h-6 w-6 text-black dark:text-white' />
               <span className='text-2xl font-bold text-black dark:text-white'>
                 {logo.title}
               </span>
-            </a>
+            </Link>
           </div>
 
           {/* Center: Menu */}
           <div className='flex-1 flex items-center justify-center'>
             <div className='flex space-x-6'>
               {menu.map((item) => (
-                <a
+                <Link
                   key={item.title}
                   className='inline-flex h-10 items-center justify-center px-4 py-2 text-sm font-medium text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md'
                   href={item.url}
                 >
                   {item.title}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -93,35 +92,62 @@ const Navbar = ({
           {/* Right: Auth buttons */}
           <div className='flex-1 flex items-center justify-end gap-2'>
             <ThemeToggle />
-            <Button
-              asChild
-              variant='outline'
-              size='sm'
-              className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
-            >
-              <a href={auth.login.url}>{auth.login.text}</a>
-            </Button>
-            <Button
-              asChild
-              size='sm'
-              className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
-            >
-              <a href={auth.signup.url}>{auth.signup.text}</a>
-            </Button>
+
+            {/* Show these buttons when user is not signed in */}
+            <SignedOut>
+              <Link href={auth.login.url}>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                >
+                  {auth.login.text}
+                </Button>
+              </Link>
+
+              <Link href={auth.signup.url}>
+                <Button
+                  size='sm'
+                  className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
+                >
+                  {auth.signup.text}
+                </Button>
+              </Link>
+            </SignedOut>
+
+            {/* Show user button and logout when signed in */}
+            <SignedIn>
+              <SignOutButton>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                >
+                  Logout
+                </Button>
+              </SignOutButton>
+              <UserButton afterSignOutUrl='/' />
+            </SignedIn>
           </div>
         </nav>
 
         {/* Mobile Navbar */}
         <div className='block lg:hidden'>
           <div className='flex items-center justify-between'>
-            <a href={logo.url} className='flex items-center gap-2'>
+            <Link href={logo.url} className='flex items-center gap-2'>
               <FileText className='h-6 w-6 text-black dark:text-white' />
               <span className='text-2xl font-bold text-black dark:text-white'>
                 {logo.title}
               </span>
-            </a>
+            </Link>
             <div className='flex items-center gap-2'>
               <ThemeToggle />
+
+              {/* Show user button when signed in (mobile) */}
+              <SignedIn>
+                <UserButton afterSignOutUrl='/' />
+              </SignedIn>
+
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -135,41 +161,58 @@ const Navbar = ({
                 <SheetContent className='overflow-y-auto bg-white dark:bg-black text-black dark:text-white'>
                   <SheetHeader>
                     <SheetTitle className='text-black dark:text-white'>
-                      <a href={logo.url} className='flex items-center gap-2'>
+                      <Link href={logo.url} className='flex items-center gap-2'>
                         <FileText className='h-6 w-6 text-black dark:text-white' />
                         <span className='text-xl font-bold text-black dark:text-white'>
                           {logo.title}
                         </span>
-                      </a>
+                      </Link>
                     </SheetTitle>
                   </SheetHeader>
                   <div className='my-6 flex flex-col gap-6'>
                     <div className='flex flex-col gap-4'>
                       {menu.map((item) => (
-                        <a
+                        <Link
                           key={item.title}
                           href={item.url}
                           className='font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md px-4 py-2'
                         >
                           {item.title}
-                        </a>
+                        </Link>
                       ))}
                     </div>
-                    <div className='flex flex-col gap-3'>
-                      <Button
-                        asChild
-                        variant='outline'
-                        className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
-                      >
-                        <a href={auth.login.url}>{auth.login.text}</a>
-                      </Button>
-                      <Button
-                        asChild
-                        className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
-                      >
-                        <a href={auth.signup.url}>{auth.signup.text}</a>
-                      </Button>
-                    </div>
+
+                    {/* Auth buttons in mobile menu */}
+                    <SignedOut>
+                      <div className='flex flex-col gap-3'>
+                        <Link href={auth.login.url}>
+                          <Button
+                            variant='outline'
+                            className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
+                          >
+                            {auth.login.text}
+                          </Button>
+                        </Link>
+
+                        <Link href={auth.signup.url}>
+                          <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'>
+                            {auth.signup.text}
+                          </Button>
+                        </Link>
+                      </div>
+                    </SignedOut>
+
+                    {/* Logout button when signed in - matches login button style */}
+                    <SignedIn>
+                      <SignOutButton>
+                        <Button
+                          variant='outline'
+                          className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                        >
+                          Logout
+                        </Button>
+                      </SignOutButton>
+                    </SignedIn>
                   </div>
                 </SheetContent>
               </Sheet>

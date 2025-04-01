@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
 
 // Example services that can be searched
 const searchExamples = [
@@ -25,9 +24,8 @@ const searchExamples = [
 ]
 
 export default function HeroSection() {
-  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [documentType, setDocumentType] = useState('both')
+  const [documentType, setDocumentType] = useState('all')
   const [placeholder, setPlaceholder] = useState(
     'Try searching for a service name'
   )
@@ -43,12 +41,11 @@ export default function HeroSection() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // Use Next.js router for better browser history support
-      router.push(
-        `/results?q=${encodeURIComponent(
-          searchQuery
-        )}&type=${documentType}&perPage=6&sort=recent`
-      )
+      // Navigate to results page with the search query and document type
+      // Also include perPage parameter for consistency
+      window.location.href = `/results?q=${encodeURIComponent(
+        searchQuery
+      )}&type=${documentType}&perPage=6&sort=recent`
     }
   }
 
@@ -93,13 +90,13 @@ export default function HeroSection() {
               <button
                 type='button'
                 className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
-                  documentType === 'both'
+                  documentType === 'all'
                     ? 'bg-black text-white dark:bg-white dark:text-black'
                     : 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
-                onClick={() => setDocumentType('both')}
+                onClick={() => setDocumentType('all')}
               >
-                Both
+                All
               </button>
             </div>
           </div>

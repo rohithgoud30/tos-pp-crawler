@@ -1,4 +1,4 @@
-import { FileText, Shield, AlertTriangle, Search } from 'lucide-react'
+import { Shield, Search, BarChart3, FileCode } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -35,13 +35,13 @@ export default function AboutPage() {
                   <div className='flex items-center gap-2'>
                     <Search className='h-6 w-6 text-black dark:text-white' />
                     <h3 className='text-xl font-bold text-black dark:text-white'>
-                      Transparency
+                      Document Analysis
                     </h3>
                   </div>
                   <p className='text-gray-500 dark:text-gray-400'>
-                    We crawl and analyze legal documents to bring transparency
-                    to the agreements you accept every day, often without
-                    reading.
+                    {`We analyze Terms of Service and Privacy Policy documents
+                    separately, providing specific insights for each document
+                    type to help you understand what you're agreeing to.`}
                   </p>
                 </div>
 
@@ -53,34 +53,40 @@ export default function AboutPage() {
                     </h3>
                   </div>
                   <p className='text-gray-500 dark:text-gray-400'>
-                    Our analysis helps you identify potential privacy concerns
-                    and understand your rights when using online services.
+                    {`Our analysis helps you identify potential privacy concerns
+                    and understand your rights when using online services, with
+                    clear distinctions between Terms of Service and Privacy
+                    Policy implications.`}
                   </p>
                 </div>
 
                 <div className='space-y-4'>
                   <div className='flex items-center gap-2'>
-                    <AlertTriangle className='h-6 w-6 text-black dark:text-white' />
+                    <BarChart3 className='h-6 w-6 text-black dark:text-white' />
                     <h3 className='text-xl font-bold text-black dark:text-white'>
-                      Awareness
+                      Text Mining
                     </h3>
                   </div>
                   <p className='text-gray-500 dark:text-gray-400'>
-                    We highlight concerning clauses and red flags that might
-                    affect your privacy or rights when using a service.
+                    We apply advanced text mining techniques to extract
+                    meaningful metrics from legal documents, including
+                    readability scores, word frequencies, and linguistic
+                    patterns specific to each document type.
                   </p>
                 </div>
 
                 <div className='space-y-4'>
                   <div className='flex items-center gap-2'>
-                    <FileText className='h-6 w-6 text-black dark:text-white' />
+                    <FileCode className='h-6 w-6 text-black dark:text-white' />
                     <h3 className='text-xl font-bold text-black dark:text-white'>
-                      Simplicity
+                      Comprehensive Data
                     </h3>
                   </div>
                   <p className='text-gray-500 dark:text-gray-400'>
-                    Complex legal jargon is translated into plain language that
-                    anyone can understand at a glance.
+                    For each document, we provide one-sentence summaries,
+                    detailed 100-word explanations, text mining measurements,
+                    and word frequency analysis to give you a complete
+                    understanding.
                   </p>
                 </div>
               </div>
@@ -90,29 +96,31 @@ export default function AboutPage() {
                   How It Works
                 </h2>
                 <p className='text-gray-500 dark:text-gray-400 leading-relaxed'>
-                  CRWLR uses advanced text mining and AI analysis to scan Terms
-                  of Service and Privacy Policy documents. Our algorithms
-                  identify important clauses, potential concerns, and summarize
-                  the key points in plain language. Each document receives a
-                  score based on user-friendliness, privacy protection, and
-                  clarity.
+                  {`CRWLR uses advanced text mining and AI analysis to scan Terms
+                  of Service and Privacy Policy documents separately. Our
+                  algorithms identify important clauses, potential concerns, and
+                  summarize the key points in plain language for each document
+                  type. We analyze linguistic patterns, readability scores, and
+                  word frequencies to provide comprehensive insights into what
+                  you're agreeing to.`}
                 </p>
               </div>
 
               <div className='space-y-4'>
                 <h2 className='text-2xl font-bold text-black dark:text-white'>
-                  Our Team
+                  Our Technology
                 </h2>
                 <p className='text-gray-500 dark:text-gray-400 leading-relaxed'>
-                  {`We're a team of privacy advocates, legal experts, and
-                  technology specialists committed to making the internet more
-                  transparent. Founded in 2023, CRWLR is dedicated to helping
-                  users make informed decisions about the services they use
-                  online.`}
+                  Our platform processes legal documents using natural language
+                  processing and text mining techniques. For each document, we
+                  calculate metrics like word count, average word and sentence
+                  length, readability scores, and unique word ratios. We also
+                  identify the most frequently used terms to highlight what
+                  companies emphasize in their legal agreements.
                 </p>
               </div>
 
-              <div className='border-t border-gray-200 dark:border-white/10 pt-8 text-center'>
+              <div className='border-t border-gray-200 dark:border-gray-700 pt-8 text-center'>
                 <p className='text-gray-500 dark:text-gray-400 mb-6'>
                   {`Ready to understand what you're really agreeing to?`}
                 </p>

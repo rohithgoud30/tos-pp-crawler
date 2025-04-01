@@ -34,11 +34,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { allResults, type SearchResult } from '@/lib/data'
 import Image from 'next/image'
+
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const [documentTypeFilter, setDocumentTypeFilter] = useState('both')
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('all')
   const [sortOption, setSortOption] = useState('recent')
   const [resultsPerPage, setResultsPerPage] = useState(6)
   const [displayedResults, setDisplayedResults] = useState<SearchResult[]>([])
@@ -62,7 +63,7 @@ export default function ResultsPage() {
     // Track if we should perform a search after setting state
     let shouldSearch = false
     let shouldUpdateUrl = false
-    let actualTypeFilter = 'both'
+    let actualTypeFilter = 'all'
     let actualSortOption = 'recent'
     let actualPerPage = 6
 
@@ -72,7 +73,7 @@ export default function ResultsPage() {
       shouldUpdateUrl = true
     }
 
-    if (typeParam && ['tos', 'privacy', 'both'].includes(typeParam)) {
+    if (typeParam && ['tos', 'privacy', 'all'].includes(typeParam)) {
       console.log('Setting document type filter to:', typeParam)
       setDocumentTypeFilter(typeParam)
       actualTypeFilter = typeParam
@@ -80,7 +81,7 @@ export default function ResultsPage() {
     }
 
     if (perPageParam) {
-      const perPageValue = parseInt(perPageParam, 10)
+      const perPageValue = Number.parseInt(perPageParam, 10)
       if ([6, 9, 12, 15].includes(perPageValue)) {
         setResultsPerPage(perPageValue)
         actualPerPage = perPageValue
@@ -151,7 +152,7 @@ export default function ResultsPage() {
       })
       .filter((result) => {
         // Filter by document type
-        if (docType === 'both') {
+        if (docType === 'all') {
           return true
         } else if (docType === 'tos') {
           return result.docType.includes('tos')
@@ -227,7 +228,7 @@ export default function ResultsPage() {
       })
       .filter((result) => {
         // Filter by document type
-        if (documentTypeFilter === 'both') {
+        if (documentTypeFilter === 'all') {
           return true
         } else if (documentTypeFilter === 'tos') {
           return result.docType.includes('tos')
@@ -323,9 +324,9 @@ export default function ResultsPage() {
         return 'Terms of Service'
       case 'privacy':
         return 'Privacy Policy'
-      case 'both':
+      case 'all':
       default:
-        return 'Both Documents'
+        return 'All Documents'
     }
   }
 
@@ -399,27 +400,33 @@ export default function ResultsPage() {
     setTimeout(() => performSearch(), 0)
   }
 
+  // Add this useEffect to maintain scroll position and prevent layout shifts
+  useEffect(() => {
+    // Store the current scroll position
+    const scrollPosition = window.scrollY
+
+    // After the component updates, restore the scroll position
+    return () => {
+      window.scrollTo(0, scrollPosition)
+    }
+  }, [displayedResults])
+
   return (
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
-      <main className='flex-1'>
+      <main className='flex-1 w-full'>
         <section className='w-full py-12 md:py-24'>
-          <div className='container px-4 md:px-6'>
-            <div className='flex justify-between items-center mb-8'>
-              <div className='space-y-4'>
-                <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
-                  {hasSearched && searchQuery
-                    ? `Search Results for "${searchQuery}"`
-                    : 'Search'}
-                </h1>
-                <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
-                  {hasSearched
-                    ? `Showing analysis results for ${getDocumentTypeLabel()}`
-                    : 'Search for Terms of Service and Privacy Policy analyses'}
-                </p>
-              </div>
-              <Button variant='outline' className='border-gray-200' asChild>
-                <Link href='/'>← Back to Home</Link>
-              </Button>
+          <div className='container px-4 md:px-6 max-w-7xl mx-auto'>
+            <div className='space-y-4 mb-8'>
+              <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
+                {hasSearched && searchQuery
+                  ? `Search Results for "${searchQuery}"`
+                  : 'Search'}
+              </h1>
+              <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
+                {hasSearched
+                  ? `Showing analysis results for ${getDocumentTypeLabel()}`
+                  : 'Search for Terms of Service and Privacy Policy analyses'}
+              </p>
             </div>
 
             <div className='flex flex-col gap-6'>
@@ -432,68 +439,76 @@ export default function ResultsPage() {
                       onSubmit={handleSearch}
                       className='flex flex-row gap-2 w-full'
                     >
-                      <div className='relative flex-1'>
+                      <div className='relative flex-1 min-w-0'>
                         <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
                         <Input
                           type='text'
                           placeholder='Search for a service...'
-                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400'
+                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400 w-full'
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                         />
                       </div>
                       <Button
                         type='submit'
-                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200 whitespace-nowrap'
                       >
                         Search
                       </Button>
                     </form>
 
                     {/* Filter controls */}
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full'>
                       {/* Document Type Filter */}
                       <div className='flex items-center gap-2 w-full'>
-                        <Filter className='h-4 w-4 text-gray-500' />
-                        <Select
-                          value={documentTypeFilter}
-                          onValueChange={handleDocumentTypeChange}
-                        >
-                          <SelectTrigger className='w-full border-gray-200'>
-                            <SelectValue placeholder='Document Type' />
-                          </SelectTrigger>
-                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                            <SelectItem value='both'>Both Documents</SelectItem>
-                            <SelectItem value='tos'>
-                              Terms of Service
-                            </SelectItem>
-                            <SelectItem value='privacy'>
-                              Privacy Policy
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Filter className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                        <div className='w-full'>
+                          <Select
+                            value={documentTypeFilter}
+                            onValueChange={handleDocumentTypeChange}
+                          >
+                            <SelectTrigger className='w-full border-gray-200'>
+                              <SelectValue placeholder='Document Type' />
+                            </SelectTrigger>
+                            <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
+                              <SelectItem value='all'>All Documents</SelectItem>
+                              <SelectItem value='tos'>
+                                Terms of Service
+                              </SelectItem>
+                              <SelectItem value='privacy'>
+                                Privacy Policy
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       {/* Sort Options */}
                       <div className='flex items-center gap-2 w-full'>
-                        <ArrowUpDown className='h-4 w-4 text-gray-500' />
-                        <Select
-                          value={sortOption}
-                          onValueChange={handleSortOptionChange}
-                        >
-                          <SelectTrigger className='w-full border-gray-200'>
-                            <SelectValue placeholder='Sort by' />
-                          </SelectTrigger>
-                          <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                            <SelectItem value='recent'>Most Recent</SelectItem>
-                            <SelectItem value='oldest'>Oldest First</SelectItem>
-                            <SelectItem value='name'>A to Z</SelectItem>
-                            <SelectItem value='z-a'>Z to A</SelectItem>
-                            <SelectItem value='most-viewed'>
-                              Most Viewed
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <ArrowUpDown className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                        <div className='w-full'>
+                          <Select
+                            value={sortOption}
+                            onValueChange={handleSortOptionChange}
+                          >
+                            <SelectTrigger className='w-full border-gray-200'>
+                              <SelectValue placeholder='Sort by' />
+                            </SelectTrigger>
+                            <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
+                              <SelectItem value='recent'>
+                                Most Recent
+                              </SelectItem>
+                              <SelectItem value='oldest'>
+                                Oldest First
+                              </SelectItem>
+                              <SelectItem value='name'>A to Z</SelectItem>
+                              <SelectItem value='z-a'>Z to A</SelectItem>
+                              <SelectItem value='most-viewed'>
+                                Most Viewed
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -511,13 +526,16 @@ export default function ResultsPage() {
               {/* Results grid - only shown after search */}
               {hasSearched ? (
                 displayedResults.length > 0 ? (
-                  <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
+                  <div
+                    className='grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full'
+                    style={{ minHeight: hasSearched ? '200px' : 'auto' }}
+                  >
                     {displayedResults.map((result) => (
                       <Card
                         key={result.id}
-                        className='border border-gray-200 hover:border-gray-300 transition-colors'
+                        className='border border-gray-200 hover:border-gray-300 transition-colors h-full flex flex-col'
                       >
-                        <CardHeader className='pb-3'>
+                        <CardHeader className='pb-3 overflow-hidden flex-shrink-0'>
                           <div className='flex items-start gap-4'>
                             {/* Logo/Image */}
                             <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
@@ -533,13 +551,13 @@ export default function ResultsPage() {
                                 <Globe className='h-6 w-6 text-gray-500' />
                               )}
                             </div>
-                            <div>
-                              <CardTitle className='text-xl'>
+                            <div className='min-w-0 flex-1'>
+                              <CardTitle className='text-xl truncate'>
                                 {result.name}
                               </CardTitle>
-                              <div className='flex items-center text-sm text-gray-500 mt-1'>
-                                <Globe className='h-3.5 w-3.5 mr-1' />
-                                {result.url}
+                              <div className='flex items-center text-sm text-gray-500 mt-1 truncate'>
+                                <Globe className='h-3.5 w-3.5 mr-1 flex-shrink-0' />
+                                <span className='truncate'>{result.url}</span>
                               </div>
                             </div>
                           </div>
@@ -548,7 +566,7 @@ export default function ResultsPage() {
                             {getDocumentTypeBadges(result)}
                           </div>
                         </CardHeader>
-                        <CardContent className='pb-3'>
+                        <CardContent className='pb-3 flex-1'>
                           <div className='space-y-3'>
                             <div className='flex items-center text-sm text-gray-500'>
                               <Clock className='h-4 w-4 mr-2' />
@@ -560,7 +578,7 @@ export default function ResultsPage() {
                             </div>
                           </div>
                         </CardContent>
-                        <CardFooter className='pt-2'>
+                        <CardFooter className='pt-2 flex-shrink-0'>
                           <Button
                             variant='outline'
                             size='sm'
@@ -577,15 +595,21 @@ export default function ResultsPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className='text-center py-12'>
-                    <p className='text-lg font-medium'>{`No results found for "${searchQuery}"`}</p>
-                    <p className='text-gray-500 mt-2'>
+                  <div
+                    className='text-center py-12 w-full'
+                    style={{ minHeight: '200px' }}
+                  >
+                    <p className='text-lg font-medium text-black dark:text-white'>{`No results found for "${searchQuery}"`}</p>
+                    <p className='text-gray-500 dark:text-gray-400 mt-2'>
                       Try adjusting your search or filters
                     </p>
                   </div>
                 )
               ) : (
-                <div className='text-center py-12'>
+                <div
+                  className='text-center py-12 w-full'
+                  style={{ minHeight: '200px' }}
+                >
                   <p className='text-lg font-medium'>
                     Enter a search term and click Search
                   </p>
@@ -597,12 +621,15 @@ export default function ResultsPage() {
 
               {/* Pagination - only shown when we have results */}
               {hasSearched && filteredResults.length > 0 && (
-                <div className='flex justify-between items-center mt-8'>
+                <div
+                  className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-8 w-full'
+                  style={{ minHeight: '60px' }}
+                >
                   <div className='text-sm text-gray-500'>
                     Page {currentPage} of {Math.max(1, totalPages)}
                   </div>
 
-                  <div className='flex items-center gap-1'>
+                  <div className='flex flex-wrap items-center gap-1 justify-center sm:justify-end'>
                     <Button
                       variant='outline'
                       size='icon'
