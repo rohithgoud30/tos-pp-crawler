@@ -177,23 +177,102 @@ export default function UrlSubmissionForm() {
         throw new Error('Please enter a URL')
       }
 
-      const normalizedUrl = directUrl.trim().startsWith('http')
-        ? directUrl.trim()
-        : `https://${directUrl.trim()}`
+      // Normalize the input URL
+      let normalizedUrl = directUrl.trim()
+
+      // Check if URL has a scheme (http/https)
+      if (!normalizedUrl.startsWith('http')) {
+        normalizedUrl = `https://${normalizedUrl}`
+      }
 
       try {
         new URL(normalizedUrl)
       } catch {
         throw new Error('Invalid URL format. Please enter a valid website URL')
       }
+
       updateStage('init', 'completed')
 
       // URL Validation
       updateStage('url', 'processing')
-      const docResponse = await makeApiRequest(
-        docType === 'tos' ? ENDPOINTS.TOS : ENDPOINTS.PRIVACY,
-        { url: normalizedUrl }
-      )
+
+      // Define URL variations to try if the initial request fails
+      const getUrlVariations = (url: string) => {
+        try {
+          const parsedUrl = new URL(url)
+          const domain = parsedUrl.hostname
+
+          // Create variations with and without www
+          const variations = []
+
+          // Original URL
+          variations.push(url)
+
+          // With www if not present
+          if (!domain.startsWith('www.')) {
+            const wwwDomain = `www.${domain}`
+            variations.push(
+              `${parsedUrl.protocol}//${wwwDomain}${parsedUrl.pathname}${parsedUrl.search}`
+            )
+          }
+
+          // Without www if present
+          if (domain.startsWith('www.')) {
+            const nonWwwDomain = domain.replace('www.', '')
+            variations.push(
+              `${parsedUrl.protocol}//${nonWwwDomain}${parsedUrl.pathname}${parsedUrl.search}`
+            )
+          }
+
+          // Try http version if using https
+          if (parsedUrl.protocol === 'https:') {
+            variations.push(
+              `http://${domain}${parsedUrl.pathname}${parsedUrl.search}`
+            )
+          }
+
+          return variations
+        } catch (error) {
+          // If parsing fails, just return the original
+          console.warn('Error parsing URL for variations:', error)
+          return [url]
+        }
+      }
+
+      const urlVariations = getUrlVariations(normalizedUrl)
+      let docResponse: ApiResponse | null = null
+      let successfulUrl = ''
+
+      // Try each URL variation until one succeeds
+      for (const urlVariation of urlVariations) {
+        try {
+          const response = await makeApiRequest(
+            docType === 'tos' ? ENDPOINTS.TOS : ENDPOINTS.PRIVACY,
+            { url: urlVariation }
+          )
+
+          // Check if we got a document URL
+          const targetUrl =
+            docType === 'tos' ? response.tos_url : response.pp_url
+          if (targetUrl) {
+            docResponse = response
+            successfulUrl = urlVariation
+            break
+          }
+        } catch (err) {
+          console.warn(`Failed attempt with URL: ${urlVariation}`, err)
+          // Continue to the next variation
+        }
+      }
+
+      if (!docResponse) {
+        throw new Error(
+          `Could not find ${
+            docType === 'tos' ? 'Terms of Service' : 'Privacy Policy'
+          } for any URL variation.`
+        )
+      }
+
       updateStage('url', 'completed')
 
       // Find Document
@@ -207,12 +286,18 @@ export default function UrlSubmissionForm() {
           } URL found`
         )
       }
+
+      // Handle relative URLs
+      const fullTargetUrl = targetUrl.startsWith('http')
+        ? targetUrl
+        : new URL(targetUrl, successfulUrl).href
+
       updateStage('find', 'completed')
 
       // Extract Text
       updateStage('extract', 'processing')
       const extractData = await makeApiRequest(ENDPOINTS.EXTRACT, {
-        url: targetUrl,
+        url: fullTargetUrl,
       })
       if (!extractData.text) {
         throw new Error('No text content found in the document')
@@ -241,7 +326,7 @@ export default function UrlSubmissionForm() {
         setSuccess(
           `Successfully summarized the ${
             docType === 'tos' ? 'Terms of Service' : 'Privacy Policy'
-          } from ${normalizedUrl}`
+          } from ${successfulUrl}`
         )
       } else {
         throw new Error('Failed to generate summary')
