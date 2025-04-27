@@ -1,0 +1,6 @@
+.git
+.gitignore
+README.md
+.next
+node_modules
+*.log 

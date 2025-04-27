@@ -1,5 +1,5 @@
 {
-  "buildCommand": "next build",
+  "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "devCommand": "next dev",
   "installCommand": "npm install",
@@ -10,5 +10,8 @@
       "destination": "/dashboard",
       "permanent": true
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
