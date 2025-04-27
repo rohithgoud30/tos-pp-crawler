@@ -4,13 +4,6 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/dashboard",
-      "permanent": true
-    }
-  ],
   "env": {
     "NODE_ENV": "production",
     "NEXT_TELEMETRY_DISABLED": "1",
