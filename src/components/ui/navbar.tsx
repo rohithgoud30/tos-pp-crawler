@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { FileText, Menu, User, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import Link from 'next/link'
-import { useUser, SignOutButton } from '@clerk/nextjs'
+import { useUser, SignOutButton, useClerk } from '@clerk/nextjs'
 
 import {
   Sheet,
@@ -62,6 +62,7 @@ const Navbar = ({
   },
 }: NavbarProps) => {
   const { isSignedIn } = useUser()
+  const { openUserProfile } = useClerk()
 
   return (
     <section className='py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-black'>
@@ -99,16 +100,15 @@ const Navbar = ({
 
             {isSignedIn ? (
               <>
-                <Link href='/profile'>
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200 flex items-center gap-2'
-                  >
-                    <User className='h-4 w-4' />
-                    Profile
-                  </Button>
-                </Link>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200 flex items-center gap-2'
+                  onClick={() => openUserProfile()}
+                >
+                  <User className='h-4 w-4' />
+                  Profile
+                </Button>
                 <SignOutButton>
                   <Button
                     size='sm'
@@ -194,15 +194,14 @@ const Navbar = ({
                     <div className='flex flex-col gap-3'>
                       {isSignedIn ? (
                         <>
-                          <Link href='/profile'>
-                            <Button
-                              variant='outline'
-                              className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm flex items-center gap-2 w-full'
-                            >
-                              <User className='h-4 w-4' />
-                              Profile
-                            </Button>
-                          </Link>
+                          <Button
+                            variant='outline'
+                            className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm flex items-center gap-2 w-full'
+                            onClick={() => openUserProfile()}
+                          >
+                            <User className='h-4 w-4' />
+                            Profile
+                          </Button>
 
                           <SignOutButton>
                             <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2 w-full'>
