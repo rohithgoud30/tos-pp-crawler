@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button'
-import { FileText, Menu } from 'lucide-react'
+import { FileText, Menu, User, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import Link from 'next/link'
+import { useUser, SignOutButton } from '@clerk/nextjs'
 
 import {
   Sheet,
@@ -58,6 +59,8 @@ const Navbar = ({
     signup: { text: 'Sign up', url: '/auth/signup' },
   },
 }: NavbarProps) => {
+  const { isSignedIn, user } = useUser()
+
   return (
     <section className='py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-black'>
       <div className='container mx-auto px-4'>
@@ -88,28 +91,54 @@ const Navbar = ({
             </div>
           </div>
 
-          {/* Right: Auth buttons - Always showing login/signup temporarily */}
+          {/* Right: Auth buttons or Profile options */}
           <div className='flex-1 flex items-center justify-end gap-2'>
             <ThemeToggle />
 
-            <Link href={auth.login.url}>
-              <Button
-                variant='outline'
-                size='sm'
-                className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
-              >
-                {auth.login.text}
-              </Button>
-            </Link>
+            {isSignedIn ? (
+              <>
+                <Link href='/profile'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200 flex items-center gap-2'
+                  >
+                    <User className='h-4 w-4' />
+                    {user?.firstName || 'Profile'}
+                  </Button>
+                </Link>
+                <SignOutButton>
+                  <Button
+                    size='sm'
+                    className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2'
+                  >
+                    <LogOut className='h-4 w-4' />
+                    Logout
+                  </Button>
+                </SignOutButton>
+              </>
+            ) : (
+              <>
+                <Link href={auth.login.url}>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                  >
+                    {auth.login.text}
+                  </Button>
+                </Link>
 
-            <Link href={auth.signup.url}>
-              <Button
-                size='sm'
-                className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
-              >
-                {auth.signup.text}
-              </Button>
-            </Link>
+                <Link href={auth.signup.url}>
+                  <Button
+                    size='sm'
+                    className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
+                  >
+                    {auth.signup.text}
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </nav>
 
@@ -159,22 +188,45 @@ const Navbar = ({
                       ))}
                     </div>
 
-                    {/* Auth buttons in mobile menu */}
+                    {/* Auth buttons or Profile options in mobile menu */}
                     <div className='flex flex-col gap-3'>
-                      <Link href={auth.login.url}>
-                        <Button
-                          variant='outline'
-                          className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
-                        >
-                          {auth.login.text}
-                        </Button>
-                      </Link>
+                      {isSignedIn ? (
+                        <>
+                          <Link href='/profile'>
+                            <Button
+                              variant='outline'
+                              className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm flex items-center gap-2 w-full'
+                            >
+                              <User className='h-4 w-4' />
+                              {user?.firstName || 'Profile'}
+                            </Button>
+                          </Link>
 
-                      <Link href={auth.signup.url}>
-                        <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'>
-                          {auth.signup.text}
-                        </Button>
-                      </Link>
+                          <SignOutButton>
+                            <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2 w-full'>
+                              <LogOut className='h-4 w-4' />
+                              Logout
+                            </Button>
+                          </SignOutButton>
+                        </>
+                      ) : (
+                        <>
+                          <Link href={auth.login.url}>
+                            <Button
+                              variant='outline'
+                              className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
+                            >
+                              {auth.login.text}
+                            </Button>
+                          </Link>
+
+                          <Link href={auth.signup.url}>
+                            <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'>
+                              {auth.signup.text}
+                            </Button>
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 </SheetContent>
