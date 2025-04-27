@@ -114,7 +114,7 @@ const Navbar = ({
                     size='sm'
                     className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2'
                   >
-                    <LogOut className='h-4 w-4 text-black dark:text-white' />
+                    <LogOut className='h-4 w-4' style={{ color: 'inherit' }} />
                     Logout
                   </Button>
                 </SignOutButton>
@@ -205,7 +205,10 @@ const Navbar = ({
 
                           <SignOutButton>
                             <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2 w-full'>
-                              <LogOut className='h-4 w-4 text-black dark:text-white' />
+                              <LogOut
+                                className='h-4 w-4'
+                                style={{ color: 'inherit' }}
+                              />
                               Logout
                             </Button>
                           </SignOutButton>
