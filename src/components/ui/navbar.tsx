@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { FileText, Menu } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { UserButton, SignedIn, SignedOut, SignOutButton } from '@clerk/nextjs'
 import Link from 'next/link'
 
 import {
@@ -89,45 +88,28 @@ const Navbar = ({
             </div>
           </div>
 
-          {/* Right: Auth buttons */}
+          {/* Right: Auth buttons - Always showing login/signup temporarily */}
           <div className='flex-1 flex items-center justify-end gap-2'>
             <ThemeToggle />
 
-            {/* Show these buttons when user is not signed in */}
-            <SignedOut>
-              <Link href={auth.login.url}>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
-                >
-                  {auth.login.text}
-                </Button>
-              </Link>
+            <Link href={auth.login.url}>
+              <Button
+                variant='outline'
+                size='sm'
+                className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+              >
+                {auth.login.text}
+              </Button>
+            </Link>
 
-              <Link href={auth.signup.url}>
-                <Button
-                  size='sm'
-                  className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
-                >
-                  {auth.signup.text}
-                </Button>
-              </Link>
-            </SignedOut>
-
-            {/* Show user button and logout when signed in */}
-            <SignedIn>
-              <SignOutButton>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
-                >
-                  Logout
-                </Button>
-              </SignOutButton>
-              <UserButton afterSignOutUrl='/' />
-            </SignedIn>
+            <Link href={auth.signup.url}>
+              <Button
+                size='sm'
+                className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
+              >
+                {auth.signup.text}
+              </Button>
+            </Link>
           </div>
         </nav>
 
@@ -142,11 +124,6 @@ const Navbar = ({
             </Link>
             <div className='flex items-center gap-2'>
               <ThemeToggle />
-
-              {/* Show user button when signed in (mobile) */}
-              <SignedIn>
-                <UserButton afterSignOutUrl='/' />
-              </SignedIn>
 
               <Sheet>
                 <SheetTrigger asChild>
@@ -183,36 +160,22 @@ const Navbar = ({
                     </div>
 
                     {/* Auth buttons in mobile menu */}
-                    <SignedOut>
-                      <div className='flex flex-col gap-3'>
-                        <Link href={auth.login.url}>
-                          <Button
-                            variant='outline'
-                            className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
-                          >
-                            {auth.login.text}
-                          </Button>
-                        </Link>
-
-                        <Link href={auth.signup.url}>
-                          <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'>
-                            {auth.signup.text}
-                          </Button>
-                        </Link>
-                      </div>
-                    </SignedOut>
-
-                    {/* Logout button when signed in - matches login button style */}
-                    <SignedIn>
-                      <SignOutButton>
+                    <div className='flex flex-col gap-3'>
+                      <Link href={auth.login.url}>
                         <Button
                           variant='outline'
-                          className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                          className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
                         >
-                          Logout
+                          {auth.login.text}
                         </Button>
-                      </SignOutButton>
-                    </SignedIn>
+                      </Link>
+
+                      <Link href={auth.signup.url}>
+                        <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'>
+                          {auth.signup.text}
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </SheetContent>
               </Sheet>

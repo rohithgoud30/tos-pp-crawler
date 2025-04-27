@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
 }
 
-// Check if we have a real publishable key
+// Only wrap with ClerkProvider if we have a valid key
 const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 const hasValidKey =
   publishableKey &&
@@ -30,7 +30,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Content to be wrapped by different providers
   const content = (
     <html lang='en' suppressHydrationWarning>
       <head>
@@ -83,15 +82,28 @@ export default function RootLayout({
     </html>
   )
 
-  // Only wrap with ClerkProvider if we have a valid key
-  if (hasValidKey) {
-    return (
-      <ClerkProvider publishableKey={publishableKey} afterSignOutUrl='/'>
-        {content}
-      </ClerkProvider>
-    )
-  }
+  if (!hasValidKey) return content
 
-  // Otherwise, return content directly
-  return content
+  return (
+    <ClerkProvider
+      publishableKey={publishableKey}
+      afterSignOutUrl='/'
+      appearance={{
+        elements: {
+          rootBox: {
+            borderRadius: '50%',
+            boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.2)',
+          },
+          card: {
+            backgroundColor: '#ffffff !important',
+          },
+          formButtonPrimary: {
+            color: '#ffffff !important',
+          },
+        },
+      }}
+    >
+      {content}
+    </ClerkProvider>
+  )
 }

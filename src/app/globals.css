@@ -69,7 +69,7 @@
     @apply text-white;
   }
 
-  .dark .bg-white a {
+  [data-theme='dark'] .bg-white a {
     @apply text-black;
   }
 
@@ -78,7 +78,7 @@
     @apply text-black;
   }
 
-  .dark .bg-black.border-white a {
+  [data-theme='dark'] .bg-black.border-white a {
     @apply text-white;
   }
 
@@ -87,7 +87,7 @@
     @apply text-black;
   }
 
-  .dark .bg-black.border-white svg {
+  [data-theme='dark'] .bg-black.border-white svg {
     @apply text-white;
   }
 
@@ -101,7 +101,21 @@
     @apply text-gray-400;
   }
 
-  .dark input::placeholder {
+  [data-theme='dark'] input::placeholder {
     @apply text-gray-300;
   }
+}
+
+[class^='cl-'],
+[class*=' cl-'] {
+  /* Lock to light mode only (prevents inheriting dark schemes) */
+  color-scheme: only light !important;
+}
+
+.cl-footerActionLink {
+  color: #000000 !important;
+}
+
+.cl-footerButtonPrimary {
+  color: #ffffff !important;
 }

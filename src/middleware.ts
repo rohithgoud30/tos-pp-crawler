@@ -1,13 +1,11 @@
+import { clerkMiddleware } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
-// Simple pass-through middleware until we properly set up Clerk
-export default function middleware() {
+export default clerkMiddleware(() => {
   return NextResponse.next()
-}
+})
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  // Match all routes except static files and API
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 }
