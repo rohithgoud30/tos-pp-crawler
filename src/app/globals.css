@@ -51,11 +51,11 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-gray-200 dark:border-gray-700;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white dark:bg-black text-black dark:text-white;
   }
 
   /* Button text should always be visible */
