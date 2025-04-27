@@ -96,11 +96,13 @@
     @apply transition-all duration-200;
   }
 
-  /* Add subtle hover effect to improve visibility */
+  /* Remove problematic hover styles */
+  /* 
   .bg-white button:hover,
   .bg-transparent button:hover {
     @apply shadow-sm bg-gray-50;
   }
+  */
 
   /* Prevent light buttons from blending into background */
   button.bg-white,
