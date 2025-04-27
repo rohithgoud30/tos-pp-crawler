@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import { FileText, Menu, User, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
