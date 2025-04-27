@@ -61,7 +61,7 @@ const Navbar = ({
     signup: { text: 'Sign up', url: '/auth/signup' },
   },
 }: NavbarProps) => {
-  const { isSignedIn, user } = useUser()
+  const { isSignedIn } = useUser()
 
   return (
     <section className='py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-black'>
@@ -106,7 +106,7 @@ const Navbar = ({
                     className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200 flex items-center gap-2'
                   >
                     <User className='h-4 w-4' />
-                    {user?.firstName || 'Profile'}
+                    Profile
                   </Button>
                 </Link>
                 <SignOutButton>
@@ -200,7 +200,7 @@ const Navbar = ({
                               className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm flex items-center gap-2 w-full'
                             >
                               <User className='h-4 w-4' />
-                              {user?.firstName || 'Profile'}
+                              Profile
                             </Button>
                           </Link>
 
