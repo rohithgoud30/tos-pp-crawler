@@ -8,6 +8,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Fix favicon conflict
+  webpack: (config) => {
+    config.resolve.fallback = { fs: false }
+    return config
+  },
 }
 
 module.exports = nextConfig
