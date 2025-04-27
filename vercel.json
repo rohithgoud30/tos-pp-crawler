@@ -6,12 +6,6 @@
   "framework": "nextjs",
   "env": {
     "NODE_ENV": "production",
-    "NEXT_TELEMETRY_DISABLED": "1",
-    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_dummy-key-for-build",
-    "CLERK_SECRET_KEY": "sk_test_dummy-key-for-build",
-    "NEXT_PUBLIC_CLERK_SIGN_IN_URL": "/auth/login",
-    "NEXT_PUBLIC_CLERK_SIGN_UP_URL": "/auth/signup",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL": "/",
-    "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL": "/"
+    "NEXT_TELEMETRY_DISABLED": "1"
   }
 }
