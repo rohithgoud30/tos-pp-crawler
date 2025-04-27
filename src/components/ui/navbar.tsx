@@ -53,6 +53,7 @@ const Navbar = ({
   },
   menu = [
     { title: 'Home', url: '/' },
+    { title: 'Search', url: '/search' },
     { title: 'About', url: '/about' },
     { title: 'FAQ', url: '/faq' },
   ],
