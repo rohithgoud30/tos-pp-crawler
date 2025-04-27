@@ -18,13 +18,17 @@ export const metadata: Metadata = {
   },
 }
 
+// A workaround to prevent build errors when Clerk keys are not available
+const publicKey =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_dummy-key-for-build'
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider afterSignOutUrl='/'>
+    <ClerkProvider publishableKey={publicKey} afterSignOutUrl='/'>
       <html lang='en' suppressHydrationWarning>
         <head>
           <link rel='icon' href='/favicon.ico' sizes='any' />
