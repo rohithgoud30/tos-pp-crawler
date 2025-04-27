@@ -96,20 +96,6 @@
     @apply transition-all duration-200;
   }
 
-  /* Remove problematic hover styles */
-  /* 
-  .bg-white button:hover,
-  .bg-transparent button:hover {
-    @apply shadow-sm bg-gray-50;
-  }
-  */
-
-  /* Prevent light buttons from blending into background */
-  button.bg-white,
-  button.border-gray-200 {
-    @apply shadow-sm;
-  }
-
   /* Explicit placeholder styles */
   input::placeholder {
     @apply text-gray-400;
