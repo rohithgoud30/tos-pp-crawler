@@ -297,16 +297,28 @@ class CodeMetrics {
 
   getFileCategory(filePath) {
     const ext = path.extname(filePath).toLowerCase()
+    const relativeDirPath = path.dirname(filePath)
 
+    // Check file extension first
     if (FRONTEND_EXTENSIONS.has(ext)) {
       return 'frontend'
     } else if (CONFIG_EXTENSIONS.has(ext)) {
       return 'config'
     } else if (DOCS_EXTENSIONS.has(ext)) {
       return 'docs'
-    } else {
-      return 'other'
     }
+
+    // If extension check is inconclusive, check directory patterns
+    for (const [category, patterns] of Object.entries(MODULE_PATTERNS)) {
+      for (const pattern of patterns) {
+        if (relativeDirPath.includes(pattern)) {
+          return category
+        }
+      }
+    }
+
+    // Default fallback
+    return 'other'
   }
 
   getCommitCount() {

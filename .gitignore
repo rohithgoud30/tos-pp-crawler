@@ -42,3 +42,4 @@ next-env.d.ts
 
 # analysis scripts
 /scripts/analyze_code.js
+/scripts/analyze_*.js
