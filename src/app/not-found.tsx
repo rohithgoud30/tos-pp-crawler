@@ -32,10 +32,13 @@ export default function NotFound() {
       </p>
       <Button
         asChild
-        className='mt-8 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 flex items-center gap-2'
+        variant='outline'
+        className='mt-8 bg-black hover:bg-gray-800 text-white border-2 border-white 
+          dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 dark:border-2 dark:border-slate-500 
+          flex items-center gap-2 py-6 px-8 text-lg font-bold shadow-md'
       >
         <Link href='/'>
-          <Home className='h-4 w-4' />
+          <Home className='h-5 w-5 mr-2' />
           Back to Home
         </Link>
       </Button>
