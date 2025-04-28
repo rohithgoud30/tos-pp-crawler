@@ -141,6 +141,24 @@ export async function getDocuments(
 }
 
 // Get document details by ID
-export async function getDocumentById(id: string): Promise<DocumentDetail> {
-  return apiRequest<DocumentDetail>(`/api/v1/documents/${id}`)
+export async function getDocumentById(
+  id: string,
+  options: { skipViewIncrement?: boolean; signal?: AbortSignal } = {}
+): Promise<DocumentDetail> {
+  const queryParams = new URLSearchParams()
+
+  // Add skipViewIncrement parameter to prevent double-counting in React StrictMode
+  if (options.skipViewIncrement) {
+    queryParams.append('skip_view_increment', 'true')
+  }
+
+  const queryString = queryParams.toString()
+  const endpoint = `/api/v1/documents/${id}${
+    queryString ? `?${queryString}` : ''
+  }`
+
+  // Pass signal to the apiRequest
+  return apiRequest<DocumentDetail>(endpoint, {
+    signal: options.signal,
+  })
 }

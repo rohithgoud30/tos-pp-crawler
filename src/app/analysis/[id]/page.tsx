@@ -19,8 +19,7 @@ import {
 } from '@/lib/api'
 
 export default function AnalysisPage() {
-  const params = useParams()
-  const id = params.id as string
+  const { id } = useParams() as { id: string }
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('tos')
   const [analysisItem, setAnalysisItem] = useState<DocumentDetail | null>(null)
@@ -28,37 +27,67 @@ export default function AnalysisPage() {
   const [error, setError] = useState<string | null>(null)
   const tosRef = useRef<HTMLDivElement>(null)
   const ppRef = useRef<HTMLDivElement>(null)
+  const fetchControllerRef = useRef<AbortController | null>(null)
 
   // Get document type from URL parameters and load data
   useEffect(() => {
+    // Create a new AbortController instance for this request
+    fetchControllerRef.current = new AbortController()
+    const signal = fetchControllerRef.current.signal
+
     const fetchDocument = async () => {
       setIsLoading(true)
       setError(null)
 
       try {
-        // Get document details from API
-        const documentData = await getDocumentById(id)
-        setAnalysisItem(documentData)
+        // Get document details from API with abort signal
+        // Skip view increment in development mode to prevent double-counting
+        const documentData = await getDocumentById(id, {
+          skipViewIncrement: process.env.NODE_ENV === 'development',
+          signal: signal,
+        })
 
-        // Set active tab based on URL parameter or available data
-        const docType = searchParams.get('docType')
-        if (docType === 'privacy' && documentData.document_type === 'pp') {
-          setActiveTab('privacy')
-        } else if (documentData.document_type === 'tos') {
-          setActiveTab('tos')
-        } else if (documentData.document_type === 'pp') {
-          setActiveTab('privacy')
+        // Only update state if the request wasn't aborted
+        if (!signal.aborted) {
+          setAnalysisItem(documentData)
+
+          // Set active tab based on URL parameter or available data
+          const docType = searchParams.get('docType')
+          if (docType === 'privacy' && documentData.document_type === 'pp') {
+            setActiveTab('privacy')
+          } else if (documentData.document_type === 'tos') {
+            setActiveTab('tos')
+          } else if (documentData.document_type === 'pp') {
+            setActiveTab('privacy')
+          }
         }
       } catch (err) {
-        console.error('Error fetching document:', err)
-        setError('Failed to load document analysis. Please try again.')
+        // Only set error state if the request wasn't aborted
+        if (
+          !signal.aborted &&
+          !(err instanceof DOMException && err.name === 'AbortError')
+        ) {
+          console.error('Error fetching document:', err)
+          setError('Failed to load document analysis. Please try again.')
+        }
       } finally {
-        setIsLoading(false)
+        // Only update loading state if the request wasn't aborted
+        if (!signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     if (id) {
       fetchDocument()
+    }
+
+    // Cleanup function to abort any in-flight requests when component unmounts
+    return () => {
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort()
+        fetchControllerRef.current = null
+      }
     }
   }, [id, searchParams])
 
