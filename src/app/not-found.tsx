@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useEffect } from 'react'
+import { Home } from 'lucide-react'
 
 export default function NotFound() {
   // Ensure theme is properly applied when this page loads
@@ -29,8 +30,14 @@ export default function NotFound() {
       <p className='text-lg mt-4 max-w-md text-gray-600 dark:text-gray-300'>
         The page you are looking for doesn&apos;t exist or has been moved.
       </p>
-      <Button asChild className='mt-8'>
-        <Link href='/'>Go back home</Link>
+      <Button
+        asChild
+        className='mt-8 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 flex items-center gap-2'
+      >
+        <Link href='/'>
+          <Home className='h-4 w-4' />
+          Back to Home
+        </Link>
       </Button>
     </div>
   )
