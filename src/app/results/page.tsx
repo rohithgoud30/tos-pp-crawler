@@ -328,12 +328,12 @@ export default function ResultsPage() {
     return (
       <div className='flex gap-2'>
         {doc.document_type === 'tos' ? (
-          <Badge className='bg-blue-600 hover:bg-blue-700'>
+          <Badge className='bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'>
             <Tag className='h-3 w-3 mr-1' />
             ToS
           </Badge>
         ) : doc.document_type === 'pp' ? (
-          <Badge className='bg-green-600 hover:bg-green-700'>
+          <Badge className='bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'>
             <Tag className='h-3 w-3 mr-1' />
             PP
           </Badge>

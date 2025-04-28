@@ -233,7 +233,7 @@ export default function AnalysisPage() {
             <div className='flex gap-2'>
               {hasTos && (
                 <Badge
-                  className='cursor-pointer bg-blue-600 hover:bg-blue-700'
+                  className='cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'
                   onClick={() => handleTagClick('tos')}
                 >
                   <Tag className='h-3 w-3 mr-1' />
@@ -242,7 +242,7 @@ export default function AnalysisPage() {
               )}
               {hasPp && (
                 <Badge
-                  className='cursor-pointer bg-green-600 hover:bg-green-700'
+                  className='cursor-pointer bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'
                   onClick={() => handleTagClick('privacy')}
                 >
                   <Tag className='h-3 w-3 mr-1' />
