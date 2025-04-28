@@ -69,10 +69,10 @@ export default function HeroSection() {
       url.searchParams.delete('type')
     }
 
-    // Add default parameters - ensure "Most Recent" sort order
+    // Add default parameters - ensure "Name (A-Z)" sort order
     url.searchParams.set('perPage', '6')
-    url.searchParams.set('sort', 'updated_at')
-    url.searchParams.set('order', 'desc')
+    url.searchParams.set('sort', 'company_name')
+    url.searchParams.set('order', 'asc')
 
     // Navigate to the URL
     window.location.href = url.toString()

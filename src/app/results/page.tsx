@@ -53,8 +53,8 @@ export default function ResultsPage() {
   const [documentTypeFilter, setDocumentTypeFilter] = useState<
     'tos' | 'pp' | undefined
   >(undefined)
-  const [sortOption, setSortOption] = useState('updated_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [sortOption, setSortOption] = useState('company_name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [resultsPerPage, setResultsPerPage] = useState(6)
   const [displayedResults, setDisplayedResults] = useState<DocumentItem[]>([])
   const [resultsPagination, setResultsPagination] =
@@ -86,8 +86,8 @@ export default function ResultsPage() {
     let shouldSearch = false
     let shouldUpdateUrl = false
     let actualTypeFilter: 'tos' | 'pp' | undefined = undefined
-    let actualSortOption = 'updated_at'
-    let actualSortOrder: 'asc' | 'desc' = 'desc'
+    let actualSortOption = 'company_name'
+    let actualSortOrder: 'asc' | 'desc' = 'asc'
     let actualPerPage = 6
     let actualPage = 1
 
@@ -580,23 +580,23 @@ export default function ResultsPage() {
                   <Select
                     value={`${sortOption}-${sortOrder}`}
                     onValueChange={handleSortOptionChange}
-                    defaultValue='updated_at-desc'
+                    defaultValue='company_name-asc'
                   >
                     <SelectTrigger className='h-10 text-xs sm:text-sm'>
-                      <SelectValue placeholder='Most Recent' />
+                      <SelectValue placeholder='Name (A-Z)' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='updated_at-desc'>
-                        Most Recent
-                      </SelectItem>
-                      <SelectItem value='updated_at-asc'>
-                        Oldest First
-                      </SelectItem>
                       <SelectItem value='company_name-asc'>
                         Name (A-Z)
                       </SelectItem>
                       <SelectItem value='company_name-desc'>
                         Name (Z-A)
+                      </SelectItem>
+                      <SelectItem value='updated_at-desc'>
+                        Most Recent
+                      </SelectItem>
+                      <SelectItem value='updated_at-asc'>
+                        Oldest First
                       </SelectItem>
                       <SelectItem value='views-desc'>Most Viewed</SelectItem>
                     </SelectContent>
