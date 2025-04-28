@@ -80,30 +80,28 @@ export default function HeroSection() {
   }
 
   return (
-    <section className='w-full py-6 md:py-8 lg:py-12 flex items-center justify-center'>
-      <div className='container px-3 md:px-4 max-w-2xl'>
-        <div className='flex flex-col items-center space-y-4 text-center'>
-          <div className='space-y-1'>
-            <h1 className='text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
+    <section className='w-full py-2 md:py-3 flex items-center justify-center'>
+      <div className='container px-2 max-w-xl'>
+        <div className='flex flex-col items-center space-y-2 text-center'>
+          <div className='space-y-0.5'>
+            <h1 className='text-xl font-bold tracking-tight sm:text-2xl md:text-3xl'>
               {`🧠 Understand What You're Agreeing To`}
             </h1>
-            <p className='mx-auto max-w-[700px] text-gray-500 text-sm md:text-base'>
+            <p className='mx-auto max-w-[700px] text-gray-500 text-xs md:text-sm'>
               {`CRWLR analyzes Terms of Service and Privacy Policies so you don't have to read the fine print.`}
             </p>
-            <div className='flex justify-center'>
-              <DocumentStatsDisplay />
-            </div>
+            <DocumentStatsDisplay />
           </div>
 
-          <div className='flex justify-center gap-3'>
-            <div className='flex items-center space-x-1'>
+          <div className='flex justify-center gap-2 -mt-1'>
+            <div className='flex items-center space-x-0.5'>
               <Checkbox
                 id='tos'
                 checked={tosSelected}
                 onCheckedChange={(checked) => {
                   setTosSelected(checked === true)
                 }}
-                className='h-3.5 w-3.5'
+                className='h-3 w-3'
               />
               <Label
                 htmlFor='tos'
@@ -112,14 +110,14 @@ export default function HeroSection() {
                 Terms of Service
               </Label>
             </div>
-            <div className='flex items-center space-x-1'>
+            <div className='flex items-center space-x-0.5'>
               <Checkbox
                 id='pp'
                 checked={ppSelected}
                 onCheckedChange={(checked) => {
                   setPpSelected(checked === true)
                 }}
-                className='h-3.5 w-3.5'
+                className='h-3 w-3'
               />
               <Label
                 htmlFor='pp'
@@ -130,57 +128,49 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className='w-full space-y-1 relative mt-1'
-          >
-            <div>
-              <div className='relative flex items-center'>
-                <Input
-                  type='text'
-                  placeholder={placeholder}
-                  className={`pr-10 h-10 text-sm ${
-                    error
-                      ? 'border-red-500 focus-visible:ring-red-500'
-                      : 'border-input focus-visible:ring-ring'
-                  }`}
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value)
-                    if (e.target.value.trim()) {
-                      setError('')
-                    }
-                  }}
-                  aria-invalid={error ? 'true' : 'false'}
-                  aria-describedby={error ? 'search-error' : undefined}
-                />
-                <Button
-                  type='submit'
-                  size='icon'
-                  className='absolute right-1 h-8 w-8 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                >
-                  <Search className='h-3.5 w-3.5' />
-                  <span className='sr-only'>Search</span>
-                </Button>
-              </div>
-
-              {error && (
-                <p
-                  id='search-error'
-                  className='text-xs font-medium text-red-500 transition-all mt-0.5'
-                >
-                  {error}
-                </p>
-              )}
+          <form onSubmit={handleSubmit} className='w-full mt-0.5'>
+            <div className='relative flex items-center'>
+              <Input
+                type='text'
+                placeholder={placeholder}
+                className={`pr-8 h-9 text-xs ${
+                  error
+                    ? 'border-red-500 focus-visible:ring-red-500'
+                    : 'border-input focus-visible:ring-ring'
+                }`}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  if (e.target.value.trim()) {
+                    setError('')
+                  }
+                }}
+                aria-invalid={error ? 'true' : 'false'}
+                aria-describedby={error ? 'search-error' : undefined}
+              />
+              <Button
+                type='submit'
+                size='icon'
+                className='absolute right-0.5 h-7 w-7 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+              >
+                <Search className='h-3 w-3' />
+                <span className='sr-only'>Search</span>
+              </Button>
             </div>
 
-            <div className='text-xs text-gray-500 mt-1'>
+            {error && (
+              <p
+                id='search-error'
+                className='text-xs font-medium text-red-500 transition-all mt-0.5 -mb-1'
+              >
+                {error}
+              </p>
+            )}
+
+            <div className='text-xs text-gray-500 mt-0.5 leading-none'>
               <p className='leading-tight'>
                 Search for any website or service to analyze their legal
-                documents.
-              </p>
-              <p className='leading-tight'>
-                Examples: Facebook, Twitter, Netflix, Spotify, or any URL
+                documents. Examples: Facebook, Twitter, Netflix, or any URL
               </p>
             </div>
           </form>
