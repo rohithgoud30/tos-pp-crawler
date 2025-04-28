@@ -80,63 +80,66 @@ export default function HeroSection() {
   }
 
   return (
-    <section className='w-full py-12 md:py-16 lg:py-20 flex items-center justify-center'>
-      <div className='container px-4 md:px-6 max-w-2xl'>
-        <div className='flex flex-col items-center space-y-6 text-center'>
-          <div className='space-y-2'>
-            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
+    <section className='w-full py-6 md:py-8 lg:py-12 flex items-center justify-center'>
+      <div className='container px-3 md:px-4 max-w-2xl'>
+        <div className='flex flex-col items-center space-y-4 text-center'>
+          <div className='space-y-1'>
+            <h1 className='text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl'>
               {`🧠 Understand What You're Agreeing To`}
             </h1>
-            <p className='mx-auto max-w-[700px] text-gray-500 md:text-lg/relaxed'>
+            <p className='mx-auto max-w-[700px] text-gray-500 text-sm md:text-base'>
               {`CRWLR analyzes Terms of Service and Privacy Policies so you don't have to read the fine print.`}
             </p>
-            <div className='flex justify-center pt-1'>
+            <div className='flex justify-center'>
               <DocumentStatsDisplay />
             </div>
           </div>
 
-          <div className='flex justify-center gap-4 pt-1'>
-            <div className='flex items-center space-x-1.5'>
+          <div className='flex justify-center gap-3'>
+            <div className='flex items-center space-x-1'>
               <Checkbox
                 id='tos'
                 checked={tosSelected}
                 onCheckedChange={(checked) => {
                   setTosSelected(checked === true)
                 }}
-                className='h-4 w-4'
+                className='h-3.5 w-3.5'
               />
               <Label
                 htmlFor='tos'
-                className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                className='text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
               >
                 Terms of Service
               </Label>
             </div>
-            <div className='flex items-center space-x-1.5'>
+            <div className='flex items-center space-x-1'>
               <Checkbox
                 id='pp'
                 checked={ppSelected}
                 onCheckedChange={(checked) => {
                   setPpSelected(checked === true)
                 }}
-                className='h-4 w-4'
+                className='h-3.5 w-3.5'
               />
               <Label
                 htmlFor='pp'
-                className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                className='text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
               >
                 Privacy Policy
               </Label>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className='w-full space-y-2 relative'>
-            <div className='space-y-1'>
+          <form
+            onSubmit={handleSubmit}
+            className='w-full space-y-1 relative mt-1'
+          >
+            <div>
               <div className='relative flex items-center'>
                 <Input
                   type='text'
                   placeholder={placeholder}
-                  className={`pr-12 h-12 text-base ${
+                  className={`pr-10 h-10 text-sm ${
                     error
                       ? 'border-red-500 focus-visible:ring-red-500'
                       : 'border-input focus-visible:ring-ring'
@@ -154,9 +157,9 @@ export default function HeroSection() {
                 <Button
                   type='submit'
                   size='icon'
-                  className='absolute right-1 h-10 w-10 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                  className='absolute right-1 h-8 w-8 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                 >
-                  <Search className='h-4 w-4' />
+                  <Search className='h-3.5 w-3.5' />
                   <span className='sr-only'>Search</span>
                 </Button>
               </div>
@@ -164,19 +167,19 @@ export default function HeroSection() {
               {error && (
                 <p
                   id='search-error'
-                  className='text-sm font-medium text-red-500 transition-all'
+                  className='text-xs font-medium text-red-500 transition-all mt-0.5'
                 >
                   {error}
                 </p>
               )}
             </div>
 
-            <div className='text-xs text-gray-500'>
-              <p>
+            <div className='text-xs text-gray-500 mt-1'>
+              <p className='leading-tight'>
                 Search for any website or service to analyze their legal
                 documents.
               </p>
-              <p className='mt-0.5'>
+              <p className='leading-tight'>
                 Examples: Facebook, Twitter, Netflix, Spotify, or any URL
               </p>
             </div>
