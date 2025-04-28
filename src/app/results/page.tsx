@@ -464,14 +464,14 @@ export default function ResultsPage() {
               <Input
                 type='text'
                 placeholder='Search by company name or URL...'
-                className='pl-10 h-12 border-gray-300 dark:border-gray-700'
+                className='pl-10 h-12 border-gray-300 dark:border-gray-700 w-full'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Button
               type='submit'
-              className='h-12 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 md:w-auto'
+              className='h-12 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 md:w-[120px] flex-shrink-0'
             >
               Search
             </Button>
@@ -486,7 +486,7 @@ export default function ResultsPage() {
               value={documentTypeFilter || 'all'}
               onValueChange={handleDocumentTypeChange}
             >
-              <SelectTrigger className='w-[180px]'>
+              <SelectTrigger className='w-[200px]'>
                 <SelectValue placeholder='Document Type' />
               </SelectTrigger>
               <SelectContent>
@@ -504,7 +504,7 @@ export default function ResultsPage() {
                 value={`${sortOption}-${sortOrder}`}
                 onValueChange={handleSortOptionChange}
               >
-                <SelectTrigger className='w-[180px]'>
+                <SelectTrigger className='w-[200px]'>
                   <SelectValue placeholder='Sort by' />
                 </SelectTrigger>
                 <SelectContent>
@@ -522,7 +522,7 @@ export default function ResultsPage() {
                 value={resultsPerPage.toString()}
                 onValueChange={handleResultsPerPageChange}
               >
-                <SelectTrigger className='w-[130px]'>
+                <SelectTrigger className='w-[150px]'>
                   <SelectValue placeholder='Per page' />
                 </SelectTrigger>
                 <SelectContent>
