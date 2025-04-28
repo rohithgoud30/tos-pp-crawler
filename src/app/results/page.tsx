@@ -32,39 +32,52 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { allResults, type SearchResult } from '@/lib/data'
-import Image from 'next/image'
+import {
+  searchDocuments,
+  getDocuments,
+  type DocumentItem,
+  type PaginatedResponse,
+} from '@/lib/api'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
-  const [documentTypeFilter, setDocumentTypeFilter] = useState('all')
-  const [sortOption, setSortOption] = useState('recent')
+  const [documentTypeFilter, setDocumentTypeFilter] = useState<
+    'tos' | 'pp' | undefined
+  >(undefined)
+  const [sortOption, setSortOption] = useState('updated_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [resultsPerPage, setResultsPerPage] = useState(6)
-  const [displayedResults, setDisplayedResults] = useState<SearchResult[]>([])
-  const [filteredResults, setFilteredResults] = useState<SearchResult[]>([])
+  const [displayedResults, setDisplayedResults] = useState<DocumentItem[]>([])
+  const [resultsPagination, setResultsPagination] =
+    useState<PaginatedResponse<DocumentItem> | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
 
   // Load initial URL parameters
   useEffect(() => {
     const queryParam = searchParams.get('q')
-    const typeParam = searchParams.get('type') as string
+    const typeParam = searchParams.get('type') as 'tos' | 'pp' | undefined
     const perPageParam = searchParams.get('perPage')
     const sortParam = searchParams.get('sort')
+    const orderParam = searchParams.get('order') as 'asc' | 'desc' | undefined
 
     console.log('Initial URL parameters:', {
       queryParam,
       typeParam,
       perPageParam,
       sortParam,
+      orderParam,
     })
 
     // Track if we should perform a search after setting state
     let shouldSearch = false
     let shouldUpdateUrl = false
-    let actualTypeFilter = 'all'
-    let actualSortOption = 'recent'
+    let actualTypeFilter: 'tos' | 'pp' | undefined = undefined
+    let actualSortOption = 'updated_at'
+    let actualSortOrder: 'asc' | 'desc' = 'desc'
     let actualPerPage = 6
 
     if (queryParam) {
@@ -73,10 +86,10 @@ export default function ResultsPage() {
       shouldUpdateUrl = true
     }
 
-    if (typeParam && ['tos', 'privacy', 'all'].includes(typeParam)) {
+    if (typeParam && ['tos', 'pp'].includes(typeParam)) {
       console.log('Setting document type filter to:', typeParam)
       setDocumentTypeFilter(typeParam)
-      actualTypeFilter = typeParam
+      actualTypeFilter = typeParam as 'tos' | 'pp'
       shouldUpdateUrl = true
     }
 
@@ -91,10 +104,16 @@ export default function ResultsPage() {
 
     if (
       sortParam &&
-      ['recent', 'oldest', 'name', 'z-a', 'most-viewed'].includes(sortParam)
+      ['updated_at', 'company_name', 'url', 'views'].includes(sortParam)
     ) {
       setSortOption(sortParam)
       actualSortOption = sortParam
+      shouldUpdateUrl = true
+    }
+
+    if (orderParam && ['asc', 'desc'].includes(orderParam)) {
+      setSortOrder(orderParam)
+      actualSortOrder = orderParam
       shouldUpdateUrl = true
     }
 
@@ -107,9 +126,15 @@ export default function ResultsPage() {
         url.searchParams.set('q', queryParam)
       }
 
-      url.searchParams.set('type', actualTypeFilter)
+      if (actualTypeFilter) {
+        url.searchParams.set('type', actualTypeFilter)
+      } else {
+        url.searchParams.delete('type')
+      }
+
       url.searchParams.set('perPage', actualPerPage.toString())
       url.searchParams.set('sort', actualSortOption)
+      url.searchParams.set('order', actualSortOrder)
 
       // Replace current state to prevent multiple history entries
       window.history.replaceState({}, '', url.toString())
@@ -122,70 +147,97 @@ export default function ResultsPage() {
       // Use timeout to ensure state updates have been applied
       setTimeout(() => {
         console.log('Performing search with document type:', actualTypeFilter)
-        performSearchWithParams(queryParam, actualTypeFilter, actualSortOption)
+        performSearchWithParams(
+          queryParam,
+          actualTypeFilter,
+          actualSortOption,
+          actualSortOrder,
+          1,
+          actualPerPage
+        )
       }, 100) // Increased timeout for state updates
+    } else {
+      // Load all documents if no search
+      loadInitialDocuments(
+        actualTypeFilter,
+        actualSortOption,
+        actualSortOrder,
+        actualPerPage
+      )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  // Function that uses direct parameters instead of relying on state
-  const performSearchWithParams = (
-    query: string | null,
-    docType: string,
-    sort: string
+  // Load initial documents without search query
+  const loadInitialDocuments = async (
+    docType: 'tos' | 'pp' | undefined,
+    sort: string,
+    order: 'asc' | 'desc',
+    perPage: number
   ) => {
-    console.log('Search with direct params:', { query, docType, sort })
+    setIsLoading(true)
+    setError(null)
 
-    // Filter results
-    const results = allResults
-      .filter((result) => {
-        if (!query || query.trim() === '') {
-          return true
-        }
-
-        const queryLower = query.toLowerCase().trim()
-        const name = result.name.toLowerCase()
-        const url = result.url.toLowerCase()
-
-        // Simple matching for demo
-        return name.includes(queryLower) || url.includes(queryLower)
-      })
-      .filter((result) => {
-        // Filter by document type
-        if (docType === 'all') {
-          return true
-        } else if (docType === 'tos') {
-          return result.docType.includes('tos')
-        } else if (docType === 'privacy') {
-          return result.docType.includes('pp')
-        }
-        return true
+    try {
+      const results = await getDocuments({
+        document_type: docType,
+        sort_by: sort,
+        sort_order: order,
+        page: 1,
+        per_page: perPage,
       })
 
-    // Sort results
-    const sorted = [...results].sort((a, b) => {
-      switch (sort) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'z-a':
-          return b.name.localeCompare(a.name)
-        case 'oldest':
-          return (
-            new Date(b.lastAnalyzed).getTime() -
-            new Date(a.lastAnalyzed).getTime()
-          )
-        case 'most-viewed':
-          return b.views - a.views
-        case 'recent':
-        default:
-          return (
-            new Date(a.lastAnalyzed).getTime() -
-            new Date(b.lastAnalyzed).getTime()
-          )
-      }
+      setResultsPagination(results)
+      setDisplayedResults(results.items)
+      setHasSearched(true)
+    } catch (err) {
+      console.error('Error loading documents:', err)
+      setError('Failed to load documents. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Function that uses direct parameters instead of relying on state
+  const performSearchWithParams = async (
+    query: string | null,
+    docType: 'tos' | 'pp' | undefined,
+    sort: string,
+    order: 'asc' | 'desc',
+    page: number,
+    perPage: number
+  ) => {
+    if (!query) return
+
+    console.log('Search with direct params:', {
+      query,
+      docType,
+      sort,
+      order,
+      page,
+      perPage,
     })
+    setIsLoading(true)
+    setError(null)
 
-    setFilteredResults(sorted)
+    try {
+      const results = await searchDocuments({
+        search_text: query,
+        document_type: docType,
+        sort_by: sort,
+        sort_order: order,
+        page: page,
+        per_page: perPage,
+      })
+
+      setResultsPagination(results)
+      setDisplayedResults(results.items)
+    } catch (err) {
+      console.error('Search error:', err)
+      setError('Search failed. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Handle explicit search action
@@ -194,15 +246,28 @@ export default function ResultsPage() {
       e.preventDefault()
     }
 
+    if (!searchQuery.trim()) {
+      setError('Please enter a search term')
+      return
+    }
+
+    // Clear any previous errors
+    setError(null)
+
     setCurrentPage(1)
     setHasSearched(true)
 
     // Update URL
     const url = new URL(window.location.href)
     url.searchParams.set('q', searchQuery)
-    url.searchParams.set('type', documentTypeFilter)
+    if (documentTypeFilter) {
+      url.searchParams.set('type', documentTypeFilter)
+    } else {
+      url.searchParams.delete('type')
+    }
     url.searchParams.set('perPage', resultsPerPage.toString())
     url.searchParams.set('sort', sortOption)
+    url.searchParams.set('order', sortOrder)
     window.history.replaceState({}, '', url.toString())
 
     // Perform search
@@ -212,553 +277,420 @@ export default function ResultsPage() {
   // Actual search logic separated from event handler
   const performSearch = () => {
     console.log('Performing search with filter:', documentTypeFilter)
-    // Filter results
-    const results = allResults
-      .filter((result) => {
-        if (!searchQuery || searchQuery.trim() === '') {
-          return true
-        }
-
-        const query = searchQuery.toLowerCase().trim()
-        const name = result.name.toLowerCase()
-        const url = result.url.toLowerCase()
-
-        // Simple matching for demo
-        return name.includes(query) || url.includes(query)
-      })
-      .filter((result) => {
-        // Filter by document type
-        if (documentTypeFilter === 'all') {
-          return true
-        } else if (documentTypeFilter === 'tos') {
-          return result.docType.includes('tos')
-        } else if (documentTypeFilter === 'privacy') {
-          return result.docType.includes('pp')
-        }
-        return true
-      })
-
-    // Sort results
-    const sorted = [...results].sort((a, b) => {
-      switch (sortOption) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'z-a':
-          return b.name.localeCompare(a.name)
-        case 'oldest':
-          return (
-            new Date(b.lastAnalyzed).getTime() -
-            new Date(a.lastAnalyzed).getTime()
-          )
-        case 'most-viewed':
-          return b.views - a.views
-        case 'recent':
-        default:
-          return (
-            new Date(a.lastAnalyzed).getTime() -
-            new Date(b.lastAnalyzed).getTime()
-          )
-      }
-    })
-
-    setFilteredResults(sorted)
+    performSearchWithParams(
+      searchQuery,
+      documentTypeFilter,
+      sortOption,
+      sortOrder,
+      currentPage,
+      resultsPerPage
+    )
   }
 
-  // Update pagination when page changes or results are filtered
-  useEffect(() => {
-    if (filteredResults.length === 0) {
-      setDisplayedResults([])
-      return
-    }
-
-    const startIndex = (currentPage - 1) * resultsPerPage
-    const endIndex = startIndex + resultsPerPage
-    const paginatedResults = filteredResults.slice(startIndex, endIndex)
-    setDisplayedResults(paginatedResults)
-  }, [currentPage, resultsPerPage, filteredResults])
-
-  // Generate page numbers for pagination
-  const totalPages = Math.ceil(filteredResults.length / resultsPerPage)
-  const pageNumbers: Array<number | 'ellipsis'> = []
-  const maxPageButtons = 5
-
-  if (totalPages <= maxPageButtons) {
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i)
-    }
-  } else {
-    if (currentPage <= 3) {
-      for (let i = 1; i <= 4; i++) {
-        pageNumbers.push(i)
-      }
-      pageNumbers.push('ellipsis')
-      pageNumbers.push(totalPages)
-    } else if (currentPage >= totalPages - 2) {
-      pageNumbers.push(1)
-      pageNumbers.push('ellipsis')
-      for (let i = totalPages - 3; i <= totalPages; i++) {
-        pageNumbers.push(i)
-      }
-    } else {
-      pageNumbers.push(1)
-      pageNumbers.push('ellipsis')
-      pageNumbers.push(currentPage - 1)
-      pageNumbers.push(currentPage)
-      pageNumbers.push(currentPage + 1)
-      pageNumbers.push('ellipsis')
-      pageNumbers.push(totalPages)
-    }
-  }
-
+  // Handle page change
   const handlePageChange = (page: number) => {
-    const maxPage = Math.max(1, totalPages)
-    const newPage = Math.min(Math.max(1, page), maxPage)
-    setCurrentPage(newPage)
-    window.scrollTo(0, 0)
-  }
+    setCurrentPage(page)
 
-  // Get document type label
-  const getDocumentTypeLabel = () => {
-    switch (documentTypeFilter) {
-      case 'tos':
-        return 'Terms of Service'
-      case 'privacy':
-        return 'Privacy Policy'
-      case 'all':
-      default:
-        return 'All Documents'
+    // If we're searching, update search with new page
+    if (searchQuery) {
+      performSearchWithParams(
+        searchQuery,
+        documentTypeFilter,
+        sortOption,
+        sortOrder,
+        page,
+        resultsPerPage
+      )
+    } else {
+      // Otherwise just load documents for the page
+      loadInitialDocuments(
+        documentTypeFilter,
+        sortOption,
+        sortOrder,
+        resultsPerPage
+      )
     }
   }
 
-  // Get document type badges
-  const getDocumentTypeBadges = (result: SearchResult) => {
-    const hasTos = result.docType.includes('tos')
-    const hasPp = result.docType.includes('pp')
+  // Document type display
+  const getDocumentTypeLabel = () => {
+    if (documentTypeFilter === 'tos') {
+      return 'Terms of Service'
+    } else if (documentTypeFilter === 'pp') {
+      return 'Privacy Policy'
+    } else {
+      return 'All Documents'
+    }
+  }
 
+  // Document type badges
+  const getDocumentTypeBadges = (doc: DocumentItem) => {
     return (
       <div className='flex gap-2'>
-        {hasTos && (
-          <Badge
-            className='cursor-pointer bg-blue-600 hover:bg-blue-700'
-            onClick={() => {
-              const url = `/analysis/${result.id}?docType=tos`
-              window.location.href = url
-            }}
-          >
+        {doc.document_type === 'tos' ? (
+          <Badge className='bg-blue-600 hover:bg-blue-700'>
             <Tag className='h-3 w-3 mr-1' />
             ToS
           </Badge>
-        )}
-        {hasPp && (
-          <Badge
-            className='cursor-pointer bg-green-600 hover:bg-green-700'
-            onClick={() => {
-              const url = `/analysis/${result.id}?docType=privacy`
-              window.location.href = url
-            }}
-          >
+        ) : doc.document_type === 'pp' ? (
+          <Badge className='bg-green-600 hover:bg-green-700'>
             <Tag className='h-3 w-3 mr-1' />
             PP
           </Badge>
-        )}
+        ) : null}
       </div>
     )
   }
 
-  // Fix issue with document type not being recognized when coming from hero section
+  // Handle document type filter change
   const handleDocumentTypeChange = (value: string) => {
-    setDocumentTypeFilter(value)
-    setCurrentPage(1)
+    let docType: 'tos' | 'pp' | undefined
 
-    // Update URL with all current parameters
-    const url = new URL(window.location.href)
-    url.searchParams.set('type', value)
-    // Preserve other parameters
-    if (searchQuery) url.searchParams.set('q', searchQuery)
-    url.searchParams.set('perPage', resultsPerPage.toString())
-    window.history.replaceState({}, '', url.toString())
-
-    // Perform search with the updated filter
-    setTimeout(() => performSearch(), 0)
-  }
-
-  // Fix issue with sort option changes
-  const handleSortOptionChange = (value: string) => {
-    setSortOption(value)
-    setCurrentPage(1)
-
-    // Update URL with all current parameters
-    const url = new URL(window.location.href)
-    url.searchParams.set('sort', value)
-    // Preserve other parameters
-    if (searchQuery) url.searchParams.set('q', searchQuery)
-    url.searchParams.set('type', documentTypeFilter)
-    url.searchParams.set('perPage', resultsPerPage.toString())
-    window.history.replaceState({}, '', url.toString())
-
-    // Perform search with the updated sort option
-    setTimeout(() => performSearch(), 0)
-  }
-
-  // Add this useEffect to maintain scroll position and prevent layout shifts
-  useEffect(() => {
-    // Store the current scroll position
-    const scrollPosition = window.scrollY
-
-    // After the component updates, restore the scroll position
-    return () => {
-      window.scrollTo(0, scrollPosition)
+    if (value === 'tos' || value === 'pp') {
+      docType = value
+    } else {
+      docType = undefined // "all" case
     }
-  }, [displayedResults])
+
+    setDocumentTypeFilter(docType)
+
+    // Update URL parameter
+    const url = new URL(window.location.href)
+    if (docType) {
+      url.searchParams.set('type', docType)
+    } else {
+      url.searchParams.delete('type')
+    }
+    window.history.replaceState({}, '', url.toString())
+
+    // Reapply search with the new filter
+    if (searchQuery) {
+      performSearchWithParams(
+        searchQuery,
+        docType,
+        sortOption,
+        sortOrder,
+        1,
+        resultsPerPage
+      )
+    } else {
+      loadInitialDocuments(docType, sortOption, sortOrder, resultsPerPage)
+    }
+  }
+
+  // Handle sort option change
+  const handleSortOptionChange = (value: string) => {
+    const [newSortOption, newSortOrder] = value.split('-')
+
+    setSortOption(newSortOption)
+    setSortOrder(newSortOrder as 'asc' | 'desc')
+
+    // Update URL parameters
+    const url = new URL(window.location.href)
+    url.searchParams.set('sort', newSortOption)
+    url.searchParams.set('order', newSortOrder)
+    window.history.replaceState({}, '', url.toString())
+
+    // Reapply search with the new sorting
+    if (searchQuery) {
+      performSearchWithParams(
+        searchQuery,
+        documentTypeFilter,
+        newSortOption,
+        newSortOrder as 'asc' | 'desc',
+        1,
+        resultsPerPage
+      )
+    } else {
+      loadInitialDocuments(
+        documentTypeFilter,
+        newSortOption,
+        newSortOrder as 'asc' | 'desc',
+        resultsPerPage
+      )
+    }
+  }
+
+  // Handle results per page change
+  const handleResultsPerPageChange = (value: string) => {
+    const perPage = parseInt(value, 10)
+    setResultsPerPage(perPage)
+
+    // Update URL parameter
+    const url = new URL(window.location.href)
+    url.searchParams.set('perPage', perPage.toString())
+    window.history.replaceState({}, '', url.toString())
+
+    // Reapply search with the new size
+    if (searchQuery) {
+      performSearchWithParams(
+        searchQuery,
+        documentTypeFilter,
+        sortOption,
+        sortOrder,
+        1,
+        perPage
+      )
+    } else {
+      loadInitialDocuments(documentTypeFilter, sortOption, sortOrder, perPage)
+    }
+  }
+
+  // Format updated date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
+  }
 
   return (
-    <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
-      <main className='flex-1 w-full'>
-        <section className='w-full py-12 md:py-24'>
-          <div className='container px-4 md:px-6 max-w-7xl mx-auto'>
-            <div className='space-y-4 mb-8'>
-              <h1 className='text-3xl font-bold tracking-tighter sm:text-4xl text-black dark:text-white'>
-                {hasSearched && searchQuery
-                  ? `Search Results for "${searchQuery}"`
-                  : 'Search'}
-              </h1>
-              <p className='text-gray-500 dark:text-gray-400 md:text-lg'>
-                {hasSearched
-                  ? `Showing analysis results for ${getDocumentTypeLabel()}`
-                  : 'Search for Terms of Service and Privacy Policy analyses'}
-              </p>
+    <div className='min-h-screen bg-white dark:bg-black'>
+      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+        {/* Header with search */}
+        <div className='mb-8'>
+          <h1 className='text-3xl font-bold mb-8 text-black dark:text-white'>
+            Search Results
+          </h1>
+
+          {/* Search form */}
+          <form
+            onSubmit={handleSearch}
+            className='flex flex-col md:flex-row gap-4 mb-6'
+          >
+            <div className='w-full relative'>
+              <Search className='absolute left-3 top-3 h-4 w-4 text-gray-400' />
+              <Input
+                type='text'
+                placeholder='Search by company name or URL...'
+                className='pl-10 h-12 border-gray-300 dark:border-gray-700'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button
+              type='submit'
+              className='h-12 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 md:w-auto'
+            >
+              Search
+            </Button>
+          </form>
+        </div>
+
+        {/* Filters and sorting */}
+        <div className='flex flex-col md:flex-row justify-between mb-8 gap-4'>
+          <div className='flex items-center gap-2'>
+            <Filter className='h-5 w-5 text-gray-500' />
+            <Select
+              value={documentTypeFilter || 'all'}
+              onValueChange={handleDocumentTypeChange}
+            >
+              <SelectTrigger className='w-[180px]'>
+                <SelectValue placeholder='Document Type' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Documents</SelectItem>
+                <SelectItem value='tos'>Terms of Service</SelectItem>
+                <SelectItem value='pp'>Privacy Policy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='flex flex-col md:flex-row gap-4'>
+            <div className='flex items-center gap-2'>
+              <ArrowUpDown className='h-5 w-5 text-gray-500' />
+              <Select
+                value={`${sortOption}-${sortOrder}`}
+                onValueChange={handleSortOptionChange}
+              >
+                <SelectTrigger className='w-[180px]'>
+                  <SelectValue placeholder='Sort by' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='updated_at-desc'>Most Recent</SelectItem>
+                  <SelectItem value='updated_at-asc'>Oldest First</SelectItem>
+                  <SelectItem value='company_name-asc'>Name (A-Z)</SelectItem>
+                  <SelectItem value='company_name-desc'>Name (Z-A)</SelectItem>
+                  <SelectItem value='views-desc'>Most Viewed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className='flex flex-col gap-6'>
-              {/* Search and filter bar */}
-              <div className='mb-4 space-y-4'>
-                <div className='relative w-full'>
-                  <div className='flex flex-col gap-4'>
-                    {/* Search input */}
-                    <form
-                      onSubmit={handleSearch}
-                      className='flex flex-row gap-2 w-full'
-                    >
-                      <div className='relative flex-1 min-w-0'>
-                        <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
-                        <Input
-                          type='text'
-                          placeholder='Search for a service...'
-                          className='pl-10 border-gray-200 focus:border-gray-400 focus:ring-gray-400 w-full'
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                      </div>
-                      <Button
-                        type='submit'
-                        className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200 whitespace-nowrap'
-                      >
-                        Search
-                      </Button>
-                    </form>
-
-                    {/* Filter controls */}
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-2 w-full'>
-                      {/* Document Type Filter */}
-                      <div className='flex items-center gap-2 w-full'>
-                        <Filter className='h-4 w-4 text-gray-500 flex-shrink-0' />
-                        <div className='w-full'>
-                          <Select
-                            value={documentTypeFilter}
-                            onValueChange={handleDocumentTypeChange}
-                          >
-                            <SelectTrigger className='w-full border-gray-200'>
-                              <SelectValue placeholder='Document Type' />
-                            </SelectTrigger>
-                            <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                              <SelectItem value='all'>All Documents</SelectItem>
-                              <SelectItem value='tos'>
-                                Terms of Service
-                              </SelectItem>
-                              <SelectItem value='privacy'>
-                                Privacy Policy
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Sort Options */}
-                      <div className='flex items-center gap-2 w-full'>
-                        <ArrowUpDown className='h-4 w-4 text-gray-500 flex-shrink-0' />
-                        <div className='w-full'>
-                          <Select
-                            value={sortOption}
-                            onValueChange={handleSortOptionChange}
-                          >
-                            <SelectTrigger className='w-full border-gray-200'>
-                              <SelectValue placeholder='Sort by' />
-                            </SelectTrigger>
-                            <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                              <SelectItem value='recent'>
-                                Most Recent
-                              </SelectItem>
-                              <SelectItem value='oldest'>
-                                Oldest First
-                              </SelectItem>
-                              <SelectItem value='name'>A to Z</SelectItem>
-                              <SelectItem value='z-a'>Z to A</SelectItem>
-                              <SelectItem value='most-viewed'>
-                                Most Viewed
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Results count - only shown after search */}
-              {hasSearched && (
-                <div className='text-sm text-gray-500 mb-4 mt-2'>
-                  Showing {displayedResults.length} of {filteredResults.length}{' '}
-                  results
-                </div>
-              )}
-
-              {/* Results grid - only shown after search */}
-              {hasSearched ? (
-                displayedResults.length > 0 ? (
-                  <div
-                    className='grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-full'
-                    style={{ minHeight: hasSearched ? '200px' : 'auto' }}
-                  >
-                    {displayedResults.map((result) => (
-                      <Card
-                        key={result.id}
-                        className='border border-gray-200 hover:border-gray-300 transition-colors h-full flex flex-col'
-                      >
-                        <CardHeader className='pb-3 overflow-hidden flex-shrink-0'>
-                          <div className='flex items-start gap-4'>
-                            {/* Logo/Image */}
-                            <div className='w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0'>
-                              {result.logo ? (
-                                <Image
-                                  src={result.logo || '/placeholder.svg'}
-                                  alt={`${result.name} logo`}
-                                  className='h-8 w-8'
-                                  width={32}
-                                  height={32}
-                                />
-                              ) : (
-                                <Globe className='h-6 w-6 text-gray-500' />
-                              )}
-                            </div>
-                            <div className='min-w-0 flex-1'>
-                              <CardTitle className='text-xl truncate'>
-                                {result.name}
-                              </CardTitle>
-                              <div className='flex items-center text-sm text-gray-500 mt-1 truncate'>
-                                <Globe className='h-3.5 w-3.5 mr-1 flex-shrink-0' />
-                                <span className='truncate'>{result.url}</span>
-                              </div>
-                            </div>
-                          </div>
-                          {/* Add ToS/PP tags */}
-                          <div className='flex gap-2 mt-3'>
-                            {getDocumentTypeBadges(result)}
-                          </div>
-                        </CardHeader>
-                        <CardContent className='pb-3 flex-1'>
-                          <div className='space-y-3'>
-                            <div className='flex items-center text-sm text-gray-500'>
-                              <Clock className='h-4 w-4 mr-2' />
-                              <span>Last analyzed: {result.lastAnalyzed}</span>
-                            </div>
-                            <div className='flex items-center text-sm text-gray-500'>
-                              <Eye className='h-4 w-4 mr-2' />
-                              <span>{result.views.toLocaleString()} views</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className='pt-2 flex-shrink-0'>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='w-full gap-1 border-gray-200 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-                            asChild
-                          >
-                            <Link href={`/analysis/${result.id}`}>
-                              View Analysis
-                              <ExternalLink className='h-3 w-3' />
-                            </Link>
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div
-                    className='text-center py-12 w-full'
-                    style={{ minHeight: '200px' }}
-                  >
-                    <p className='text-lg font-medium text-black dark:text-white'>{`No results found for "${searchQuery}"`}</p>
-                    <p className='text-gray-500 dark:text-gray-400 mt-2'>
-                      Try adjusting your search or filters
-                    </p>
-                  </div>
-                )
-              ) : (
-                <div
-                  className='text-center py-12 w-full'
-                  style={{ minHeight: '200px' }}
-                >
-                  <p className='text-lg font-medium'>
-                    Enter a search term and click Search
-                  </p>
-                  <p className='text-gray-500 mt-2'>
-                    Search for privacy policies and terms of service
-                  </p>
-                </div>
-              )}
-
-              {/* Pagination - only shown when we have results */}
-              {hasSearched && filteredResults.length > 0 && (
-                <div
-                  className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-8 w-full'
-                  style={{ minHeight: '60px' }}
-                >
-                  <div className='text-sm text-gray-500'>
-                    Page {currentPage} of {Math.max(1, totalPages)}
-                  </div>
-
-                  <div className='flex flex-wrap items-center gap-1 justify-center sm:justify-end'>
-                    <Button
-                      variant='outline'
-                      size='icon'
-                      className='h-10 w-10 border-gray-200 rounded-md'
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <span className='sr-only'>Previous page</span>
-                      <svg
-                        width='15'
-                        height='15'
-                        viewBox='0 0 15 15'
-                        fill='none'
-                        xmlns='http://www.w3.org/2000/svg'
-                        className='h-4 w-4'
-                      >
-                        <path
-                          d='M8.84182 3.13514C9.04327 3.32401 9.05348 3.64042 8.86462 3.84188L5.43521 7.49991L8.86462 11.1579C9.05348 11.3594 9.04327 11.6758 8.84182 11.8647C8.64036 12.0535 8.32394 12.0433 8.13508 11.8419L4.38508 7.84188C4.20477 7.64955 4.20477 7.35027 4.38508 7.15794L8.13508 3.15794C8.32394 2.95648 8.64036 2.94628 8.84182 3.13514Z'
-                          fill='currentColor'
-                          fillRule='evenodd'
-                          clipRule='evenodd'
-                        ></path>
-                      </svg>
-                    </Button>
-
-                    {totalPages > 0 ? (
-                      pageNumbers.map((page, index) =>
-                        page === 'ellipsis' ? (
-                          <span
-                            key={`ellipsis-${index}`}
-                            className='px-2 text-gray-500'
-                          >
-                            ...
-                          </span>
-                        ) : (
-                          <Button
-                            key={`page-${page}`}
-                            variant={
-                              currentPage === page ? 'default' : 'outline'
-                            }
-                            size='icon'
-                            className={`h-10 w-10 border-gray-200 rounded-md ${
-                              currentPage === page
-                                ? 'bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
-                                : ''
-                            }`}
-                            onClick={() => handlePageChange(page as number)}
-                          >
-                            {page}
-                          </Button>
-                        )
-                      )
-                    ) : (
-                      <Button
-                        variant='default'
-                        size='icon'
-                        className='h-10 w-10 border-gray-200 rounded-md bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200'
-                      >
-                        1
-                      </Button>
-                    )}
-
-                    <Button
-                      variant='outline'
-                      size='icon'
-                      className='h-10 w-10 border-gray-200 rounded-md'
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage >= Math.max(1, totalPages)}
-                    >
-                      <span className='sr-only'>Next page</span>
-                      <svg
-                        width='15'
-                        height='15'
-                        viewBox='0 0 15 15'
-                        fill='none'
-                        xmlns='http://www.w3.org/2000/svg'
-                        className='h-4 w-4'
-                      >
-                        <path
-                          d='M6.1584 3.13514C5.95694 3.32401 5.94673 3.64042 6.13559 3.84188L9.565 7.49991L6.13559 11.1579C5.94673 11.3594 5.95694 11.6758 6.13559 11.8647C6.35986 12.0535 6.67627 12.0433 6.86514 11.8419L10.6151 7.84188C10.7954 7.64955 10.7954 7.35027 10.6151 7.15794L6.86514 3.15794C6.67627 2.95648 6.35986 2.94628 6.1584 3.13514Z'
-                          fill='currentColor'
-                          fillRule='evenodd'
-                          clipRule='evenodd'
-                        ></path>
-                      </svg>
-                    </Button>
-
-                    <div className='ml-4'>
-                      <Select
-                        value={resultsPerPage.toString()}
-                        onValueChange={(value) => {
-                          const newResultsPerPage = Number.parseInt(value)
-                          setCurrentPage(1)
-                          setResultsPerPage(newResultsPerPage)
-
-                          // Update URL to preserve params
-                          const url = new URL(window.location.href)
-                          url.searchParams.set('perPage', value)
-                          // Preserve existing search and type params
-                          if (searchQuery)
-                            url.searchParams.set('q', searchQuery)
-                          // Always set the document type filter to maintain current selection
-                          url.searchParams.set('type', documentTypeFilter)
-                          window.history.replaceState({}, '', url.toString())
-
-                          // Use immediate function to ensure we're using the latest state
-                          setTimeout(() => {
-                            // Re-trigger search to preserve filters with current values
-                            performSearch()
-                          }, 0)
-                        }}
-                      >
-                        <SelectTrigger className='w-[130px] border-gray-200'>
-                          <SelectValue placeholder='Items per page' />
-                        </SelectTrigger>
-                        <SelectContent className='bg-white dark:bg-black border border-gray-200 shadow-md'>
-                          <SelectItem value='6'>6 / page</SelectItem>
-                          <SelectItem value='9'>9 / page</SelectItem>
-                          <SelectItem value='12'>12 / page</SelectItem>
-                          <SelectItem value='15'>15 / page</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className='flex items-center gap-2'>
+              <Select
+                value={resultsPerPage.toString()}
+                onValueChange={handleResultsPerPageChange}
+              >
+                <SelectTrigger className='w-[130px]'>
+                  <SelectValue placeholder='Per page' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='6'>6 per page</SelectItem>
+                  <SelectItem value='9'>9 per page</SelectItem>
+                  <SelectItem value='12'>12 per page</SelectItem>
+                  <SelectItem value='15'>15 per page</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </section>
+        </div>
+
+        {/* Results count and current filter */}
+        {hasSearched && !isLoading && resultsPagination && (
+          <div className='flex flex-col md:flex-row justify-between mb-6 text-gray-500 dark:text-gray-400'>
+            <p>
+              Showing {resultsPagination.items.length} of{' '}
+              {resultsPagination.total} results
+            </p>
+            <p>
+              Filtered by:{' '}
+              <span className='font-medium'>{getDocumentTypeLabel()}</span>
+            </p>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {isLoading && (
+          <div className='text-center py-12'>
+            <p className='text-gray-500 dark:text-gray-400'>
+              Loading results...
+            </p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className='bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 rounded-md mb-8'>
+            <p className='font-medium'>Error</p>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Empty results */}
+        {hasSearched &&
+          !isLoading &&
+          (!displayedResults || displayedResults.length === 0) && (
+            <div className='text-center py-12'>
+              <p className='text-xl font-medium mb-2 text-black dark:text-white'>
+                No results found
+              </p>
+              <p className='text-gray-500 dark:text-gray-400 mb-6'>
+                Try a different search term or filter
+              </p>
+            </div>
+          )}
+
+        {/* Results grid */}
+        {displayedResults && displayedResults.length > 0 && (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
+            {displayedResults.map((doc) => (
+              <Card key={doc.id} className='overflow-hidden'>
+                <CardHeader className='pb-3'>
+                  <div className='flex items-start justify-between'>
+                    <div>
+                      <CardTitle className='text-xl text-black dark:text-white'>
+                        {doc.company_name}
+                      </CardTitle>
+                      <p className='text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+                        <Globe className='h-3.5 w-3.5' />
+                        {doc.url}
+                      </p>
+                    </div>
+                    {doc.logo_url && (
+                      <div className='w-10 h-10 rounded-md overflow-hidden flex-shrink-0'>
+                        <img
+                          src={doc.logo_url}
+                          alt={`${doc.company_name} logo`}
+                          className='w-full h-full object-contain'
+                          onError={(e) => {
+                            // Hide broken images
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className='py-3'>
+                  <div className='flex justify-between'>
+                    <div>
+                      <p className='text-xs text-gray-500 dark:text-gray-400 mb-1'>
+                        Document Type
+                      </p>
+                      {getDocumentTypeBadges(doc)}
+                    </div>
+                    <div className='text-right'>
+                      <p className='text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center justify-end gap-1'>
+                        <Clock className='h-3.5 w-3.5' />
+                        Last Updated
+                      </p>
+                      <p className='text-sm text-gray-700 dark:text-gray-300'>
+                        {formatDate(doc.updated_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='mt-3 text-right'>
+                    <p className='text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center justify-end gap-1'>
+                      <Eye className='h-3.5 w-3.5' />
+                      Views
+                    </p>
+                    <p className='text-sm text-gray-700 dark:text-gray-300'>
+                      {doc.views}
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter className='pt-2'>
+                  <Button className='w-full gap-2' variant='outline' asChild>
+                    <Link href={`/analysis/${doc.id}`}>
+                      View Analysis
+                      <ExternalLink className='h-4 w-4' />
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {resultsPagination && resultsPagination.total_pages > 1 && (
+          <div className='flex justify-center mt-8'>
+            <div className='flex space-x-2'>
+              <Button
+                variant='outline'
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!resultsPagination.has_prev}
+              >
+                Previous
+              </Button>
+
+              {/* Page numbers */}
+              {[...Array(resultsPagination.total_pages)].map((_, index) => (
+                <Button
+                  key={index}
+                  variant={currentPage === index + 1 ? 'default' : 'outline'}
+                  onClick={() => handlePageChange(index + 1)}
+                  className={
+                    currentPage === index + 1
+                      ? 'bg-black text-white dark:bg-white dark:text-black'
+                      : ''
+                  }
+                >
+                  {index + 1}
+                </Button>
+              ))}
+
+              <Button
+                variant='outline'
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!resultsPagination.has_next}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

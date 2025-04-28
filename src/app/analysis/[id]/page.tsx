@@ -11,31 +11,49 @@ import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
 import { useSearchParams, useParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { getResultById, type SearchResult } from '@/lib/data'
+import { getDocumentById, type DocumentDetail } from '@/lib/api'
 
 export default function AnalysisPage() {
   const params = useParams()
   const id = params.id as string
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('tos')
-  const [analysisItem, setAnalysisItem] = useState<SearchResult | null>(null)
+  const [analysisItem, setAnalysisItem] = useState<DocumentDetail | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const tosRef = useRef<HTMLDivElement>(null)
   const ppRef = useRef<HTMLDivElement>(null)
 
   // Get document type from URL parameters and load data
   useEffect(() => {
-    // Find the analysis item by ID
-    const item = getResultById(id)
-    setAnalysisItem(item || null)
+    const fetchDocument = async () => {
+      setIsLoading(true)
+      setError(null)
 
-    // Set active tab based on URL parameter or available data
-    const docType = searchParams.get('docType')
-    if (docType === 'privacy' && item?.docType.includes('pp')) {
-      setActiveTab('privacy')
-    } else if (item?.docType.includes('tos')) {
-      setActiveTab('tos')
-    } else if (item?.docType.includes('pp')) {
-      setActiveTab('privacy')
+      try {
+        // Get document details from API
+        const documentData = await getDocumentById(id)
+        setAnalysisItem(documentData)
+
+        // Set active tab based on URL parameter or available data
+        const docType = searchParams.get('docType')
+        if (docType === 'privacy' && documentData.document_type === 'pp') {
+          setActiveTab('privacy')
+        } else if (documentData.document_type === 'tos') {
+          setActiveTab('tos')
+        } else if (documentData.document_type === 'pp') {
+          setActiveTab('privacy')
+        }
+      } catch (err) {
+        console.error('Error fetching document:', err)
+        setError('Failed to load document analysis. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchDocument()
     }
   }, [id, searchParams])
 
@@ -53,17 +71,10 @@ export default function AnalysisPage() {
   const renderAnalysisContent = (docType: 'tos' | 'privacy') => {
     if (!analysisItem) return null
 
-    const isTos = docType === 'tos'
-    const summarization = isTos
-      ? analysisItem.tos_summarization
-      : analysisItem.pp_summarization
-    const textMining = isTos
-      ? analysisItem.tos_text_mining
-      : analysisItem.pp_text_mining
-    const wordFrequency = isTos
-      ? analysisItem.tos_word_frequency
-      : analysisItem.pp_word_frequency
-    const docLink = isTos ? analysisItem.tos_link : analysisItem.pp_link
+    const isTos = docType === 'tos' && analysisItem.document_type === 'tos'
+    const isPp = docType === 'privacy' && analysisItem.document_type === 'pp'
+
+    if (!isTos && !isPp) return null
 
     return (
       <>
@@ -74,7 +85,7 @@ export default function AnalysisPage() {
           </h2>
           <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
             <p className='text-gray-900 dark:text-gray-100 font-medium'>
-              {summarization.one_sentence || 'No summary available'}
+              {analysisItem.one_sentence_summary || 'No summary available'}
             </p>
           </div>
         </div>
@@ -88,7 +99,8 @@ export default function AnalysisPage() {
           </h2>
           <Card className='p-4'>
             <p className='text-gray-700 dark:text-gray-300'>
-              {summarization.hundred_words || 'No detailed summary available'}
+              {analysisItem.hundred_word_summary ||
+                'No detailed summary available'}
             </p>
           </Card>
         </div>
@@ -100,7 +112,16 @@ export default function AnalysisPage() {
           <h2 className='text-xl font-semibold mb-6 text-black dark:text-white'>
             Word Frequency Analysis
           </h2>
-          <WordFrequencyChart wordFrequencies={wordFrequency} />
+          {analysisItem.sections && analysisItem.sections.length > 0 ? (
+            <WordFrequencyChart
+              wordFrequencies={
+                analysisItem.sections.find((s) => s.type === 'word_frequency')
+                  ?.data || []
+              }
+            />
+          ) : (
+            <p className='text-gray-500'>No word frequency data available</p>
+          )}
         </div>
 
         <Separator className='my-8' />
@@ -113,17 +134,30 @@ export default function AnalysisPage() {
               Text Mining Measurements
             </h2>
           </div>
-          <TextMetricsGrid metrics={textMining} />
+          {analysisItem.sections && analysisItem.sections.length > 0 ? (
+            <TextMetricsGrid
+              metrics={
+                analysisItem.sections.find((s) => s.type === 'text_mining')
+                  ?.data || {}
+              }
+            />
+          ) : (
+            <p className='text-gray-500'>No text metrics available</p>
+          )}
         </div>
 
         {/* Navigation Buttons - View Original Source */}
         <div className='flex flex-col sm:flex-row justify-center gap-4 mt-12'>
-          {docLink && (
+          {analysisItem.retrieved_url && (
             <Button
               className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
               asChild
             >
-              <a href={docLink} target='_blank' rel='noopener noreferrer'>
+              <a
+                href={analysisItem.retrieved_url}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
                 View Original Source
                 <ExternalLink className='h-4 w-4' />
               </a>
@@ -134,7 +168,7 @@ export default function AnalysisPage() {
     )
   }
 
-  if (!analysisItem) {
+  if (isLoading) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-white dark:bg-black'>
         <p className='text-gray-500 dark:text-gray-400'>Loading analysis...</p>
@@ -142,8 +176,29 @@ export default function AnalysisPage() {
     )
   }
 
-  const hasTos = analysisItem.docType.includes('tos')
-  const hasPp = analysisItem.docType.includes('pp')
+  if (error) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-white dark:bg-black'>
+        <div className='bg-red-50 dark:bg-red-900/20 p-4 rounded-md max-w-md'>
+          <p className='text-red-800 dark:text-red-300'>{error}</p>
+          <Button className='mt-4' asChild>
+            <Link href='/'>Return Home</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!analysisItem) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-white dark:bg-black'>
+        <p className='text-gray-500 dark:text-gray-400'>Document not found</p>
+      </div>
+    )
+  }
+
+  const hasTos = analysisItem.document_type === 'tos'
+  const hasPp = analysisItem.document_type === 'pp'
 
   return (
     <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
@@ -165,7 +220,7 @@ export default function AnalysisPage() {
           </Link>
           <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
           <span className='text-gray-900 dark:text-white font-medium'>
-            {analysisItem.name}
+            {analysisItem.company_name}
           </span>
         </nav>
 
@@ -173,7 +228,7 @@ export default function AnalysisPage() {
         <div className='mb-8'>
           <div className='flex flex-wrap items-center gap-3 mb-3'>
             <h1 className='text-3xl font-bold text-black dark:text-white'>
-              {analysisItem.name}
+              {analysisItem.company_name}
             </h1>
             <div className='flex gap-2'>
               {hasTos && (
@@ -199,7 +254,8 @@ export default function AnalysisPage() {
           <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6'>
             <p className='text-gray-500'>{analysisItem.url}</p>
             <p className='text-sm text-gray-400'>
-              Last analyzed: {analysisItem.lastAnalyzed}
+              Last analyzed:{' '}
+              {new Date(analysisItem.updated_at).toLocaleDateString()}
             </p>
           </div>
         </div>

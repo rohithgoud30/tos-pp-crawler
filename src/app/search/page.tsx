@@ -1,139 +1,185 @@
 'use client'
 
-import { useState } from 'react'
-import { SearchBar } from '@/components/search-bar'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Search } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { SearchResults } from '@/components/search-results'
-import type { DocumentItem, PaginatedResponse } from '@/lib/api'
-import { searchDocuments } from '@/lib/api'
+import {
+  searchDocuments,
+  type DocumentItem,
+  type PaginatedResponse,
+} from '@/lib/api'
 
 export default function SearchPage() {
-  const [searchState, setSearchState] = useState<
-    'empty' | 'loading' | 'results'
-  >('empty')
-  const [searchResults, setSearchResults] = useState<
-    PaginatedResponse<DocumentItem> | undefined
-  >()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<DocumentItem[]>([])
+  const [resultsPagination, setResultsPagination] =
+    useState<PaginatedResponse<DocumentItem> | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [documentType, setDocumentType] = useState<'tos' | 'pp' | undefined>()
-  const [currentPage, setCurrentPage] = useState(1)
 
-  const handleSearch = (
-    results: PaginatedResponse<DocumentItem>,
-    query: string
-  ) => {
-    setSearchResults(results)
-    setSearchState(results.items.length > 0 ? 'results' : 'empty')
-    setCurrentPage(1)
-    setSearchQuery(query)
-  }
+  // Initialize search query from URL on page load
+  useEffect(() => {
+    const initialQuery = searchParams.get('q')
+    if (initialQuery) {
+      setQuery(initialQuery)
+      performSearch(initialQuery)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
-  const handleSearchStart = () => {
-    setSearchState('loading')
+  const performSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) return
+
+    setIsLoading(true)
     setError(null)
-  }
-
-  const handleSearchError = (error: Error) => {
-    setError(error.message)
-    setSearchState('empty')
-  }
-
-  const handleLoadMore = async () => {
-    if (!searchResults || !searchQuery) return
 
     try {
-      const nextPage = currentPage + 1
-      const moreResults = await searchDocuments({
+      const response = await searchDocuments({
         search_text: searchQuery,
-        document_type: documentType,
-        page: nextPage,
-        per_page: 6,
+        page: 1,
+        per_page: 10,
       })
 
-      setSearchResults({
-        ...moreResults,
-        items: [...searchResults.items, ...moreResults.items],
-      })
-      setCurrentPage(nextPage)
-    } catch (error) {
-      console.error('Error loading more results:', error)
-      setError(
-        error instanceof Error ? error.message : 'Failed to load more results'
-      )
+      setResults(response.items)
+      setResultsPagination(response)
+    } catch (err) {
+      console.error('Search error:', err)
+      setError('Failed to perform search. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!query.trim()) {
+      setError('Please enter a search term')
+      return
+    }
+
+    // Clear previous error
+    setError(null)
+
+    // Update URL with search query
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', query)
+    window.history.pushState({}, '', url.toString())
+
+    performSearch(query)
+  }
+
   return (
-    <div className='container max-w-7xl mx-auto px-4 py-8'>
-      <h1 className='text-3xl font-bold mb-6'>Search Documents</h1>
+    <div className='min-h-screen bg-white dark:bg-black'>
+      <main className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
+        <div className='flex flex-col items-center gap-6 mb-8'>
+          <h1 className='text-4xl font-bold text-center text-black dark:text-white'>
+            Find Website Legal Documents
+          </h1>
+          <p className='text-center text-gray-500 dark:text-gray-400 max-w-3xl'>
+            Search for Terms of Service and Privacy Policy documents from
+            companies across the web
+          </p>
+        </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-8'>
-        <div className='md:col-span-1'>
-          <div className='bg-white dark:bg-black p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm'>
-            <h2 className='text-xl font-semibold mb-4'>Search Filters</h2>
-
-            <div className='mb-6'>
-              <label className='block text-sm font-medium mb-2'>
-                Document Type
-              </label>
-              <div className='space-y-2'>
-                <label className='flex items-center space-x-2'>
-                  <input
-                    type='radio'
-                    name='document_type'
-                    checked={documentType === undefined}
-                    onChange={() => setDocumentType(undefined)}
-                    className='h-4 w-4'
-                  />
-                  <span>All Documents</span>
-                </label>
-                <label className='flex items-center space-x-2'>
-                  <input
-                    type='radio'
-                    name='document_type'
-                    checked={documentType === 'tos'}
-                    onChange={() => setDocumentType('tos')}
-                    className='h-4 w-4'
-                  />
-                  <span>Terms of Service</span>
-                </label>
-                <label className='flex items-center space-x-2'>
-                  <input
-                    type='radio'
-                    name='document_type'
-                    checked={documentType === 'pp'}
-                    onChange={() => setDocumentType('pp')}
-                    className='h-4 w-4'
-                  />
-                  <span>Privacy Policy</span>
-                </label>
-              </div>
+        {/* Main search bar */}
+        <div className='max-w-2xl mx-auto mb-12'>
+          <form onSubmit={handleSearch} className='flex gap-2'>
+            <div className='relative flex-grow'>
+              <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
+              <Input
+                type='text'
+                placeholder='Search by company name or website...'
+                className='pl-10 py-6 border-gray-300 dark:border-gray-700'
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
             </div>
+            <Button
+              type='submit'
+              className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+            >
+              Search
+            </Button>
+          </form>
+        </div>
 
-            <SearchBar
-              onSearch={handleSearch}
-              onSearchStart={handleSearchStart}
-              onSearchError={handleSearchError}
-              documentType={documentType}
-            />
+        {/* Error message */}
+        {error && (
+          <div className='bg-red-50 dark:bg-red-900/20 p-4 rounded-md mb-8 max-w-3xl mx-auto'>
+            <p className='text-red-800 dark:text-red-300'>{error}</p>
           </div>
-        </div>
+        )}
 
-        <div className='md:col-span-3'>
-          {error && (
-            <div className='bg-red-50 text-red-800 p-4 rounded-lg mb-6'>
-              <p className='font-medium'>Error</p>
-              <p>{error}</p>
-            </div>
-          )}
+        {/* Loading state */}
+        {isLoading && (
+          <div className='text-center py-10'>
+            <p className='text-gray-500 dark:text-gray-400'>Searching...</p>
+          </div>
+        )}
 
-          <SearchResults
-            state={searchState}
-            results={searchResults}
-            onLoadMore={handleLoadMore}
-          />
-        </div>
-      </div>
+        {/* Results */}
+        {!isLoading && query && results.length > 0 && (
+          <div className='mt-8'>
+            <h2 className='text-2xl font-semibold mb-6 text-black dark:text-white'>
+              Search Results
+            </h2>
+            <SearchResults
+              state='results'
+              results={{
+                items: results,
+                total: resultsPagination?.total || results.length,
+                page: resultsPagination?.page || 1,
+                per_page: resultsPagination?.per_page || 10,
+                total_pages: resultsPagination?.total_pages || 1,
+                has_next: resultsPagination?.has_next || false,
+                has_prev: resultsPagination?.has_prev || false,
+              }}
+              onLoadMore={() =>
+                router.push(`/results?q=${encodeURIComponent(query)}`)
+              }
+            />
+
+            {/* Display total results count */}
+            {resultsPagination && (
+              <p className='text-sm text-gray-500 dark:text-gray-400 mt-4'>
+                Showing {results.length} of {resultsPagination.total} results
+              </p>
+            )}
+
+            {/* View all results button */}
+            {resultsPagination && resultsPagination.total > results.length && (
+              <div className='mt-8 text-center'>
+                <Button
+                  onClick={() =>
+                    router.push(`/results?q=${encodeURIComponent(query)}`)
+                  }
+                  variant='outline'
+                >
+                  View All Results
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* No results */}
+        {!isLoading && query && results.length === 0 && (
+          <div className='text-center py-12'>
+            <p className='text-xl font-medium mb-2 text-black dark:text-white'>
+              No results found
+            </p>
+            <p className='text-gray-500 dark:text-gray-400'>
+              Try a different search term or check your spelling
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   )
 }
