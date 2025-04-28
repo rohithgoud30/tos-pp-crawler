@@ -87,7 +87,7 @@ export default function HeroSection() {
               {`🧠 Understand What You're Agreeing To`}
             </h1>
             <p className='mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed'>
-              {`CRWLR analyzes Terms of Service and Privacy Policies so you don't have to read the fine print.`}
+              {`CRWLR analyze's Terms of Service and Privacy Policies so you don't have to read the fine print.`}
             </p>
             <div className='flex justify-center pt-2'>
               <DocumentStatsDisplay />
