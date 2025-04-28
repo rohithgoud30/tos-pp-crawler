@@ -40,5 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# code metrics
-code-metrics.js
+# analysis scripts
+/scripts/analyze_code.js
