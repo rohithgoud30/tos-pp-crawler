@@ -25,7 +25,9 @@ const searchExamples = [
 
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [documentType, setDocumentType] = useState('all')
+  const [documentType, setDocumentType] = useState<'tos' | 'pp' | undefined>(
+    undefined
+  )
   const [placeholder, setPlaceholder] = useState(
     'Try searching for a service name'
   )
@@ -41,11 +43,24 @@ export default function HeroSection() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      // Navigate to results page with the search query and document type
-      // Also include perPage parameter for consistency
-      window.location.href = `/results?q=${encodeURIComponent(
-        searchQuery
-      )}&type=${documentType}&perPage=6&sort=recent`
+      // Build the URL with search parameters
+      const url = new URL('/results', window.location.origin)
+
+      // Add search query
+      url.searchParams.set('q', searchQuery)
+
+      // Add document type if specified
+      if (documentType) {
+        url.searchParams.set('type', documentType)
+      }
+
+      // Add default parameters
+      url.searchParams.set('perPage', '6')
+      url.searchParams.set('sort', 'updated_at')
+      url.searchParams.set('order', 'desc')
+
+      // Navigate to the URL
+      window.location.href = url.toString()
     }
   }
 
@@ -79,22 +94,22 @@ export default function HeroSection() {
               <button
                 type='button'
                 className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
-                  documentType === 'privacy'
+                  documentType === 'pp'
                     ? 'bg-black text-white dark:bg-white dark:text-black'
                     : 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
-                onClick={() => setDocumentType('privacy')}
+                onClick={() => setDocumentType('pp')}
               >
                 Privacy Policy
               </button>
               <button
                 type='button'
                 className={`inline-flex items-center justify-center rounded-sm px-3 py-1.5 ${
-                  documentType === 'all'
+                  documentType === undefined
                     ? 'bg-black text-white dark:bg-white dark:text-black'
                     : 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
-                onClick={() => setDocumentType('all')}
+                onClick={() => setDocumentType(undefined)}
               >
                 All
               </button>
