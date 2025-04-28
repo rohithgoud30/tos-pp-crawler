@@ -479,14 +479,14 @@ export default function ResultsPage() {
         </div>
 
         {/* Filters and sorting */}
-        <div className='flex flex-col md:flex-row justify-between mb-8 gap-4'>
-          <div className='flex items-center gap-2'>
-            <Filter className='h-5 w-5 text-gray-500' />
+        <div className='flex flex-col md:flex-row justify-between mb-8 gap-6'>
+          <div className='flex items-center gap-2 w-full max-w-[250px]'>
+            <Filter className='h-5 w-5 text-gray-500 flex-shrink-0' />
             <Select
               value={documentTypeFilter || 'all'}
               onValueChange={handleDocumentTypeChange}
             >
-              <SelectTrigger className='w-[200px]'>
+              <SelectTrigger>
                 <SelectValue placeholder='Document Type' />
               </SelectTrigger>
               <SelectContent>
@@ -497,14 +497,14 @@ export default function ResultsPage() {
             </Select>
           </div>
 
-          <div className='flex flex-col md:flex-row gap-4'>
-            <div className='flex items-center gap-2'>
-              <ArrowUpDown className='h-5 w-5 text-gray-500' />
+          <div className='flex flex-col md:flex-row gap-6'>
+            <div className='flex items-center gap-2 w-full max-w-[250px]'>
+              <ArrowUpDown className='h-5 w-5 text-gray-500 flex-shrink-0' />
               <Select
                 value={`${sortOption}-${sortOrder}`}
                 onValueChange={handleSortOptionChange}
               >
-                <SelectTrigger className='w-[200px]'>
+                <SelectTrigger>
                   <SelectValue placeholder='Sort by' />
                 </SelectTrigger>
                 <SelectContent>
@@ -517,12 +517,12 @@ export default function ResultsPage() {
               </Select>
             </div>
 
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2 w-full max-w-[180px]'>
               <Select
                 value={resultsPerPage.toString()}
                 onValueChange={handleResultsPerPageChange}
               >
-                <SelectTrigger className='w-[150px]'>
+                <SelectTrigger>
                   <SelectValue placeholder='Per page' />
                 </SelectTrigger>
                 <SelectContent>
