@@ -93,7 +93,7 @@ export function SearchResults({
             <CardContent>
               <div className='flex justify-between items-center'>
                 <div>
-                  <p className='text-sm text-muted-foreground'>Document type</p>
+                  <p className='text-sm text-muted-foreground'>Doc Type</p>
                   <p className='capitalize'>
                     {item.document_type === 'tos'
                       ? 'Terms of Service'

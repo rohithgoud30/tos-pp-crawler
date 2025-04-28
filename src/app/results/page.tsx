@@ -487,7 +487,7 @@ export default function ResultsPage() {
               onValueChange={handleDocumentTypeChange}
             >
               <SelectTrigger>
-                <SelectValue placeholder='Document Type' />
+                <SelectValue placeholder='Doc Type' />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='all'>All Documents</SelectItem>
@@ -616,7 +616,7 @@ export default function ResultsPage() {
                   <div className='flex justify-between'>
                     <div>
                       <p className='text-xs text-gray-500 dark:text-gray-400 mb-1'>
-                        Document Type
+                        Doc Type
                       </p>
                       {getDocumentTypeBadges(doc)}
                     </div>
