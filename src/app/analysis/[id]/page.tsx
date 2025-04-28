@@ -3,9 +3,6 @@
 import { ChevronRight, BarChart3, ExternalLink, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
@@ -18,10 +15,13 @@ import {
   type TextMiningMetrics,
 } from '@/lib/api'
 
+// This Map stores document IDs that have already been fetched in the current session
+// It persists between component remounts in StrictMode but is cleared on actual page navigation
+const viewedDocuments = new Map<string, boolean>()
+
 export default function AnalysisPage() {
-  const { id } = useParams() as { id: string }
+  const params = useParams()
   const searchParams = useSearchParams()
-  const [activeTab, setActiveTab] = useState('tos')
   const [analysisItem, setAnalysisItem] = useState<DocumentDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +31,9 @@ export default function AnalysisPage() {
 
   // Get document type from URL parameters and load data
   useEffect(() => {
+    const documentId = params.id as string
+    if (!documentId) return
+
     // Create a new AbortController instance for this request
     fetchControllerRef.current = new AbortController()
     const signal = fetchControllerRef.current.signal
@@ -40,29 +43,37 @@ export default function AnalysisPage() {
       setError(null)
 
       try {
-        // Get document details from API with abort signal
-        // Skip view increment in development mode to prevent double-counting
-        const documentData = await getDocumentById(id, {
-          skipViewIncrement: process.env.NODE_ENV === 'development',
+        // Check if we've already fetched this document in the current session
+        // This prevents double-counting views in React StrictMode during development
+        const shouldFetchFresh = !viewedDocuments.has(documentId)
+
+        // Get document details from API
+        const documentData = await getDocumentById(documentId, {
+          // Always skip view increment in development when using React.StrictMode
+          skipViewIncrement:
+            process.env.NODE_ENV === 'development' || !shouldFetchFresh,
+          // Pass the abort signal to cancel the request if needed
           signal: signal,
         })
 
-        // Only update state if the request wasn't aborted
+        // Only set state if the request wasn't aborted
         if (!signal.aborted) {
           setAnalysisItem(documentData)
 
-          // Set active tab based on URL parameter or available data
-          const docType = searchParams.get('docType')
-          if (docType === 'privacy' && documentData.document_type === 'pp') {
-            setActiveTab('privacy')
-          } else if (documentData.document_type === 'tos') {
-            setActiveTab('tos')
-          } else if (documentData.document_type === 'pp') {
-            setActiveTab('privacy')
+          // Mark this document as viewed for this session
+          if (shouldFetchFresh) {
+            viewedDocuments.set(documentId, true)
+            console.log(
+              `Document ${documentId} marked as viewed for this session`
+            )
+          } else {
+            console.log(
+              `Document ${documentId} already viewed in this session, not incrementing view count`
+            )
           }
         }
       } catch (err) {
-        // Only set error state if the request wasn't aborted
+        // Only set error state if the request wasn't aborted and it's not an abort error
         if (
           !signal.aborted &&
           !(err instanceof DOMException && err.name === 'AbortError')
@@ -78,22 +89,20 @@ export default function AnalysisPage() {
       }
     }
 
-    if (id) {
-      fetchDocument()
-    }
+    fetchDocument()
 
     // Cleanup function to abort any in-flight requests when component unmounts
+    // This prevents state updates after the component unmounts
     return () => {
       if (fetchControllerRef.current) {
         fetchControllerRef.current.abort()
         fetchControllerRef.current = null
       }
     }
-  }, [id, searchParams])
+  }, [params.id, searchParams])
 
   // Handle tag click to navigate to the appropriate section
   const handleTagClick = (docType: string) => {
-    setActiveTab(docType)
     if (docType === 'tos') {
       tosRef.current?.scrollIntoView({ behavior: 'smooth' })
     } else if (docType === 'privacy') {
@@ -113,102 +122,84 @@ export default function AnalysisPage() {
     return (
       <>
         {/* One-Sentence Summary */}
-        <div className='mb-8'>
-          <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
-            One-Sentence Summary
-          </h2>
-          <div className='bg-gray-100 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700'>
-            <p className='text-gray-900 dark:text-gray-100 font-medium'>
+        <div
+          className='mb-5'
+          id={docType === 'tos' ? 'tos-summary' : 'pp-summary'}
+        >
+          <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md'>
+            <h2 className='text-lg font-semibold'>One-Sentence Summary</h2>
+          </div>
+          <div className='bg-slate-50 dark:bg-slate-900 border border-t-0 border-slate-300 dark:border-slate-700 p-3 rounded-b-md'>
+            <p className='text-gray-900 dark:text-gray-100'>
               {analysisItem.one_sentence_summary || 'No summary available'}
             </p>
           </div>
         </div>
 
-        <Separator className='my-8' />
-
         {/* 100-Word Summary */}
-        <div className='mb-8'>
-          <h2 className='text-xl font-semibold mb-3 text-black dark:text-white'>
-            100-Word Summary
-          </h2>
-          <Card className='p-4'>
-            <p className='text-gray-700 dark:text-gray-300'>
+        <div className='mb-5'>
+          <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md'>
+            <h2 className='text-lg font-semibold'>100-Word Summary</h2>
+          </div>
+          <div className='bg-slate-50 dark:bg-slate-900 border border-t-0 border-slate-300 dark:border-slate-700 p-3 rounded-b-md'>
+            <p className='text-gray-800 dark:text-gray-200'>
               {analysisItem.hundred_word_summary ||
                 'No detailed summary available'}
             </p>
-          </Card>
+          </div>
         </div>
 
-        <Separator className='my-8' />
-
-        {/* Word Frequency Analysis - Now first */}
-        <div className='mb-8'>
-          <h2 className='text-xl font-semibold mb-6 text-black dark:text-white'>
-            Word Frequency Analysis
-          </h2>
-          {analysisItem.word_frequencies &&
-          analysisItem.word_frequencies.length > 0 ? (
-            <WordFrequencyChart
-              wordFrequencies={analysisItem.word_frequencies}
-            />
-          ) : analysisItem.sections &&
-            analysisItem.sections.find((s) => s.type === 'word_frequency') ? (
-            // Fallback for backward compatibility
-            <WordFrequencyChart
-              wordFrequencies={
-                (analysisItem.sections.find((s) => s.type === 'word_frequency')
-                  ?.data || []) as WordFrequency[]
-              }
-            />
-          ) : (
-            <p className='text-gray-500'>No word frequency data available</p>
-          )}
+        {/* Word Frequency Analysis */}
+        <div className='mb-5'>
+          <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md'>
+            <h2 className='text-lg font-semibold'>Word Frequency Analysis</h2>
+          </div>
+          <div className='bg-slate-50 dark:bg-slate-900 border border-t-0 border-slate-300 dark:border-slate-700 p-3 rounded-b-md'>
+            {analysisItem.word_frequencies &&
+            analysisItem.word_frequencies.length > 0 ? (
+              <WordFrequencyChart
+                wordFrequencies={analysisItem.word_frequencies}
+              />
+            ) : analysisItem.sections &&
+              analysisItem.sections.find((s) => s.type === 'word_frequency') ? (
+              // Fallback for backward compatibility
+              <WordFrequencyChart
+                wordFrequencies={
+                  (analysisItem.sections.find(
+                    (s) => s.type === 'word_frequency'
+                  )?.data || []) as WordFrequency[]
+                }
+              />
+            ) : (
+              <p className='text-gray-500 dark:text-gray-400'>
+                No word frequency data available
+              </p>
+            )}
+          </div>
         </div>
-
-        <Separator className='my-8' />
 
         {/* Text Mining Measurements */}
-        <div className='mb-8'>
-          <div className='flex items-center gap-2 mb-4'>
-            <BarChart3 className='h-5 w-5 text-gray-700 dark:text-gray-300' />
-            <h2 className='text-xl font-semibold text-black dark:text-white'>
-              Text Mining Measurements
-            </h2>
+        <div className='mb-5'>
+          <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md flex items-center gap-2'>
+            <BarChart3 className='h-4 w-4' />
+            <h2 className='text-lg font-semibold'>Text Mining Measurements</h2>
           </div>
-          {analysisItem.text_mining_metrics ? (
-            <TextMetricsGrid metrics={analysisItem.text_mining_metrics} />
-          ) : analysisItem.sections &&
-            analysisItem.sections.find((s) => s.type === 'text_mining') ? (
-            // Fallback for backward compatibility
-            <TextMetricsGrid
-              metrics={
-                (analysisItem.sections.find((s) => s.type === 'text_mining')
-                  ?.data || {}) as unknown as TextMiningMetrics
-              }
-            />
-          ) : (
-            <p className='text-gray-500'>No text metrics available</p>
-          )}
-        </div>
-
-        {/* Navigation Buttons - View Original Source */}
-        <div className='flex flex-col sm:flex-row justify-center gap-4 mt-12'>
-          {analysisItem.retrieved_url && (
-            <Button
-              variant='outline'
-              className='gap-2 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground'
-              asChild
-            >
-              <a
-                href={analysisItem.retrieved_url}
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                View Original Source
-                <ExternalLink className='h-4 w-4' />
-              </a>
-            </Button>
-          )}
+          <div className='bg-slate-50 dark:bg-slate-900 border border-t-0 border-slate-300 dark:border-slate-700 px-2 py-3 rounded-b-md'>
+            {analysisItem.text_mining_metrics ? (
+              <TextMetricsGrid metrics={analysisItem.text_mining_metrics} />
+            ) : analysisItem.sections &&
+              analysisItem.sections.find((s) => s.type === 'text_mining') ? (
+              // Fallback for backward compatibility
+              <TextMetricsGrid
+                metrics={
+                  (analysisItem.sections.find((s) => s.type === 'text_mining')
+                    ?.data || {}) as unknown as TextMiningMetrics
+                }
+              />
+            ) : (
+              <p className='text-gray-500'>No text metrics available</p>
+            )}
+          </div>
         </div>
       </>
     )
@@ -216,29 +207,109 @@ export default function AnalysisPage() {
 
   if (isLoading) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-white dark:bg-black'>
-        <p className='text-gray-500 dark:text-gray-400'>Loading analysis...</p>
+      <div className='min-h-screen bg-white dark:bg-black'>
+        <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+          {/* Breadcrumb for loading state */}
+          <nav className='flex items-center text-sm mb-6'>
+            <Link
+              href='/'
+              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            >
+              Home
+            </Link>
+            <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
+            <Link
+              href='/results'
+              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            >
+              Search Results
+            </Link>
+          </nav>
+
+          {/* Loading message - left aligned */}
+          <div className='mt-8'>
+            <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200 mb-2'>
+              Loading analysis...
+            </h2>
+            <p className='text-gray-600 dark:text-gray-400'>
+              Please wait while we retrieve the document analysis.
+            </p>
+          </div>
+        </main>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-white dark:bg-black'>
-        <div className='bg-red-50 dark:bg-red-900/20 p-4 rounded-md max-w-md'>
-          <p className='text-red-800 dark:text-red-300'>{error}</p>
-          <Button className='mt-4' asChild>
-            <Link href='/'>Return Home</Link>
-          </Button>
-        </div>
+      <div className='min-h-screen bg-white dark:bg-black'>
+        <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+          {/* Breadcrumb for error state */}
+          <nav className='flex items-center text-sm mb-6'>
+            <Link
+              href='/'
+              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            >
+              Home
+            </Link>
+            <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
+            <Link
+              href='/results'
+              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            >
+              Search Results
+            </Link>
+          </nav>
+
+          {/* Error message - left aligned */}
+          <div className='bg-red-50 dark:bg-red-900/20 p-4 rounded-md max-w-md mt-8'>
+            <h2 className='text-xl font-bold text-red-800 dark:text-red-300 mb-2'>
+              Error
+            </h2>
+            <p className='text-red-800 dark:text-red-300 mb-4'>{error}</p>
+            <Button asChild>
+              <Link href='/results'>Return to Search</Link>
+            </Button>
+          </div>
+        </main>
       </div>
     )
   }
 
   if (!analysisItem) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-white dark:bg-black'>
-        <p className='text-gray-500 dark:text-gray-400'>Document not found</p>
+      <div className='min-h-screen bg-white dark:bg-black'>
+        <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+          {/* Breadcrumb for not found state */}
+          <nav className='flex items-center text-sm mb-6'>
+            <Link
+              href='/'
+              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            >
+              Home
+            </Link>
+            <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
+            <Link
+              href='/results'
+              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            >
+              Search Results
+            </Link>
+          </nav>
+
+          {/* Not found message - left aligned */}
+          <div className='bg-gray-50 dark:bg-gray-900/20 p-4 rounded-md max-w-md mt-8'>
+            <h2 className='text-xl font-bold text-gray-800 dark:text-gray-300 mb-2'>
+              Document not found
+            </h2>
+            <p className='text-gray-600 dark:text-gray-400 mb-4'>
+              The requested document could not be found.
+            </p>
+            <Button asChild>
+              <Link href='/results'>Return to Search</Link>
+            </Button>
+          </div>
+        </main>
       </div>
     )
   }
@@ -246,11 +317,19 @@ export default function AnalysisPage() {
   const hasTos = analysisItem.document_type === 'tos'
   const hasPp = analysisItem.document_type === 'pp'
 
+  // Determine the URL for the 'Search Results' breadcrumb
+  const backToUrl = searchParams.get('backTo')
+
+  // Improved validation logic for the backTo parameter
+  // Check if it's a valid results URL path (just validate that it starts with /results)
+  const isValidBackToUrl = backToUrl && backToUrl.startsWith('/results')
+  const searchResultsHref = isValidBackToUrl ? backToUrl : '/results'
+
   return (
-    <div className='min-h-screen flex flex-col bg-white dark:bg-black'>
-      <main className='flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+    <div className='min-h-screen bg-white dark:bg-black'>
+      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4'>
         {/* Breadcrumb */}
-        <nav className='flex items-center text-sm mb-6'>
+        <nav className='flex items-center text-sm mb-4'>
           <Link
             href='/'
             className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -259,7 +338,7 @@ export default function AnalysisPage() {
           </Link>
           <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
           <Link
-            href='/results'
+            href={searchResultsHref}
             className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           >
             Search Results
@@ -271,9 +350,9 @@ export default function AnalysisPage() {
         </nav>
 
         {/* Document Info with Category Tags */}
-        <div className='mb-8'>
-          <div className='flex flex-wrap items-center gap-3 mb-3'>
-            <h1 className='text-3xl font-bold text-black dark:text-white'>
+        <div className='mb-4'>
+          <div className='flex flex-wrap items-center gap-3 mb-2'>
+            <h1 className='text-2xl font-bold text-black dark:text-white'>
               {analysisItem.company_name}
             </h1>
             <div className='flex gap-2'>
@@ -298,7 +377,7 @@ export default function AnalysisPage() {
             </div>
           </div>
           <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6'>
-            <p className='text-gray-500'>{analysisItem.url}</p>
+            <p className='text-gray-500 text-sm'>{analysisItem.url}</p>
             <p className='text-sm text-gray-400'>
               Last analyzed:{' '}
               {new Date(analysisItem.updated_at).toLocaleDateString()}
@@ -306,31 +385,26 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        {/* Document Type Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className='mb-8'>
-          <TabsList className='w-full max-w-md grid grid-cols-2'>
-            <TabsTrigger value='tos' disabled={!hasTos}>
-              Terms of Service
-            </TabsTrigger>
-            <TabsTrigger value='privacy' disabled={!hasPp}>
-              Privacy Policy
-            </TabsTrigger>
-          </TabsList>
+        {/* Content area with max-width to match search results cards */}
+        <div className='max-w-4xl mx-auto'>
+          {hasTos && renderAnalysisContent('tos')}
+          {hasPp && renderAnalysisContent('privacy')}
+        </div>
 
-          {hasTos && (
-            <TabsContent value='tos' className='pt-6'>
-              <div ref={tosRef}>{renderAnalysisContent('tos')}</div>
-            </TabsContent>
+        {/* View Original Source Button */}
+        <div className='flex justify-center mt-4 mb-4'>
+          {analysisItem.retrieved_url && (
+            <a
+              href={analysisItem.retrieved_url}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='flex items-center bg-slate-800 hover:bg-slate-700 text-white rounded px-4 py-2 text-sm'
+            >
+              View Original Source
+              <ExternalLink className='h-3 w-3 ml-2' />
+            </a>
           )}
-
-          {hasPp && (
-            <TabsContent value='privacy'>
-              <div ref={ppRef} className='pt-6'>
-                {renderAnalysisContent('privacy')}
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
+        </div>
       </main>
     </div>
   )
