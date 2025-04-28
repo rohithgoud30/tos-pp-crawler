@@ -80,30 +80,30 @@ export default function HeroSection() {
   }
 
   return (
-    <section className='w-full py-20 md:py-28 lg:py-36 flex items-center justify-center'>
+    <section className='w-full py-12 md:py-16 lg:py-20 flex items-center justify-center'>
       <div className='container px-4 md:px-6 max-w-2xl'>
-        <div className='flex flex-col items-center space-y-12 text-center'>
-          <div className='space-y-4'>
-            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
+        <div className='flex flex-col items-center space-y-6 text-center'>
+          <div className='space-y-2'>
+            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl'>
               {`🧠 Understand What You're Agreeing To`}
             </h1>
-            <p className='mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed'>
+            <p className='mx-auto max-w-[700px] text-gray-500 md:text-lg/relaxed'>
               {`CRWLR analyzes Terms of Service and Privacy Policies so you don't have to read the fine print.`}
             </p>
-            <div className='flex justify-center pt-2'>
+            <div className='flex justify-center pt-1'>
               <DocumentStatsDisplay />
             </div>
           </div>
 
-          <div className='flex justify-center gap-6 pt-2'>
-            <div className='flex items-center space-x-2'>
+          <div className='flex justify-center gap-4 pt-1'>
+            <div className='flex items-center space-x-1.5'>
               <Checkbox
                 id='tos'
                 checked={tosSelected}
                 onCheckedChange={(checked) => {
                   setTosSelected(checked === true)
                 }}
-                className='h-5 w-5'
+                className='h-4 w-4'
               />
               <Label
                 htmlFor='tos'
@@ -112,14 +112,14 @@ export default function HeroSection() {
                 Terms of Service
               </Label>
             </div>
-            <div className='flex items-center space-x-2'>
+            <div className='flex items-center space-x-1.5'>
               <Checkbox
                 id='pp'
                 checked={ppSelected}
                 onCheckedChange={(checked) => {
                   setPpSelected(checked === true)
                 }}
-                className='h-5 w-5'
+                className='h-4 w-4'
               />
               <Label
                 htmlFor='pp'
@@ -130,13 +130,13 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className='w-full space-y-4 relative'>
-            <div className='space-y-2'>
+          <form onSubmit={handleSubmit} className='w-full space-y-2 relative'>
+            <div className='space-y-1'>
               <div className='relative flex items-center'>
                 <Input
                   type='text'
                   placeholder={placeholder}
-                  className={`pr-12 h-14 text-base ${
+                  className={`pr-12 h-12 text-base ${
                     error
                       ? 'border-red-500 focus-visible:ring-red-500'
                       : 'border-input focus-visible:ring-ring'
@@ -154,9 +154,9 @@ export default function HeroSection() {
                 <Button
                   type='submit'
                   size='icon'
-                  className='absolute right-1 h-12 w-12 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                  className='absolute right-1 h-10 w-10 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                 >
-                  <Search className='h-5 w-5' />
+                  <Search className='h-4 w-4' />
                   <span className='sr-only'>Search</span>
                 </Button>
               </div>
@@ -171,12 +171,12 @@ export default function HeroSection() {
               )}
             </div>
 
-            <div className='text-sm text-gray-500'>
+            <div className='text-xs text-gray-500'>
               <p>
                 Search for any website or service to analyze their legal
                 documents.
               </p>
-              <p className='mt-1'>
+              <p className='mt-0.5'>
                 Examples: Facebook, Twitter, Netflix, Spotify, or any URL
               </p>
             </div>
