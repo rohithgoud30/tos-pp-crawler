@@ -30,18 +30,12 @@ export default function NotFound() {
       <p className='text-lg mt-4 max-w-md text-gray-600 dark:text-gray-300'>
         The page you are looking for doesn&apos;t exist or has been moved.
       </p>
-      <Button
-        asChild
-        variant='outline'
-        className='mt-8 bg-black hover:bg-gray-800 text-white border-2 border-white 
-          dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 dark:border-2 dark:border-slate-500 
-          flex items-center gap-2 py-6 px-8 text-lg font-bold shadow-md'
-      >
-        <Link href='/'>
-          <Home className='h-5 w-5 mr-2' />
-          Back to Home
-        </Link>
-      </Button>
+      <Link href='/'>
+        <Button className='mt-8 bg-black hover:bg-gray-800 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 flex items-center gap-2'>
+          <Home className='h-4 w-4' />
+          <span>Back to Home</span>
+        </Button>
+      </Link>
     </div>
   )
 }
