@@ -12,6 +12,7 @@ import {
   Clock,
   Eye,
   Tag,
+  FileText,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -38,6 +39,12 @@ import {
   type DocumentItem,
   type PaginatedResponse,
 } from '@/lib/api'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
@@ -53,7 +60,8 @@ export default function ResultsPage() {
   const [resultsPagination, setResultsPagination] =
     useState<PaginatedResponse<DocumentItem> | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
 
   // Load initial URL parameters
@@ -176,7 +184,8 @@ export default function ResultsPage() {
     perPage: number
   ) => {
     setIsLoading(true)
-    setError(null)
+    setFetchError(null)
+    setSearchError(null)
 
     try {
       const results = await getDocuments({
@@ -192,7 +201,9 @@ export default function ResultsPage() {
       setHasSearched(true)
     } catch (err) {
       console.error('Error loading documents:', err)
-      setError('Failed to load documents. Please try again.')
+      setFetchError('Failed to load documents. Please try again.')
+      setDisplayedResults([])
+      setResultsPagination(null)
     } finally {
       setIsLoading(false)
     }
@@ -218,7 +229,8 @@ export default function ResultsPage() {
       perPage,
     })
     setIsLoading(true)
-    setError(null)
+    setFetchError(null)
+    setSearchError(null)
 
     try {
       const results = await searchDocuments({
@@ -234,7 +246,9 @@ export default function ResultsPage() {
       setDisplayedResults(results.items)
     } catch (err) {
       console.error('Search error:', err)
-      setError('Search failed. Please try again.')
+      setFetchError('Search failed. Please try again.')
+      setDisplayedResults([])
+      setResultsPagination(null)
     } finally {
       setIsLoading(false)
     }
@@ -247,30 +261,20 @@ export default function ResultsPage() {
     }
 
     if (!searchQuery.trim()) {
-      setError('Please enter a search term')
+      setSearchError('Please enter a search term')
+      setFetchError(null)
       return
     }
 
-    // Clear any previous errors
-    setError(null)
-
+    setSearchError(null)
+    setFetchError(null)
     setCurrentPage(1)
     setHasSearched(true)
 
-    // Update URL
-    const url = new URL(window.location.href)
-    url.searchParams.set('q', searchQuery)
-    if (documentTypeFilter) {
-      url.searchParams.set('type', documentTypeFilter)
-    } else {
-      url.searchParams.delete('type')
-    }
-    url.searchParams.set('perPage', resultsPerPage.toString())
-    url.searchParams.set('sort', sortOption)
-    url.searchParams.set('order', sortOrder)
-    window.history.replaceState({}, '', url.toString())
+    // Update URL parameters
+    updateUrlParameters()
 
-    // Perform search
+    // Execute search
     performSearch()
   }
 
@@ -445,93 +449,147 @@ export default function ResultsPage() {
     })
   }
 
+  // Update URL parameters
+  const updateUrlParameters = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('q', searchQuery)
+    if (documentTypeFilter) {
+      url.searchParams.set('type', documentTypeFilter)
+    } else {
+      url.searchParams.delete('type')
+    }
+    url.searchParams.set('perPage', resultsPerPage.toString())
+    url.searchParams.set('sort', sortOption)
+    url.searchParams.set('order', sortOrder)
+    window.history.replaceState({}, '', url.toString())
+  }
+
   return (
     <div className='min-h-screen bg-white dark:bg-black'>
       <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-        {/* Header with search */}
+        {/* Header */}
         <div className='mb-8'>
           <h1 className='text-3xl font-bold mb-8 text-black dark:text-white'>
             Search Results
           </h1>
 
-          {/* Search form */}
-          <form
-            onSubmit={handleSearch}
-            className='flex flex-col md:flex-row gap-4 mb-6'
-          >
-            <div className='w-full relative'>
-              <Search className='absolute left-3 top-3 h-4 w-4 text-gray-400' />
-              <Input
-                type='text'
-                placeholder='Search by company name or URL...'
-                className='pl-10 h-12 border-gray-300 dark:border-gray-700 w-full'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button
-              type='submit'
-              className='h-12 bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 md:w-[120px] flex-shrink-0'
-            >
-              Search
-            </Button>
-          </form>
-        </div>
+          {/* Combined Search and Filter Section */}
+          <div className='space-y-4 mb-8'>
+            {/* Search form */}
+            <form onSubmit={handleSearch} className=''>
+              {' '}
+              {/* Removed mb-6 */}
+              <div className='space-y-2'>
+                <div className='relative flex items-center'>
+                  <Input
+                    type='text'
+                    placeholder='Search by company name or website URL'
+                    className={`pr-12 h-12 text-base ${
+                      searchError
+                        ? 'border-red-500 focus-visible:ring-red-500'
+                        : 'border-input focus-visible:ring-ring'
+                    }`}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value)
+                      if (e.target.value.trim()) {
+                        setSearchError(null)
+                      }
+                    }}
+                    aria-invalid={searchError ? 'true' : 'false'}
+                    aria-describedby={searchError ? 'search-error' : undefined}
+                  />
+                  <Button
+                    type='submit'
+                    size='icon'
+                    className='absolute right-1 h-10 w-10 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                    disabled={isLoading}
+                  >
+                    <Search className='h-4 w-4' />
+                    <span className='sr-only'>Search</span>
+                  </Button>
+                </div>
 
-        {/* Filters and sorting */}
-        <div className='flex flex-col md:flex-row justify-between mb-8 gap-6'>
-          <div className='flex items-center gap-2 w-full max-w-[250px]'>
-            <Filter className='h-5 w-5 text-gray-500 flex-shrink-0' />
-            <Select
-              value={documentTypeFilter || 'all'}
-              onValueChange={handleDocumentTypeChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder='Doc Type' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>All Documents</SelectItem>
-                <SelectItem value='tos'>Terms of Service</SelectItem>
-                <SelectItem value='pp'>Privacy Policy</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                {searchError && (
+                  <p
+                    id='search-error'
+                    className='text-sm font-medium text-red-500 text-left'
+                  >
+                    {searchError}
+                  </p>
+                )}
+              </div>
+            </form>
 
-          <div className='flex flex-col md:flex-row gap-6'>
-            <div className='flex items-center gap-2 w-full max-w-[250px]'>
-              <ArrowUpDown className='h-5 w-5 text-gray-500 flex-shrink-0' />
-              <Select
-                value={`${sortOption}-${sortOrder}`}
-                onValueChange={handleSortOptionChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Sort by' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='updated_at-desc'>Most Recent</SelectItem>
-                  <SelectItem value='updated_at-asc'>Oldest First</SelectItem>
-                  <SelectItem value='company_name-asc'>Name (A-Z)</SelectItem>
-                  <SelectItem value='company_name-desc'>Name (Z-A)</SelectItem>
-                  <SelectItem value='views-desc'>Most Viewed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Filters and sorting */}
+            {/* Apply justify-between to distribute space */}
+            <div className='flex flex-col md:flex-row gap-4 items-center justify-between'>
+              {/* Filter by Doc Type (Stays on the left) */}
+              <div className='flex items-center gap-2 w-full md:w-auto md:min-w-[200px]'>
+                <Filter className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                <Select
+                  value={documentTypeFilter || 'all'}
+                  onValueChange={handleDocumentTypeChange}
+                >
+                  <SelectTrigger className='h-10 text-xs sm:text-sm'>
+                    <SelectValue placeholder='Doc Type' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>All Documents</SelectItem>
+                    <SelectItem value='tos'>Terms of Service</SelectItem>
+                    <SelectItem value='pp'>Privacy Policy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className='flex items-center gap-2 w-full max-w-[180px]'>
-              <Select
-                value={resultsPerPage.toString()}
-                onValueChange={handleResultsPerPageChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder='Per page' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='6'>6 per page</SelectItem>
-                  <SelectItem value='9'>9 per page</SelectItem>
-                  <SelectItem value='12'>12 per page</SelectItem>
-                  <SelectItem value='15'>15 per page</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Sorting and Paging Options - Grouped together (Moves to the right due to justify-between) */}
+              <div className='flex flex-col sm:flex-row gap-4 w-full md:w-auto'>
+                {/* Sort By */}
+                <div className='flex items-center gap-2 w-full sm:w-auto md:min-w-[180px]'>
+                  <ArrowUpDown className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                  <Select
+                    value={`${sortOption}-${sortOrder}`}
+                    onValueChange={handleSortOptionChange}
+                  >
+                    <SelectTrigger className='h-10 text-xs sm:text-sm'>
+                      <SelectValue placeholder='Sort by' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='updated_at-desc'>
+                        Most Recent
+                      </SelectItem>
+                      <SelectItem value='updated_at-asc'>
+                        Oldest First
+                      </SelectItem>
+                      <SelectItem value='company_name-asc'>
+                        Name (A-Z)
+                      </SelectItem>
+                      <SelectItem value='company_name-desc'>
+                        Name (Z-A)
+                      </SelectItem>
+                      <SelectItem value='views-desc'>Most Viewed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Results Per Page */}
+                <div className='flex items-center gap-2 w-full sm:w-auto md:min-w-[150px]'>
+                  <Select
+                    value={resultsPerPage.toString()}
+                    onValueChange={handleResultsPerPageChange}
+                  >
+                    <SelectTrigger className='h-10 text-xs sm:text-sm'>
+                      <SelectValue placeholder='Per page' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='6'>6 per page</SelectItem>
+                      <SelectItem value='9'>9 per page</SelectItem>
+                      <SelectItem value='12'>12 per page</SelectItem>
+                      <SelectItem value='15'>15 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -559,11 +617,11 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Error state */}
-        {error && (
+        {/* General Fetch Error state - only show this block for fetch errors */}
+        {fetchError && !isLoading && (
           <div className='bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 rounded-md mb-8'>
             <p className='font-medium'>Error</p>
-            <p>{error}</p>
+            <p>{fetchError}</p>
           </div>
         )}
 
@@ -585,63 +643,92 @@ export default function ResultsPage() {
         {displayedResults && displayedResults.length > 0 && (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
             {displayedResults.map((doc) => (
-              <Card key={doc.id} className='overflow-hidden'>
-                <CardHeader className='pb-3'>
-                  <div className='flex items-start justify-between'>
-                    <div>
-                      <CardTitle className='text-xl text-black dark:text-white'>
-                        {doc.company_name}
-                      </CardTitle>
-                      <p className='text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1'>
-                        <Globe className='h-3.5 w-3.5' />
-                        {doc.url}
-                      </p>
-                    </div>
-                    {doc.logo_url && (
-                      <div className='w-10 h-10 rounded-md overflow-hidden flex-shrink-0'>
-                        <img
-                          src={doc.logo_url}
-                          alt={`${doc.company_name} logo`}
-                          className='w-full h-full object-contain'
-                          onError={(e) => {
-                            // Hide broken images
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
+              <Card
+                key={doc.id}
+                className='group flex flex-col justify-between overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
+              >
+                <div>
+                  {' '}
+                  {/* Wrapper for content except footer */}
+                  <CardHeader className='p-4 pb-2'>
+                    <div className='flex items-center gap-3 mb-2'>
+                      {doc.logo_url && (
+                        <div className='w-10 h-10 p-1 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border dark:border-gray-700'>
+                          <img
+                            src={doc.logo_url}
+                            alt={`${doc.company_name} logo`}
+                            className='max-w-full max-h-full object-contain'
+                            onError={(e) => {
+                              e.currentTarget.parentElement?.classList.add(
+                                'hidden'
+                              ) // Hide parent div on error
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className='flex-grow min-w-0'>
+                        {' '}
+                        {/* Allow text to wrap */}
+                        {/* Use Tooltip for full name on hover */}
+                        <TooltipProvider delayDuration={200}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors truncate cursor-default'>
+                                {doc.company_name}
+                              </CardTitle>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{doc.company_name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate'>
+                          <Globe className='h-3 w-3 flex-shrink-0' />
+                          <span className='truncate'>{doc.url}</span>
+                        </p>
                       </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className='py-3'>
-                  <div className='flex justify-between'>
-                    <div>
-                      <p className='text-xs text-gray-500 dark:text-gray-400 mb-1'>
-                        Doc Type
-                      </p>
-                      {getDocumentTypeBadges(doc)}
                     </div>
-                    <div className='text-right'>
-                      <p className='text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center justify-end gap-1'>
-                        <Clock className='h-3.5 w-3.5' />
-                        Last Updated
+                  </CardHeader>
+                  <CardContent className='p-4 pt-2 text-xs'>
+                    <div className='grid grid-cols-2 gap-3'>
+                      <div>
+                        <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center gap-1'>
+                          <FileText className='h-3.5 w-3.5' />
+                          Doc Type
+                        </p>
+                        {getDocumentTypeBadges(doc)}{' '}
+                        {/* Re-use existing badge logic */}
+                      </div>
+                      <div className='text-right'>
+                        <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
+                          <Clock className='h-3.5 w-3.5' />
+                          Last Updated
+                        </p>
+                        <p className='text-gray-700 dark:text-gray-300 font-medium'>
+                          {formatDate(doc.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className='mt-3 text-right'>
+                      <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
+                        <Eye className='h-3.5 w-3.5' />
+                        Views
                       </p>
-                      <p className='text-sm text-gray-700 dark:text-gray-300'>
-                        {formatDate(doc.updated_at)}
+                      <p className='text-gray-700 dark:text-gray-300 font-medium'>
+                        {doc.views.toLocaleString()}
                       </p>
                     </div>
-                  </div>
-                  <div className='mt-3 text-right'>
-                    <p className='text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center justify-end gap-1'>
-                      <Eye className='h-3.5 w-3.5' />
-                      Views
-                    </p>
-                    <p className='text-sm text-gray-700 dark:text-gray-300'>
-                      {doc.views}
-                    </p>
-                  </div>
-                </CardContent>
-                <CardFooter className='pt-2'>
-                  <Button className='w-full gap-2' variant='outline' asChild>
+                  </CardContent>
+                </div>
+                <CardFooter className='p-4 pt-0 mt-auto'>
+                  {' '}
+                  {/* Ensure footer is at the bottom */}
+                  <Button
+                    className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary/90 dark:group-hover:text-primary-foreground transition-colors'
+                    variant='outline'
+                    size='sm'
+                    asChild
+                  >
                     <Link href={`/analysis/${doc.id}`}>
                       View Analysis
                       <ExternalLink className='h-4 w-4' />

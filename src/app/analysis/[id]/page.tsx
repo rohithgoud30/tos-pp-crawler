@@ -11,7 +11,12 @@ import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
 import { useSearchParams, useParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { getDocumentById, type DocumentDetail } from '@/lib/api'
+import {
+  getDocumentById,
+  type DocumentDetail,
+  type WordFrequency,
+  type TextMiningMetrics,
+} from '@/lib/api'
 
 export default function AnalysisPage() {
   const params = useParams()
@@ -112,11 +117,18 @@ export default function AnalysisPage() {
           <h2 className='text-xl font-semibold mb-6 text-black dark:text-white'>
             Word Frequency Analysis
           </h2>
-          {analysisItem.sections && analysisItem.sections.length > 0 ? (
+          {analysisItem.word_frequencies &&
+          analysisItem.word_frequencies.length > 0 ? (
+            <WordFrequencyChart
+              wordFrequencies={analysisItem.word_frequencies}
+            />
+          ) : analysisItem.sections &&
+            analysisItem.sections.find((s) => s.type === 'word_frequency') ? (
+            // Fallback for backward compatibility
             <WordFrequencyChart
               wordFrequencies={
-                analysisItem.sections.find((s) => s.type === 'word_frequency')
-                  ?.data || []
+                (analysisItem.sections.find((s) => s.type === 'word_frequency')
+                  ?.data || []) as WordFrequency[]
               }
             />
           ) : (
@@ -126,7 +138,7 @@ export default function AnalysisPage() {
 
         <Separator className='my-8' />
 
-        {/* Text Mining Measurements - Now second */}
+        {/* Text Mining Measurements */}
         <div className='mb-8'>
           <div className='flex items-center gap-2 mb-4'>
             <BarChart3 className='h-5 w-5 text-gray-700 dark:text-gray-300' />
@@ -134,11 +146,15 @@ export default function AnalysisPage() {
               Text Mining Measurements
             </h2>
           </div>
-          {analysisItem.sections && analysisItem.sections.length > 0 ? (
+          {analysisItem.text_mining_metrics ? (
+            <TextMetricsGrid metrics={analysisItem.text_mining_metrics} />
+          ) : analysisItem.sections &&
+            analysisItem.sections.find((s) => s.type === 'text_mining') ? (
+            // Fallback for backward compatibility
             <TextMetricsGrid
               metrics={
-                analysisItem.sections.find((s) => s.type === 'text_mining')
-                  ?.data || {}
+                (analysisItem.sections.find((s) => s.type === 'text_mining')
+                  ?.data || {}) as unknown as TextMiningMetrics
               }
             />
           ) : (
@@ -150,7 +166,8 @@ export default function AnalysisPage() {
         <div className='flex flex-col sm:flex-row justify-center gap-4 mt-12'>
           {analysisItem.retrieved_url && (
             <Button
-              className='bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 gap-2'
+              variant='outline'
+              className='gap-2 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground'
               asChild
             >
               <a

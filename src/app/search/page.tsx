@@ -89,20 +89,23 @@ export default function SearchPage() {
 
         {/* Main search bar */}
         <div className='max-w-2xl mx-auto mb-12'>
-          <form onSubmit={handleSearch} className='flex gap-2'>
-            <div className='relative flex-grow'>
+          <form
+            onSubmit={handleSearch}
+            className='flex flex-col sm:flex-row gap-2'
+          >
+            <div className='relative w-full'>
               <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
               <Input
                 type='text'
                 placeholder='Search by company name or website...'
-                className='pl-10 py-6 border-gray-300 dark:border-gray-700'
+                className='pl-10 py-6 h-12 w-full border-gray-300 dark:border-gray-700'
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
             <Button
               type='submit'
-              className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200'
+              className='bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 h-12 min-w-[120px] flex-shrink-0'
             >
               Search
             </Button>

@@ -73,49 +73,66 @@ export function SearchResults({
     <div className='space-y-6'>
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
         {results.items.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className='flex items-center gap-3'>
-                {item.logo_url && (
-                  <img
-                    src={item.logo_url}
-                    alt={`${item.company_name} logo`}
-                    className='w-8 h-8 object-contain'
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                )}
-                <CardTitle className='text-xl'>{item.company_name}</CardTitle>
-              </div>
-              <p className='text-sm text-muted-foreground'>{item.url}</p>
-            </CardHeader>
-            <CardContent>
-              <div className='flex justify-between items-center'>
-                <div>
-                  <p className='text-sm text-muted-foreground'>Doc Type</p>
-                  <p className='capitalize'>
-                    {item.document_type === 'tos'
-                      ? 'Terms of Service'
-                      : 'Privacy Policy'}
-                  </p>
+          <Card
+            key={item.id}
+            className='group transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
+          >
+            <div className='relative'>
+              <CardHeader className='pb-0'>
+                <div className='flex flex-col items-center text-center mb-2'>
+                  {item.logo_url && (
+                    <div className='w-16 h-16 mb-2 rounded-lg overflow-hidden bg-white flex items-center justify-center p-1'>
+                      <img
+                        src={item.logo_url}
+                        alt={`${item.company_name} logo`}
+                        className='max-w-full max-h-full object-contain'
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  )}
+                  <CardTitle className='text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                    {item.company_name}
+                  </CardTitle>
                 </div>
-                <div>
-                  <p className='text-sm text-muted-foreground'>Last updated</p>
-                  <p className='text-right'>
-                    {new Date(item.updated_at).toLocaleDateString()}
-                  </p>
+                <p className='text-sm text-muted-foreground text-center truncate'>
+                  {item.url}
+                </p>
+              </CardHeader>
+              <CardContent className='pt-4'>
+                <div className='flex justify-between items-center'>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>Doc Type</p>
+                    <p className='capitalize font-medium'>
+                      {item.document_type === 'tos'
+                        ? 'Terms of Service'
+                        : 'Privacy Policy'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>
+                      Last updated
+                    </p>
+                    <p className='text-right font-medium'>
+                      {new Date(item.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className='w-full gap-2' variant='outline' asChild>
-                <a href={`/analysis/${item.id}`}>
-                  View Analysis
-                  <ExternalLink className='h-4 w-4' />
-                </a>
-              </Button>
-            </CardFooter>
+              </CardContent>
+              <CardFooter className='pt-2'>
+                <Button
+                  className='w-full gap-2 group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-600 transition-colors'
+                  variant='outline'
+                  asChild
+                >
+                  <a href={`/analysis/${item.id}`}>
+                    View Analysis
+                    <ExternalLink className='h-4 w-4' />
+                  </a>
+                </Button>
+              </CardFooter>
+            </div>
           </Card>
         ))}
       </div>

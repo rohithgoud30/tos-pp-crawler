@@ -38,12 +38,41 @@ export interface PaginatedResponse<T> {
   has_prev: boolean
 }
 
+export interface WordFrequency {
+  word: string
+  count: number
+  percentage: number
+  percentage_display: string
+}
+
+export interface TextMiningMetrics {
+  word_count: number
+  avg_word_length: number
+  sentence_count: number
+  avg_sentence_length: number
+  readability_score: number
+  readability_interpretation: string
+  unique_word_ratio: number
+  capital_letter_freq: number
+  punctuation_density: number
+  question_frequency: number
+  paragraph_count: number
+  common_word_percentage: number
+}
+
+export interface DocumentSection {
+  type: string
+  data: Record<string, unknown>
+}
+
 export interface DocumentDetail extends DocumentItem {
   retrieved_url: string
   raw_text: string
   one_sentence_summary: string
   hundred_word_summary: string
-  sections: any[] // Could be more specific based on actual section structure
+  word_frequencies: WordFrequency[]
+  text_mining_metrics: TextMiningMetrics
+  sections?: DocumentSection[] // Keeping optional for backward compatibility
   created_at: string
 }
 
