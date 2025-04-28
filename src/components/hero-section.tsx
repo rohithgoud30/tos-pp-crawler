@@ -65,12 +65,11 @@ export default function HeroSection() {
     } else if (ppSelected && !tosSelected) {
       url.searchParams.set('type', 'pp')
     } else if (tosSelected && ppSelected) {
-      // If both are selected, we can either omit the parameter (for "All")
-      // or use a custom parameter to indicate both
-      url.searchParams.set('type', 'both')
+      // Both selected - remove type param for "All"
+      url.searchParams.delete('type')
     }
 
-    // Add default parameters
+    // Add default parameters - ensure "Most Recent" sort order
     url.searchParams.set('perPage', '6')
     url.searchParams.set('sort', 'updated_at')
     url.searchParams.set('order', 'desc')

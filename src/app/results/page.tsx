@@ -580,9 +580,10 @@ export default function ResultsPage() {
                   <Select
                     value={`${sortOption}-${sortOrder}`}
                     onValueChange={handleSortOptionChange}
+                    defaultValue='updated_at-desc'
                   >
                     <SelectTrigger className='h-10 text-xs sm:text-sm'>
-                      <SelectValue placeholder='Sort by' />
+                      <SelectValue placeholder='Most Recent' />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='updated_at-desc'>
