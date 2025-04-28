@@ -71,6 +71,7 @@ export default function ResultsPage() {
     const perPageParam = searchParams.get('perPage')
     const sortParam = searchParams.get('sort')
     const orderParam = searchParams.get('order') as 'asc' | 'desc' | undefined
+    const pageParam = searchParams.get('page')
 
     console.log('Initial URL parameters:', {
       queryParam,
@@ -78,6 +79,7 @@ export default function ResultsPage() {
       perPageParam,
       sortParam,
       orderParam,
+      pageParam,
     })
 
     // Track if we should perform a search after setting state
@@ -87,6 +89,7 @@ export default function ResultsPage() {
     let actualSortOption = 'updated_at'
     let actualSortOrder: 'asc' | 'desc' = 'desc'
     let actualPerPage = 6
+    let actualPage = 1
 
     if (queryParam) {
       setSearchQuery(queryParam)
@@ -125,6 +128,16 @@ export default function ResultsPage() {
       shouldUpdateUrl = true
     }
 
+    // Handle page parameter
+    if (pageParam) {
+      const pageValue = Number.parseInt(pageParam, 10)
+      if (pageValue > 0) {
+        setCurrentPage(pageValue)
+        actualPage = pageValue
+        shouldUpdateUrl = true
+      }
+    }
+
     // Update URL to ensure a consistent state
     if (shouldUpdateUrl) {
       const url = new URL(window.location.href)
@@ -144,6 +157,13 @@ export default function ResultsPage() {
       url.searchParams.set('sort', actualSortOption)
       url.searchParams.set('order', actualSortOrder)
 
+      // Include page parameter if not page 1
+      if (actualPage > 1) {
+        url.searchParams.set('page', actualPage.toString())
+      } else {
+        url.searchParams.delete('page')
+      }
+
       // Replace current state to prevent multiple history entries
       window.history.replaceState({}, '', url.toString())
     }
@@ -160,7 +180,7 @@ export default function ResultsPage() {
           actualTypeFilter,
           actualSortOption,
           actualSortOrder,
-          1,
+          actualPage,
           actualPerPage
         )
       }, 100) // Increased timeout for state updates
@@ -170,7 +190,8 @@ export default function ResultsPage() {
         actualTypeFilter,
         actualSortOption,
         actualSortOrder,
-        actualPerPage
+        actualPerPage,
+        actualPage
       )
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,7 +202,8 @@ export default function ResultsPage() {
     docType: 'tos' | 'pp' | undefined,
     sort: string,
     order: 'asc' | 'desc',
-    perPage: number
+    perPage: number,
+    page: number = 1 // Default to page 1 if not provided
   ) => {
     setIsLoading(true)
     setFetchError(null)
@@ -192,7 +214,7 @@ export default function ResultsPage() {
         document_type: docType,
         sort_by: sort,
         sort_order: order,
-        page: 1,
+        page: page,
         per_page: perPage,
       })
 
@@ -311,7 +333,8 @@ export default function ResultsPage() {
         documentTypeFilter,
         sortOption,
         sortOrder,
-        resultsPerPage
+        resultsPerPage,
+        page
       )
     }
   }
@@ -374,11 +397,11 @@ export default function ResultsPage() {
         docType,
         sortOption,
         sortOrder,
-        1,
+        1, // Reset to page 1 when filter changes
         resultsPerPage
       )
     } else {
-      loadInitialDocuments(docType, sortOption, sortOrder, resultsPerPage)
+      loadInitialDocuments(docType, sortOption, sortOrder, resultsPerPage, 1) // Reset to page 1
     }
   }
 
@@ -402,7 +425,7 @@ export default function ResultsPage() {
         documentTypeFilter,
         newSortOption,
         newSortOrder as 'asc' | 'desc',
-        1,
+        1, // Reset to page 1 when sorting changes
         resultsPerPage
       )
     } else {
@@ -410,7 +433,8 @@ export default function ResultsPage() {
         documentTypeFilter,
         newSortOption,
         newSortOrder as 'asc' | 'desc',
-        resultsPerPage
+        resultsPerPage,
+        1 // Reset to page 1
       )
     }
   }
@@ -432,11 +456,17 @@ export default function ResultsPage() {
         documentTypeFilter,
         sortOption,
         sortOrder,
-        1,
+        1, // Reset to page 1 when per page changes
         perPage
       )
     } else {
-      loadInitialDocuments(documentTypeFilter, sortOption, sortOrder, perPage)
+      loadInitialDocuments(
+        documentTypeFilter,
+        sortOption,
+        sortOrder,
+        perPage,
+        1
+      ) // Reset to page 1
     }
   }
 
@@ -642,101 +672,128 @@ export default function ResultsPage() {
         {/* Results grid */}
         {displayedResults && displayedResults.length > 0 && (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
-            {displayedResults.map((doc) => (
-              <Card
-                key={doc.id}
-                className='group flex flex-col justify-between overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
-              >
-                <div>
-                  {' '}
-                  {/* Wrapper for content except footer */}
-                  <CardHeader className='p-4 pb-2'>
-                    <div className='flex items-center gap-3 mb-2'>
-                      {doc.logo_url && (
-                        <div className='w-10 h-10 p-1 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border dark:border-gray-700'>
-                          <img
-                            src={doc.logo_url}
-                            alt={`${doc.company_name} logo`}
-                            className='max-w-full max-h-full object-contain'
-                            onError={(e) => {
-                              e.currentTarget.parentElement?.classList.add(
-                                'hidden'
-                              ) // Hide parent div on error
-                            }}
-                          />
+            {displayedResults.map((doc) => {
+              // Construct the URL for the 'backTo' parameter - use path only instead of full URL
+              const currentResultsPath = '/results'
+              const searchParams = new URLSearchParams()
+
+              if (searchQuery) {
+                searchParams.set('q', searchQuery)
+              }
+              if (documentTypeFilter) {
+                searchParams.set('type', documentTypeFilter)
+              }
+              searchParams.set('sort', sortOption)
+              searchParams.set('order', sortOrder)
+              searchParams.set('perPage', resultsPerPage.toString())
+              if (currentPage > 1) {
+                searchParams.set('page', currentPage.toString())
+              }
+
+              // Create path+query string without the origin
+              const backToUrl = `${currentResultsPath}?${searchParams.toString()}`
+              const analysisUrl = `/analysis/${
+                doc.id
+              }?backTo=${encodeURIComponent(backToUrl)}`
+
+              return (
+                <Card
+                  key={doc.id}
+                  className='group flex flex-col justify-between overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
+                >
+                  <div>
+                    {' '}
+                    {/* Wrapper for content except footer */}
+                    <CardHeader className='p-4 pb-2'>
+                      <div className='flex items-center gap-3 mb-2'>
+                        {doc.logo_url && (
+                          <div className='w-10 h-10 p-1 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border dark:border-gray-700'>
+                            <img
+                              src={doc.logo_url}
+                              alt={`${doc.company_name} logo`}
+                              className='max-w-full max-h-full object-contain'
+                              onError={(e) => {
+                                e.currentTarget.parentElement?.classList.add(
+                                  'hidden'
+                                ) // Hide parent div on error
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className='flex-grow min-w-0'>
+                          {' '}
+                          {/* Allow text to wrap */}
+                          {/* Use Tooltip for full name on hover */}
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors truncate cursor-default'>
+                                  {doc.company_name}
+                                </CardTitle>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{doc.company_name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate'>
+                            <Globe className='h-3 w-3 flex-shrink-0' />
+                            <span className='truncate'>{doc.url}</span>
+                          </p>
                         </div>
-                      )}
-                      <div className='flex-grow min-w-0'>
-                        {' '}
-                        {/* Allow text to wrap */}
-                        {/* Use Tooltip for full name on hover */}
-                        <TooltipProvider delayDuration={200}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors truncate cursor-default'>
-                                {doc.company_name}
-                              </CardTitle>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{doc.company_name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate'>
-                          <Globe className='h-3 w-3 flex-shrink-0' />
-                          <span className='truncate'>{doc.url}</span>
-                        </p>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className='p-4 pt-2 text-xs'>
-                    <div className='grid grid-cols-2 gap-3'>
-                      <div>
-                        <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center gap-1'>
-                          <FileText className='h-3.5 w-3.5' />
-                          Doc Type
-                        </p>
-                        {getDocumentTypeBadges(doc)}{' '}
-                        {/* Re-use existing badge logic */}
+                    </CardHeader>
+                    <CardContent className='p-4 pt-2 text-xs'>
+                      <div className='grid grid-cols-2 gap-3'>
+                        <div>
+                          <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center gap-1'>
+                            <FileText className='h-3.5 w-3.5' />
+                            Doc Type
+                          </p>
+                          {getDocumentTypeBadges(doc)}{' '}
+                          {/* Re-use existing badge logic */}
+                        </div>
+                        <div className='text-right'>
+                          <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
+                            <Clock className='h-3.5 w-3.5' />
+                            Last Updated
+                          </p>
+                          <p className='text-gray-700 dark:text-gray-300 font-medium'>
+                            {formatDate(doc.updated_at)}
+                          </p>
+                        </div>
                       </div>
-                      <div className='text-right'>
+                      <div className='mt-3 text-right'>
                         <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
-                          <Clock className='h-3.5 w-3.5' />
-                          Last Updated
+                          <Eye className='h-3.5 w-3.5' />
+                          Views
                         </p>
                         <p className='text-gray-700 dark:text-gray-300 font-medium'>
-                          {formatDate(doc.updated_at)}
+                          {doc.views.toLocaleString()}
                         </p>
                       </div>
-                    </div>
-                    <div className='mt-3 text-right'>
-                      <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
-                        <Eye className='h-3.5 w-3.5' />
-                        Views
-                      </p>
-                      <p className='text-gray-700 dark:text-gray-300 font-medium'>
-                        {doc.views.toLocaleString()}
-                      </p>
-                    </div>
-                  </CardContent>
-                </div>
-                <CardFooter className='p-4 pt-0 mt-auto'>
-                  {' '}
-                  {/* Ensure footer is at the bottom */}
-                  <Button
-                    className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary/90 dark:group-hover:text-primary-foreground transition-colors'
-                    variant='outline'
-                    size='sm'
-                    asChild
-                  >
-                    <Link href={`/analysis/${doc.id}`}>
-                      View Analysis
-                      <ExternalLink className='h-4 w-4' />
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                    </CardContent>
+                  </div>
+                  <CardFooter className='p-4 pt-0 mt-auto'>
+                    {' '}
+                    {/* Ensure footer is at the bottom */}
+                    <Button
+                      className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary/90 dark:group-hover:text-primary-foreground transition-colors'
+                      variant='outline'
+                      size='sm'
+                      asChild
+                    >
+                      <Link href={analysisUrl}>
+                        {' '}
+                        {/* Use the constructed URL */}
+                        View Analysis
+                        <ExternalLink className='h-4 w-4' />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )
+            })}
           </div>
         )}
 

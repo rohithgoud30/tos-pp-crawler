@@ -80,97 +80,104 @@ export default function HeroSection() {
   }
 
   return (
-    <section className='w-full py-2 md:py-3 flex items-center justify-center'>
-      <div className='container px-2 max-w-xl'>
-        <div className='flex flex-col items-center space-y-2 text-center'>
-          <div className='space-y-0.5'>
-            <h1 className='text-xl font-bold tracking-tight sm:text-2xl md:text-3xl'>
+    <section className='w-full py-20 md:py-28 lg:py-36 flex items-center justify-center'>
+      <div className='container px-4 md:px-6 max-w-2xl'>
+        <div className='flex flex-col items-center space-y-4 text-center'>
+          <div className='space-y-4'>
+            <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
               {`🧠 Understand What You're Agreeing To`}
             </h1>
-            <p className='mx-auto max-w-[700px] text-gray-500 text-xs md:text-sm'>
+            <p className='mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed'>
               {`CRWLR analyzes Terms of Service and Privacy Policies so you don't have to read the fine print.`}
             </p>
-            <DocumentStatsDisplay />
+            <div className='flex justify-center pt-2'>
+              <DocumentStatsDisplay />
+            </div>
           </div>
 
-          <div className='flex justify-center gap-2 -mt-1'>
-            <div className='flex items-center space-x-0.5'>
+          <div className='flex justify-center gap-6 pt-2'>
+            <div className='flex items-center space-x-2'>
               <Checkbox
                 id='tos'
                 checked={tosSelected}
                 onCheckedChange={(checked) => {
                   setTosSelected(checked === true)
                 }}
-                className='h-3 w-3'
+                className='h-5 w-5'
               />
               <Label
                 htmlFor='tos'
-                className='text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
               >
                 Terms of Service
               </Label>
             </div>
-            <div className='flex items-center space-x-0.5'>
+            <div className='flex items-center space-x-2'>
               <Checkbox
                 id='pp'
                 checked={ppSelected}
                 onCheckedChange={(checked) => {
                   setPpSelected(checked === true)
                 }}
-                className='h-3 w-3'
+                className='h-5 w-5'
               />
               <Label
                 htmlFor='pp'
-                className='text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
               >
                 Privacy Policy
               </Label>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className='w-full mt-0.5'>
-            <div className='relative flex items-center'>
-              <Input
-                type='text'
-                placeholder={placeholder}
-                className={`pr-8 h-9 text-xs ${
-                  error
-                    ? 'border-red-500 focus-visible:ring-red-500'
-                    : 'border-input focus-visible:ring-ring'
-                }`}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  if (e.target.value.trim()) {
-                    setError('')
-                  }
-                }}
-                aria-invalid={error ? 'true' : 'false'}
-                aria-describedby={error ? 'search-error' : undefined}
-              />
-              <Button
-                type='submit'
-                size='icon'
-                className='absolute right-0.5 h-7 w-7 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
-              >
-                <Search className='h-3 w-3' />
-                <span className='sr-only'>Search</span>
-              </Button>
+          <form onSubmit={handleSubmit} className='w-full space-y-4 relative'>
+            <div className='space-y-2'>
+              <div className='relative flex items-center'>
+                <Input
+                  type='text'
+                  placeholder={placeholder}
+                  className={`pr-12 h-14 text-base ${
+                    error
+                      ? 'border-red-500 focus-visible:ring-red-500'
+                      : 'border-input focus-visible:ring-ring'
+                  }`}
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    if (e.target.value.trim()) {
+                      setError('')
+                    }
+                  }}
+                  aria-invalid={error ? 'true' : 'false'}
+                  aria-describedby={error ? 'search-error' : undefined}
+                />
+                <Button
+                  type='submit'
+                  size='icon'
+                  className='absolute right-1 h-12 w-12 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                >
+                  <Search className='h-5 w-5' />
+                  <span className='sr-only'>Search</span>
+                </Button>
+              </div>
+
+              {error && (
+                <p
+                  id='search-error'
+                  className='text-sm font-medium text-red-500 transition-all'
+                >
+                  {error}
+                </p>
+              )}
             </div>
 
-            {error && (
-              <p
-                id='search-error'
-                className='text-xs font-medium text-red-500 transition-all mt-0.5 -mb-1'
-              >
-                {error}
-              </p>
-            )}
-
-            <div className='text-xs text-gray-500 mt-0.5 leading-none'>
-              <p className='leading-tight'>
+            <div className='text-sm text-gray-500'>
+              <p>
                 Search for any website or service to analyze their legal
-                documents. Examples: Facebook, Twitter, Netflix, or any URL
+                documents.
+              </p>
+              <p className='mt-1'>
+                Examples: Facebook, Twitter, Netflix, Spotify, or any URL
               </p>
             </div>
           </form>
