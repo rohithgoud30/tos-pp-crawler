@@ -102,7 +102,7 @@ const Navbar = ({
                 <Button
                   variant='outline'
                   size='sm'
-                  className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200 flex items-center gap-2'
+                  className='bg-black text-white hover:bg-gray-900 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black border border-gray-200 flex items-center gap-2'
                   onClick={() => openUserProfile()}
                 >
                   <User className='h-4 w-4' />
@@ -111,7 +111,7 @@ const Navbar = ({
                 <SignOutButton>
                   <Button
                     size='sm'
-                    className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2'
+                    className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm flex items-center gap-2'
                   >
                     <LogOut className='h-4 w-4' style={{ color: 'inherit' }} />
                     Logout
@@ -124,7 +124,7 @@ const Navbar = ({
                   <Button
                     variant='outline'
                     size='sm'
-                    className='bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 border border-gray-200'
+                    className='bg-black text-white hover:bg-gray-800 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black border border-gray-200'
                   >
                     {auth.login.text}
                   </Button>
@@ -133,7 +133,7 @@ const Navbar = ({
                 <Link href={auth.signup.url}>
                   <Button
                     size='sm'
-                    className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'
+                    className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm'
                   >
                     {auth.signup.text}
                   </Button>
@@ -195,7 +195,7 @@ const Navbar = ({
                         <>
                           <Button
                             variant='outline'
-                            className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm flex items-center gap-2 w-full'
+                            className='bg-black text-white border border-black hover:bg-gray-900 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black shadow-sm flex items-center gap-2 w-full'
                             onClick={() => openUserProfile()}
                           >
                             <User className='h-4 w-4' />
@@ -203,7 +203,7 @@ const Navbar = ({
                           </Button>
 
                           <SignOutButton>
-                            <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm flex items-center gap-2 w-full'>
+                            <Button className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm flex items-center gap-2 w-full'>
                               <LogOut
                                 className='h-4 w-4'
                                 style={{ color: 'inherit' }}
@@ -217,14 +217,14 @@ const Navbar = ({
                           <Link href={auth.login.url}>
                             <Button
                               variant='outline'
-                              className='bg-black text-white border border-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200 shadow-sm'
+                              className='bg-black text-white border border-black hover:bg-gray-800 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black shadow-sm w-full'
                             >
                               {auth.login.text}
                             </Button>
                           </Link>
 
                           <Link href={auth.signup.url}>
-                            <Button className='bg-white text-black border border-black hover:bg-gray-100 dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-900 shadow-sm'>
+                            <Button className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm w-full'>
                               {auth.signup.text}
                             </Button>
                           </Link>
