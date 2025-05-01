@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import { Navbar } from '@/components/ui/navbar'
 import ThemeProvider from '@/components/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
+import { NavigationProvider } from '@/context/navigation-context'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -65,7 +66,7 @@ export default function RootLayout({
           <div className='min-h-screen flex flex-col'>
             <Navbar />
             <main className='flex-1 bg-white dark:bg-black text-black dark:text-white mx-auto'>
-              {children}
+              <NavigationProvider>{children}</NavigationProvider>
             </main>
             <footer className='w-full border-t border-gray-100 dark:border-white/10 py-3 bg-white dark:bg-black'>
               <div className='w-full max-w-screen-xl mx-auto px-4 md:px-6'>

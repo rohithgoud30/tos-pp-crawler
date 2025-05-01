@@ -45,6 +45,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useNavigation } from '@/context/navigation-context'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
@@ -63,6 +64,7 @@ export default function ResultsPage() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
+  const { setLastSearchState } = useNavigation()
 
   // Load initial URL parameters
   useEffect(() => {
@@ -296,9 +298,40 @@ export default function ResultsPage() {
     // Update URL parameters
     updateUrlParameters()
 
+    // Save search state to context
+    updateSearchState()
+
     // Execute search
     performSearch()
   }
+
+  // New function to update search state in context
+  const updateSearchState = () => {
+    setLastSearchState({
+      query: searchQuery,
+      documentType: documentTypeFilter,
+      sortOption,
+      sortOrder,
+      page: currentPage,
+      perPage: resultsPerPage,
+    })
+  }
+
+  // Effect to update search state when any search param changes
+  useEffect(() => {
+    // Only save state if we have shown some results
+    if (hasSearched) {
+      updateSearchState()
+    }
+  }, [
+    searchQuery,
+    documentTypeFilter,
+    sortOption,
+    sortOrder,
+    currentPage,
+    resultsPerPage,
+    hasSearched,
+  ])
 
   // Actual search logic separated from event handler
   const performSearch = () => {
@@ -325,6 +358,9 @@ export default function ResultsPage() {
       url.searchParams.delete('page') // Remove page param if it's page 1
     }
     window.history.replaceState({}, '', url.toString())
+
+    // Save the updated search state with new page
+    updateSearchState()
 
     // If we're searching, update search with new page
     if (searchQuery) {
@@ -399,6 +435,9 @@ export default function ResultsPage() {
     }
     window.history.replaceState({}, '', url.toString())
 
+    // Update search state
+    updateSearchState()
+
     // Reapply search with the new filter
     if (searchQuery) {
       performSearchWithParams(
@@ -426,6 +465,9 @@ export default function ResultsPage() {
     url.searchParams.set('sort', newSortOption)
     url.searchParams.set('order', newSortOrder)
     window.history.replaceState({}, '', url.toString())
+
+    // Update search state
+    updateSearchState()
 
     // Reapply search with the new sorting
     if (searchQuery) {
@@ -457,6 +499,9 @@ export default function ResultsPage() {
     const url = new URL(window.location.href)
     url.searchParams.set('perPage', perPage.toString())
     window.history.replaceState({}, '', url.toString())
+
+    // Update search state
+    updateSearchState()
 
     // Reapply search with the new size
     if (searchQuery) {
@@ -683,28 +728,8 @@ export default function ResultsPage() {
         {displayedResults && displayedResults.length > 0 && (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
             {displayedResults.map((doc) => {
-              // Construct the URL for the 'backTo' parameter - use path only instead of full URL
-              const currentResultsPath = '/results'
-              const searchParams = new URLSearchParams()
-
-              if (searchQuery) {
-                searchParams.set('q', searchQuery)
-              }
-              if (documentTypeFilter) {
-                searchParams.set('type', documentTypeFilter)
-              }
-              searchParams.set('sort', sortOption)
-              searchParams.set('order', sortOrder)
-              searchParams.set('perPage', resultsPerPage.toString())
-              if (currentPage > 1) {
-                searchParams.set('page', currentPage.toString())
-              }
-
-              // Create path+query string without the origin
-              const backToUrl = `${currentResultsPath}?${searchParams.toString()}`
-              const analysisUrl = `/analysis/${
-                doc.id
-              }?backTo=${encodeURIComponent(backToUrl)}`
+              // Just create a simple analysis URL without backTo parameter
+              const analysisUrl = `/analysis/${doc.id}`
 
               return (
                 <Card

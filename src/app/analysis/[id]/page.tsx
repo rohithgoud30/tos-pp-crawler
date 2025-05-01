@@ -1,11 +1,12 @@
 'use client'
 
-import { ChevronRight, BarChart3, ExternalLink, Tag } from 'lucide-react'
+import { BarChart3, ExternalLink, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
+import { Breadcrumb } from '@/components/breadcrumb'
 import { useSearchParams, useParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import {
@@ -209,22 +210,14 @@ export default function AnalysisPage() {
     return (
       <div className='min-h-screen bg-white dark:bg-black'>
         <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-          {/* Breadcrumb for loading state */}
-          <nav className='flex items-center text-sm mb-6'>
-            <Link
-              href='/'
-              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            >
-              Home
-            </Link>
-            <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
-            <Link
-              href='/results'
-              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            >
-              Search Results
-            </Link>
-          </nav>
+          {/* Use the Breadcrumb component */}
+          <Breadcrumb
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Search Results', href: '/results' },
+              { label: 'Loading...', isCurrentPage: true },
+            ]}
+          />
 
           {/* Loading message - left aligned */}
           <div className='mt-8'>
@@ -244,22 +237,14 @@ export default function AnalysisPage() {
     return (
       <div className='min-h-screen bg-white dark:bg-black'>
         <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-          {/* Breadcrumb for error state */}
-          <nav className='flex items-center text-sm mb-6'>
-            <Link
-              href='/'
-              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            >
-              Home
-            </Link>
-            <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
-            <Link
-              href='/results'
-              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            >
-              Search Results
-            </Link>
-          </nav>
+          {/* Use the Breadcrumb component */}
+          <Breadcrumb
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Search Results', href: '/results' },
+              { label: 'Error', isCurrentPage: true },
+            ]}
+          />
 
           {/* Error message - left aligned */}
           <div className='bg-red-50 dark:bg-red-900/20 p-4 rounded-md max-w-md mt-8'>
@@ -280,22 +265,14 @@ export default function AnalysisPage() {
     return (
       <div className='min-h-screen bg-white dark:bg-black'>
         <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-          {/* Breadcrumb for not found state */}
-          <nav className='flex items-center text-sm mb-6'>
-            <Link
-              href='/'
-              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            >
-              Home
-            </Link>
-            <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
-            <Link
-              href='/results'
-              className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            >
-              Search Results
-            </Link>
-          </nav>
+          {/* Use the Breadcrumb component */}
+          <Breadcrumb
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Search Results', href: '/results' },
+              { label: 'Not Found', isCurrentPage: true },
+            ]}
+          />
 
           {/* Not found message - left aligned */}
           <div className='bg-gray-50 dark:bg-gray-900/20 p-4 rounded-md max-w-md mt-8'>
@@ -314,40 +291,17 @@ export default function AnalysisPage() {
     )
   }
 
-  const hasTos = analysisItem.document_type === 'tos'
-  const hasPp = analysisItem.document_type === 'pp'
-
-  // Determine the URL for the 'Search Results' breadcrumb
-  const backToUrl = searchParams.get('backTo')
-
-  // Improved validation logic for the backTo parameter
-  // Check if it's a valid results URL path (just validate that it starts with /results)
-  const isValidBackToUrl = backToUrl && backToUrl.startsWith('/results')
-  const searchResultsHref = isValidBackToUrl ? backToUrl : '/results'
-
   return (
     <div className='min-h-screen bg-white dark:bg-black'>
       <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4'>
-        {/* Breadcrumb */}
-        <nav className='flex items-center text-sm mb-4'>
-          <Link
-            href='/'
-            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          >
-            Home
-          </Link>
-          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
-          <Link
-            href={searchResultsHref}
-            className='text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          >
-            Search Results
-          </Link>
-          <ChevronRight className='h-4 w-4 mx-2 text-gray-500 dark:text-gray-400' />
-          <span className='text-gray-900 dark:text-white font-medium'>
-            {analysisItem.company_name}
-          </span>
-        </nav>
+        {/* Use the Breadcrumb component */}
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Search Results' },
+            { label: analysisItem.company_name, isCurrentPage: true },
+          ]}
+        />
 
         {/* Document Info with Category Tags */}
         <div className='mb-4'>
@@ -356,7 +310,7 @@ export default function AnalysisPage() {
               {analysisItem.company_name}
             </h1>
             <div className='flex gap-2'>
-              {hasTos && (
+              {analysisItem.document_type === 'tos' && (
                 <Badge
                   className='cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'
                   onClick={() => handleTagClick('tos')}
@@ -365,7 +319,7 @@ export default function AnalysisPage() {
                   ToS
                 </Badge>
               )}
-              {hasPp && (
+              {analysisItem.document_type === 'pp' && (
                 <Badge
                   className='cursor-pointer bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white'
                   onClick={() => handleTagClick('privacy')}
@@ -387,8 +341,9 @@ export default function AnalysisPage() {
 
         {/* Content area with max-width to match search results cards */}
         <div className='max-w-4xl mx-auto'>
-          {hasTos && renderAnalysisContent('tos')}
-          {hasPp && renderAnalysisContent('privacy')}
+          {analysisItem.document_type === 'tos' && renderAnalysisContent('tos')}
+          {analysisItem.document_type === 'pp' &&
+            renderAnalysisContent('privacy')}
         </div>
 
         {/* View Original Source Button */}
