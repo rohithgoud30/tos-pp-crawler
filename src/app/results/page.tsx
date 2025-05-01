@@ -317,6 +317,15 @@ export default function ResultsPage() {
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
 
+    // Update URL parameter for the page
+    const url = new URL(window.location.href)
+    if (page > 1) {
+      url.searchParams.set('page', page.toString())
+    } else {
+      url.searchParams.delete('page') // Remove page param if it's page 1
+    }
+    window.history.replaceState({}, '', url.toString())
+
     // If we're searching, update search with new page
     if (searchQuery) {
       performSearchWithParams(
@@ -737,9 +746,20 @@ export default function ResultsPage() {
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                          <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate'>
+                          <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1'>
                             <Globe className='h-3 w-3 flex-shrink-0' />
-                            <span className='truncate'>{doc.url}</span>
+                            <TooltipProvider delayDuration={200}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className='truncate cursor-default'>
+                                    {doc.url}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side='bottom' align='start'>
+                                  <p>{doc.url}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </p>
                         </div>
                       </div>
