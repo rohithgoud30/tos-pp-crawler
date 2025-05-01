@@ -51,6 +51,12 @@ export default function HeroSection() {
       return
     }
 
+    // Check if at least one document type is selected
+    if (!tosSelected && !ppSelected) {
+      setError('Please select at least one document type (ToS or PP)')
+      return
+    }
+
     setError('')
 
     // Build the URL with search parameters
