@@ -801,7 +801,7 @@ export default function ResultsPage() {
         {/* Pagination */}
         {resultsPagination && resultsPagination.total_pages > 1 && (
           <div className='flex justify-center mt-8'>
-            <div className='flex space-x-2'>
+            <div className='flex space-x-2 items-center'>
               <Button
                 variant='outline'
                 onClick={() => handlePageChange(currentPage - 1)}
@@ -810,21 +810,48 @@ export default function ResultsPage() {
                 Previous
               </Button>
 
-              {/* Page numbers */}
-              {[...Array(resultsPagination.total_pages)].map((_, index) => (
-                <Button
-                  key={index}
-                  variant={currentPage === index + 1 ? 'default' : 'outline'}
-                  onClick={() => handlePageChange(index + 1)}
-                  className={
-                    currentPage === index + 1
-                      ? 'bg-black text-white dark:bg-white dark:text-black'
-                      : ''
-                  }
-                >
-                  {index + 1}
-                </Button>
-              ))}
+              {/* Page numbers - Google Style */}
+              {(() => {
+                const totalPages = resultsPagination.total_pages
+                const MAX_VISIBLE_PAGES = 10
+                const pagesToShow = Math.min(MAX_VISIBLE_PAGES, totalPages)
+
+                let startPage = Math.max(
+                  1,
+                  currentPage - Math.floor(pagesToShow / 2)
+                )
+                const endPage = Math.min(
+                  totalPages,
+                  startPage + pagesToShow - 1
+                )
+
+                // Adjust startPage if endPage hits the limit
+                if (endPage === totalPages) {
+                  startPage = Math.max(1, totalPages - pagesToShow + 1)
+                }
+
+                const pageNumbers = []
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(i)
+                }
+
+                return pageNumbers.map((pageNumber) => (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? 'default' : 'outline'}
+                    onClick={() => handlePageChange(pageNumber)}
+                    className={
+                      currentPage === pageNumber
+                        ? 'bg-black text-white dark:bg-white dark:text-black'
+                        : ''
+                    }
+                    size='icon' // Make buttons square
+                    style={{ minWidth: '2.5rem' }} // Ensure consistent width
+                  >
+                    {pageNumber}
+                  </Button>
+                ))
+              })()}
 
               <Button
                 variant='outline'
