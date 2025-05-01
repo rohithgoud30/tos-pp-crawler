@@ -709,7 +709,7 @@ export default function ResultsPage() {
               return (
                 <Card
                   key={doc.id}
-                  className='group flex flex-col justify-between overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
+                  className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
                 >
                   <div>
                     {' '}
@@ -730,15 +730,17 @@ export default function ResultsPage() {
                             />
                           </div>
                         )}
-                        <div className='flex-grow min-w-0'>
+                        <div className='flex-grow min-w-0 max-w-full overflow-hidden'>
                           {' '}
                           {/* Allow text to wrap */}
-                          {/* Use Tooltip for full name on hover */}
+                          {/* Use TooltipProvider for all company names, truncate if > 13 chars */}
                           <TooltipProvider delayDuration={200}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors truncate cursor-default'>
-                                  {doc.company_name}
+                                <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors cursor-default'>
+                                  {doc.company_name.length > 13
+                                    ? `${doc.company_name.substring(0, 11)}...`
+                                    : doc.company_name}
                                 </CardTitle>
                               </TooltipTrigger>
                               <TooltipContent>
