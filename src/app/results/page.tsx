@@ -779,7 +779,9 @@ export default function ResultsPage() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className='truncate cursor-default'>
-                                    {doc.url}
+                                    {doc.url.length > 18
+                                      ? `${doc.url.substring(0, 16)}...`
+                                      : doc.url}
                                   </span>
                                 </TooltipTrigger>
                                 <TooltipContent side='bottom' align='start'>
