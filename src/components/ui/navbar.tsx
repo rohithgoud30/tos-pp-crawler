@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sheet'
 
 import * as React from 'react'
+import { useState } from 'react'
 
 interface MenuItem {
   title: string
@@ -62,6 +63,7 @@ const Navbar = ({
 }: NavbarProps) => {
   const { isSignedIn } = useUser()
   const { openUserProfile } = useClerk()
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   return (
     <section className='py-4 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-black'>
@@ -155,7 +157,7 @@ const Navbar = ({
             <div className='flex items-center gap-2'>
               <ThemeToggle />
 
-              <Sheet>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant='outline'
@@ -168,7 +170,11 @@ const Navbar = ({
                 <SheetContent className='overflow-y-auto bg-white dark:bg-black text-black dark:text-white'>
                   <SheetHeader>
                     <SheetTitle className='text-black dark:text-white'>
-                      <Link href={logo.url} className='flex items-center gap-2'>
+                      <Link
+                        href={logo.url}
+                        className='flex items-center gap-2'
+                        onClick={() => setIsSheetOpen(false)}
+                      >
                         <FileText className='h-6 w-6 text-black dark:text-white' />
                         <span className='text-xl font-bold text-black dark:text-white'>
                           {logo.title}
@@ -183,6 +189,7 @@ const Navbar = ({
                           key={item.title}
                           href={item.url}
                           className='font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md px-4 py-2'
+                          onClick={() => setIsSheetOpen(false)}
                         >
                           {item.title}
                         </Link>
@@ -196,14 +203,20 @@ const Navbar = ({
                           <Button
                             variant='outline'
                             className='bg-black text-white border border-black hover:bg-gray-900 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black shadow-sm flex items-center gap-2 w-full'
-                            onClick={() => openUserProfile()}
+                            onClick={() => {
+                              setIsSheetOpen(false)
+                              openUserProfile()
+                            }}
                           >
                             <User className='h-4 w-4' />
                             Profile
                           </Button>
 
                           <SignOutButton>
-                            <Button className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm flex items-center gap-2 w-full'>
+                            <Button
+                              className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm flex items-center gap-2 w-full'
+                              onClick={() => setIsSheetOpen(false)}
+                            >
                               <LogOut
                                 className='h-4 w-4'
                                 style={{ color: 'inherit' }}
@@ -214,7 +227,10 @@ const Navbar = ({
                         </>
                       ) : (
                         <>
-                          <Link href={auth.login.url}>
+                          <Link
+                            href={auth.login.url}
+                            onClick={() => setIsSheetOpen(false)}
+                          >
                             <Button
                               variant='outline'
                               className='bg-black text-white border border-black hover:bg-gray-800 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black shadow-sm w-full'
@@ -223,7 +239,10 @@ const Navbar = ({
                             </Button>
                           </Link>
 
-                          <Link href={auth.signup.url}>
+                          <Link
+                            href={auth.signup.url}
+                            onClick={() => setIsSheetOpen(false)}
+                          >
                             <Button className='bg-white text-black border border-black hover:bg-gray-100 hover:text-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-gray-800 dark:hover:text-white shadow-sm w-full'>
                               {auth.signup.text}
                             </Button>
