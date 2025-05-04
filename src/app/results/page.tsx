@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import Image from 'next/image'
+// import Image from 'next/image' // REMOVED next/image import
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -781,26 +781,29 @@ export default function ResultsPage() {
                       className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
                     >
                       <div>
-                        {' '}
                         {/* Wrapper for content except footer */}
                         <CardHeader className='p-4 pb-2'>
                           <div className='flex items-center gap-3 mb-2'>
+                            {/* Logo display - Reverted to img tag like analysis page */}
                             {doc.logo_url && (
-                              <div className='w-10 h-10 p-1 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border dark:border-gray-700 relative'>
-                                {' '}
-                                {/* Added relative positioning */}
-                                <Image
+                              <div className='flex-shrink-0 h-10 w-10 p-1 mr-1 bg-white dark:bg-white rounded-md flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700'>
+                                <img
                                   src={doc.logo_url}
                                   alt={`${doc.company_name} logo`}
-                                  fill={true} // Use fill layout
-                                  style={{ objectFit: 'contain' }} // Use style for object-fit
+                                  className='max-h-full max-w-full object-contain'
                                   onError={(e) => {
-                                    // Hide the parent div on error
-                                    ;(
-                                      e.target as HTMLImageElement
-                                    ).parentElement?.classList.add('hidden')
+                                    // Hide img on error
+                                    e.currentTarget.style.display = 'none'
+                                    // Optionally hide parent if needed, but start with just img
+                                    // e.currentTarget.parentElement?.classList.add('hidden');
                                   }}
                                 />
+                              </div>
+                            )}
+                            {/* Fallback placeholder if no logo URL */}
+                            {!doc.logo_url && (
+                              <div className='w-10 h-10 rounded-md flex-shrink-0 bg-gray-100 dark:bg-gray-800 border dark:border-gray-700 flex items-center justify-center mr-1'>
+                                <FileText className='h-5 w-5 text-gray-400 dark:text-gray-500' />
                               </div>
                             )}
                             <div className='flex-grow min-w-0 max-w-full overflow-hidden'>
