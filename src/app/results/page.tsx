@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -46,6 +47,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useNavigation } from '@/context/navigation-context'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function ResultsPage() {
   const searchParams = useSearchParams()
@@ -207,7 +209,6 @@ export default function ResultsPage() {
     perPage: number,
     page: number = 1 // Default to page 1 if not provided
   ) => {
-    setIsLoading(true)
     setFetchError(null)
     setSearchError(null)
 
@@ -242,7 +243,10 @@ export default function ResultsPage() {
     page: number,
     perPage: number
   ) => {
-    if (!query) return
+    if (!query) {
+      setIsLoading(false)
+      return
+    }
 
     console.log('Search with direct params:', {
       query,
@@ -252,7 +256,6 @@ export default function ResultsPage() {
       page,
       perPage,
     })
-    setIsLoading(true)
     setFetchError(null)
     setSearchError(null)
 
@@ -348,6 +351,7 @@ export default function ResultsPage() {
 
   // Handle page change
   const handlePageChange = (page: number) => {
+    setIsLoading(true)
     setCurrentPage(page)
 
     // Update URL parameter for the page
@@ -679,12 +683,16 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* Results count and current filter */}
-        {hasSearched && !isLoading && resultsPagination && (
+        {/* Results count and current filter - Show if pagination exists, regardless of loading */}
+        {resultsPagination && (
           <div className='flex flex-col md:flex-row justify-between mb-6 text-gray-500 dark:text-gray-400'>
             <p>
-              Showing {resultsPagination.items.length} of{' '}
-              {resultsPagination.total} results
+              {/* Show current item count if loading, otherwise use total */}
+              Showing{' '}
+              {isLoading
+                ? displayedResults.length
+                : resultsPagination.items.length}{' '}
+              of {resultsPagination.total} results
             </p>
             <p>
               Filtered by:{' '}
@@ -693,12 +701,46 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Loading state */}
+        {/* Loading state - Skeleton Grid */}
         {isLoading && (
-          <div className='text-center py-12'>
-            <p className='text-gray-500 dark:text-gray-400'>
-              Loading results...
-            </p>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
+            {Array.from({ length: resultsPerPage }).map((_, index) => (
+              <Card
+                key={`skeleton-${index}`}
+                className='flex flex-col justify-between'
+              >
+                <div>
+                  <CardHeader className='p-4 pb-2'>
+                    <div className='flex items-center gap-3 mb-2'>
+                      <Skeleton className='h-10 w-10 rounded-md' />
+                      <div className='flex-grow space-y-2'>
+                        <Skeleton className='h-4 w-3/4' />
+                        <Skeleton className='h-3 w-1/2' />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className='p-4 pt-2 text-xs'>
+                    <div className='grid grid-cols-2 gap-3'>
+                      <div className='space-y-1'>
+                        <Skeleton className='h-3 w-1/3' />
+                        <Skeleton className='h-5 w-1/2' />
+                      </div>
+                      <div className='space-y-1 text-right'>
+                        <Skeleton className='h-3 w-1/3 ml-auto' />
+                        <Skeleton className='h-4 w-1/2 ml-auto' />
+                      </div>
+                    </div>
+                    <div className='mt-3 text-right space-y-1'>
+                      <Skeleton className='h-3 w-1/4 ml-auto' />
+                      <Skeleton className='h-4 w-1/3 ml-auto' />
+                    </div>
+                  </CardContent>
+                </div>
+                <CardFooter className='p-4 pt-0 mt-auto'>
+                  <Skeleton className='h-9 w-full' />
+                </CardFooter>
+              </Card>
+            ))}
           </div>
         )}
 
@@ -710,141 +752,152 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Empty results */}
-        {hasSearched &&
-          !isLoading &&
-          (!displayedResults || displayedResults.length === 0) && (
-            <div className='text-center py-12'>
-              <p className='text-xl font-medium mb-2 text-black dark:text-white'>
-                No results found
-              </p>
-              <p className='text-gray-500 dark:text-gray-400 mb-6'>
-                Try a different search term or filter
-              </p>
-            </div>
-          )}
+        {/* Render results grid OR empty state only when NOT loading */}
+        {!isLoading && (
+          <>
+            {/* Empty results */}
+            {hasSearched &&
+              (!displayedResults || displayedResults.length === 0) && (
+                <div className='text-center py-12'>
+                  <p className='text-xl font-medium mb-2 text-black dark:text-white'>
+                    No results found
+                  </p>
+                  <p className='text-gray-500 dark:text-gray-400 mb-6'>
+                    Try a different search term or filter
+                  </p>
+                </div>
+              )}
 
-        {/* Results grid */}
-        {displayedResults && displayedResults.length > 0 && (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
-            {displayedResults.map((doc) => {
-              // Just create a simple analysis URL without backTo parameter
-              const analysisUrl = `/analysis/${doc.id}`
+            {/* Results grid */}
+            {displayedResults && displayedResults.length > 0 && (
+              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
+                {displayedResults.map((doc) => {
+                  // Just create a simple analysis URL without backTo parameter
+                  const analysisUrl = `/analysis/${doc.id}`
 
-              return (
-                <Card
-                  key={doc.id}
-                  className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
-                >
-                  <div>
-                    {' '}
-                    {/* Wrapper for content except footer */}
-                    <CardHeader className='p-4 pb-2'>
-                      <div className='flex items-center gap-3 mb-2'>
-                        {doc.logo_url && (
-                          <div className='w-10 h-10 p-1 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border dark:border-gray-700'>
-                            <img
-                              src={doc.logo_url}
-                              alt={`${doc.company_name} logo`}
-                              className='max-w-full max-h-full object-contain'
-                              onError={(e) => {
-                                e.currentTarget.parentElement?.classList.add(
-                                  'hidden'
-                                ) // Hide parent div on error
-                              }}
-                            />
-                          </div>
-                        )}
-                        <div className='flex-grow min-w-0 max-w-full overflow-hidden'>
-                          {' '}
-                          {/* Allow text to wrap */}
-                          {/* Use TooltipProvider for all company names, truncate if > 13 chars */}
-                          <TooltipProvider delayDuration={200}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors cursor-default'>
-                                  {doc.company_name.length > 13
-                                    ? `${doc.company_name.substring(0, 11)}...`
-                                    : doc.company_name}
-                                </CardTitle>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{doc.company_name}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1'>
-                            <Globe className='h-3 w-3 flex-shrink-0' />
-                            <TooltipProvider delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className='truncate cursor-default'>
-                                    {doc.url.length > 18
-                                      ? `${doc.url.substring(0, 16)}...`
-                                      : doc.url}
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side='bottom' align='start'>
-                                  <p>{doc.url}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className='p-4 pt-2 text-xs'>
-                      <div className='grid grid-cols-2 gap-3'>
-                        <div>
-                          <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center gap-1'>
-                            <FileText className='h-3.5 w-3.5' />
-                            Doc Type
-                          </p>
-                          {getDocumentTypeBadges(doc)}{' '}
-                          {/* Re-use existing badge logic */}
-                        </div>
-                        <div className='text-right'>
-                          <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
-                            <Clock className='h-3.5 w-3.5' />
-                            Last Updated
-                          </p>
-                          <p className='text-gray-700 dark:text-gray-300 font-medium'>
-                            {formatDate(doc.updated_at)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='mt-3 text-right'>
-                        <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
-                          <Eye className='h-3.5 w-3.5' />
-                          Views
-                        </p>
-                        <p className='text-gray-700 dark:text-gray-300 font-medium'>
-                          {doc.views.toLocaleString()}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </div>
-                  <CardFooter className='p-4 pt-0 mt-auto'>
-                    {' '}
-                    {/* Ensure footer is at the bottom */}
-                    <Button
-                      className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary/90 dark:group-hover:text-primary-foreground transition-colors'
-                      variant='outline'
-                      size='sm'
-                      asChild
+                  return (
+                    <Card
+                      key={doc.id}
+                      className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
                     >
-                      <Link href={analysisUrl}>
+                      <div>
                         {' '}
-                        {/* Use the constructed URL */}
-                        View Analysis
-                        <ExternalLink className='h-4 w-4' />
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              )
-            })}
-          </div>
+                        {/* Wrapper for content except footer */}
+                        <CardHeader className='p-4 pb-2'>
+                          <div className='flex items-center gap-3 mb-2'>
+                            {doc.logo_url && (
+                              <div className='w-10 h-10 p-1 rounded-md overflow-hidden flex-shrink-0 bg-white flex items-center justify-center border dark:border-gray-700 relative'>
+                                {' '}
+                                {/* Added relative positioning */}
+                                <Image
+                                  src={doc.logo_url}
+                                  alt={`${doc.company_name} logo`}
+                                  fill={true} // Use fill layout
+                                  style={{ objectFit: 'contain' }} // Use style for object-fit
+                                  onError={(e) => {
+                                    // Hide the parent div on error
+                                    ;(
+                                      e.target as HTMLImageElement
+                                    ).parentElement?.classList.add('hidden')
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div className='flex-grow min-w-0 max-w-full overflow-hidden'>
+                              {' '}
+                              {/* Allow text to wrap */}
+                              {/* Use TooltipProvider for all company names, truncate if > 13 chars */}
+                              <TooltipProvider delayDuration={200}>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors cursor-default'>
+                                      {doc.company_name.length > 13
+                                        ? `${doc.company_name.substring(
+                                            0,
+                                            11
+                                          )}...`
+                                        : doc.company_name}
+                                    </CardTitle>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{doc.company_name}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1'>
+                                <Globe className='h-3 w-3 flex-shrink-0' />
+                                <TooltipProvider delayDuration={200}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className='truncate cursor-default'>
+                                        {doc.url.length > 18
+                                          ? `${doc.url.substring(0, 16)}...`
+                                          : doc.url}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side='bottom' align='start'>
+                                      <p>{doc.url}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </p>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className='p-4 pt-2 text-xs'>
+                          <div className='grid grid-cols-2 gap-3'>
+                            <div>
+                              <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center gap-1'>
+                                <FileText className='h-3.5 w-3.5' />
+                                Doc Type
+                              </p>
+                              {getDocumentTypeBadges(doc)}{' '}
+                              {/* Re-use existing badge logic */}
+                            </div>
+                            <div className='text-right'>
+                              <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
+                                <Clock className='h-3.5 w-3.5' />
+                                Last Updated
+                              </p>
+                              <p className='text-gray-700 dark:text-gray-300 font-medium'>
+                                {formatDate(doc.updated_at)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className='mt-3 text-right'>
+                            <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
+                              <Eye className='h-3.5 w-3.5' />
+                              Views
+                            </p>
+                            <p className='text-gray-700 dark:text-gray-300 font-medium'>
+                              {doc.views.toLocaleString()}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </div>
+                      <CardFooter className='p-4 pt-0 mt-auto'>
+                        {' '}
+                        {/* Ensure footer is at the bottom */}
+                        <Button
+                          className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary/90 dark:group-hover:text-primary-foreground transition-colors'
+                          variant='outline'
+                          size='sm'
+                          asChild
+                        >
+                          <Link href={analysisUrl}>
+                            {' '}
+                            {/* Use the constructed URL */}
+                            View Analysis
+                            <ExternalLink className='h-4 w-4' />
+                          </Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {/* Pagination */}

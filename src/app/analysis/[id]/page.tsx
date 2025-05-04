@@ -307,11 +307,11 @@ export default function AnalysisPage() {
         <div className='mb-4'>
           <div className='flex flex-wrap items-center gap-3 mb-2'>
             {analysisItem.logo_url && (
-              <div className='flex-shrink-0 h-12 w-12 mr-2 bg-gray-50 dark:bg-gray-900 rounded-md flex items-center justify-center overflow-hidden'>
+              <div className='flex-shrink-0 h-12 w-12 mr-2 p-1 bg-white dark:bg-white rounded-md flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700'>
                 <img
                   src={analysisItem.logo_url}
                   alt={`${analysisItem.company_name} logo`}
-                  className='h-full w-full object-contain'
+                  className='max-h-full max-w-full object-contain'
                   onError={(e) => {
                     e.currentTarget.style.display = 'none'
                   }}

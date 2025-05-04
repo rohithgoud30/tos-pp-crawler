@@ -13,6 +13,17 @@ const nextConfig = {
     config.resolve.fallback = { fs: false }
     return config
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'www.google.com',
+        port: '',
+        pathname: '/s2/favicons/**', // Allow images from the favicons path
+      },
+      // Add other patterns here if needed for other logo sources
+    ],
+  },
 }
 
 module.exports = nextConfig
