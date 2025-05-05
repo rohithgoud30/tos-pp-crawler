@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   description:
     "Analyze Terms of Service and Privacy Policies to understand what you're agreeing to",
   icons: {
-    icon: '/icon.png',
-    shortcut: '/favicon.ico',
-    apple: '/icon.png',
+    icon: '/crawler-icon.svg',
+    shortcut: '/crawler-icon.svg',
+    apple: '/crawler-icon.svg',
   },
 }
 
@@ -34,7 +34,7 @@ export default function RootLayout({
   const content = (
     <html lang='en' suppressHydrationWarning>
       <head>
-        <link rel='icon' href='/favicon.ico' sizes='any' />
+        <link rel='icon' href='/crawler-icon.svg' sizes='any' />
         <script
           dangerouslySetInnerHTML={{
             __html: `
