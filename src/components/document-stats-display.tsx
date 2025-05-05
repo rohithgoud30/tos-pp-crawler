@@ -17,10 +17,19 @@ export function DocumentStatsDisplay() {
   const [showColdStartNotice, setShowColdStartNotice] = useState(false)
 
   useEffect(() => {
+    let noticeTimer: NodeJS.Timeout | null = null
+
     const fetchStats = async () => {
       setIsLoading(true)
-      setShowColdStartNotice(true)
       setError(null)
+      // Don't show notice immediately, start a timer
+      setShowColdStartNotice(false)
+      noticeTimer = setTimeout(() => {
+        // Only show if still loading after 3 seconds
+        if (isLoading) {
+          setShowColdStartNotice(true)
+        }
+      }, 3000) // 3 second delay
 
       const apiKey = process.env.NEXT_PUBLIC_API_KEY
       const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL
@@ -73,7 +82,23 @@ export function DocumentStatsDisplay() {
     }
 
     fetchStats()
+
+    return () => {
+      // Clear the timer if the component unmounts
+      if (noticeTimer) {
+        clearTimeout(noticeTimer)
+      }
+    }
   }, []) // Empty dependency array ensures this runs only once on mount
+
+  // Clear timer if loading finishes before 3 seconds
+  useEffect(() => {
+    if (!isLoading && showColdStartNotice === false) {
+      // If loading finished AND the notice hasn't been shown yet (because timer didn't fire)
+      // then ensure it doesn't show.
+      // No need to explicitly clear timer here as the check in the timer callback handles it.
+    }
+  }, [isLoading, showColdStartNotice])
 
   // Function to hide notification when dismissed
   const handleDismissNotification = () => {

@@ -2,7 +2,7 @@
 
 import type React from 'react'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Search,
   Filter,
@@ -69,6 +69,7 @@ export default function ResultsPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const { setLastSearchState } = useNavigation()
   const [showColdStartNotice, setShowColdStartNotice] = useState(false)
+  const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load initial URL parameters
   useEffect(() => {
@@ -203,9 +204,28 @@ export default function ResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  // Add cold start notification handling
+  // Add cold start notification handling with delay
   useEffect(() => {
-    setShowColdStartNotice(isLoading)
+    if (isLoading) {
+      // Start a timer to show the notification after 3 seconds
+      noticeTimerRef.current = setTimeout(() => {
+        setShowColdStartNotice(true)
+      }, 3000)
+    } else {
+      // If loading finishes before 3 seconds, clear the timer and hide notice
+      if (noticeTimerRef.current) {
+        clearTimeout(noticeTimerRef.current)
+        noticeTimerRef.current = null
+      }
+      setShowColdStartNotice(false)
+    }
+
+    // Cleanup function to clear timer on unmount or if isLoading changes
+    return () => {
+      if (noticeTimerRef.current) {
+        clearTimeout(noticeTimerRef.current)
+      }
+    }
   }, [isLoading])
 
   // Function to dismiss cold start notification
