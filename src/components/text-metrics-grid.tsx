@@ -23,6 +23,10 @@ export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
       value: metrics.readability_score.toFixed(1),
     },
     {
+      label: 'Readability Interpretation',
+      value: metrics.readability_interpretation,
+    },
+    {
       label: 'Unique Word Ratio',
       value: `${metrics.unique_word_ratio.toFixed(2)}%`,
     },
@@ -37,10 +41,6 @@ export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
     {
       label: 'Question Frequency',
       value: `${metrics.question_frequency}%`,
-    },
-    {
-      label: 'Readability Interpretation',
-      value: metrics.readability_interpretation,
     },
     {
       label: 'Common Word Percentage',
