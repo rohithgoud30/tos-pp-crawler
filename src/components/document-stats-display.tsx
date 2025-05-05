@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Database } from 'lucide-react'
+import { Database, AlertCircle } from 'lucide-react'
 
 interface DocumentStats {
   tos_count: number
@@ -14,10 +14,12 @@ export function DocumentStatsDisplay() {
   const [stats, setStats] = useState<DocumentStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showColdStartNotice, setShowColdStartNotice] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
       setIsLoading(true)
+      setShowColdStartNotice(true)
       setError(null)
 
       const apiKey = process.env.NEXT_PUBLIC_API_KEY
@@ -73,54 +75,98 @@ export function DocumentStatsDisplay() {
     fetchStats()
   }, []) // Empty dependency array ensures this runs only once on mount
 
+  // Function to hide notification when dismissed
+  const handleDismissNotification = () => {
+    setShowColdStartNotice(false)
+  }
+
+  // Integrated cold start notification
+  const ColdStartAlert = () => {
+    if (!showColdStartNotice || (!isLoading && !error)) return null
+
+    return (
+      <div className='fixed bottom-4 right-4 z-50 max-w-md p-4 bg-amber-100 border border-amber-200 rounded-lg shadow-lg dark:bg-amber-900 dark:border-amber-800'>
+        <div className='flex items-start'>
+          <div className='flex-shrink-0'>
+            <AlertCircle className='h-5 w-5 text-amber-500' />
+          </div>
+          <div className='ml-3'>
+            <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
+              Backend Warming Up
+            </h3>
+            <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
+              <p>
+                Our backend runs on a free service that may need to &ldquo;cold
+                start&rdquo; if inactive. Stats and data may take a minute to
+                load while the service comes online. Please be patient.
+              </p>
+            </div>
+            <div className='mt-3'>
+              <button
+                type='button'
+                className='text-xs font-medium text-amber-800 dark:text-amber-200 hover:text-amber-600 dark:hover:text-amber-300'
+                onClick={handleDismissNotification}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className='flex items-center gap-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base'>
-      {isLoading ? (
-        <div className='flex items-center gap-2'>
-          <Database className='h-4 w-4' />
-          <span className='animate-pulse'>Loading stats...</span>
-        </div>
-      ) : error ? (
-        <div className='flex items-center gap-2 text-red-600' title={error}>
-          <Database className='h-4 w-4' />
-          <span>Stats unavailable</span>
-        </div>
-      ) : stats ? (
-        <>
-          <div
-            className='flex items-center gap-2'
-            title='Total Documents Analyzed'
-          >
-            <Database className='h-4 w-4 text-gray-500' />
-            <span className='font-semibold text-lg text-black dark:text-white'>
-              {stats.total_count.toLocaleString()}
-            </span>
-            <span className='text-xs text-gray-500 dark:text-gray-400 hidden sm:inline'>
-              Total
-            </span>
+    <>
+      <div className='flex items-center gap-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base'>
+        {isLoading ? (
+          <div className='flex items-center gap-2'>
+            <Database className='h-4 w-4' />
+            <span className='animate-pulse'>Loading stats...</span>
           </div>
-          <span className='text-gray-300 dark:text-gray-600'>|</span>
-          <div
-            className='flex items-center gap-1.5'
-            title='Terms of Service Documents'
-          >
-            <span className='text-blue-500 font-semibold'>ToS:</span>
-            <span className='font-medium text-base text-black dark:text-white'>
-              {stats.tos_count.toLocaleString()}
-            </span>
+        ) : error ? (
+          <div className='flex items-center gap-2 text-red-600' title={error}>
+            <Database className='h-4 w-4' />
+            <span>Stats unavailable</span>
           </div>
-          <span className='text-gray-300 dark:text-gray-600'>|</span>
-          <div
-            className='flex items-center gap-1.5'
-            title='Privacy Policy Documents'
-          >
-            <span className='text-green-500 font-semibold'>PP:</span>
-            <span className='font-medium text-base text-black dark:text-white'>
-              {stats.pp_count.toLocaleString()}
-            </span>
-          </div>
-        </>
-      ) : null}
-    </div>
+        ) : stats ? (
+          <>
+            <div
+              className='flex items-center gap-2'
+              title='Total Documents Analyzed'
+            >
+              <Database className='h-4 w-4 text-gray-500' />
+              <span className='font-semibold text-lg text-black dark:text-white'>
+                {stats.total_count.toLocaleString()}
+              </span>
+              <span className='text-xs text-gray-500 dark:text-gray-400 hidden sm:inline'>
+                Total
+              </span>
+            </div>
+            <span className='text-gray-300 dark:text-gray-600'>|</span>
+            <div
+              className='flex items-center gap-1.5'
+              title='Terms of Service Documents'
+            >
+              <span className='text-blue-500 font-semibold'>ToS:</span>
+              <span className='font-medium text-base text-black dark:text-white'>
+                {stats.tos_count.toLocaleString()}
+              </span>
+            </div>
+            <span className='text-gray-300 dark:text-gray-600'>|</span>
+            <div
+              className='flex items-center gap-1.5'
+              title='Privacy Policy Documents'
+            >
+              <span className='text-green-500 font-semibold'>PP:</span>
+              <span className='font-medium text-base text-black dark:text-white'>
+                {stats.pp_count.toLocaleString()}
+              </span>
+            </div>
+          </>
+        ) : null}
+      </div>
+      <ColdStartAlert />
+    </>
   )
 }

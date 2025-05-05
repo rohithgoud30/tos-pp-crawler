@@ -13,6 +13,7 @@ import {
   Eye,
   Tag,
   FileText,
+  AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -67,6 +68,7 @@ export default function ResultsPage() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
   const { setLastSearchState } = useNavigation()
+  const [showColdStartNotice, setShowColdStartNotice] = useState(false)
 
   // Load initial URL parameters
   useEffect(() => {
@@ -201,6 +203,52 @@ export default function ResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
+  // Add cold start notification handling
+  useEffect(() => {
+    setShowColdStartNotice(isLoading)
+  }, [isLoading])
+
+  // Function to dismiss cold start notification
+  const handleDismissNotification = () => {
+    setShowColdStartNotice(false)
+  }
+
+  // Integrated cold start notification
+  const ColdStartAlert = () => {
+    if (!showColdStartNotice) return null
+
+    return (
+      <div className='fixed bottom-4 right-4 z-50 max-w-md p-4 bg-amber-100 border border-amber-200 rounded-lg shadow-lg dark:bg-amber-900 dark:border-amber-800'>
+        <div className='flex items-start'>
+          <div className='flex-shrink-0'>
+            <AlertCircle className='h-5 w-5 text-amber-500' />
+          </div>
+          <div className='ml-3'>
+            <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
+              Backend Warming Up
+            </h3>
+            <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
+              <p>
+                Our backend runs on a free service that may need to &ldquo;cold
+                start&rdquo; if inactive. Stats and data may take a minute to
+                load while the service comes online. Please be patient.
+              </p>
+            </div>
+            <div className='mt-3'>
+              <button
+                type='button'
+                className='text-xs font-medium text-amber-800 dark:text-amber-200 hover:text-amber-600 dark:hover:text-amber-300'
+                onClick={handleDismissNotification}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Load initial documents without search query
   const loadInitialDocuments = async (
     docType: 'tos' | 'pp' | undefined,
@@ -211,6 +259,7 @@ export default function ResultsPage() {
   ) => {
     setFetchError(null)
     setSearchError(null)
+    setIsLoading(true) // This will trigger showing the cold start notification
 
     try {
       const results = await getDocuments({
@@ -969,6 +1018,7 @@ export default function ResultsPage() {
           </div>
         )}
       </main>
+      <ColdStartAlert />
     </div>
   )
 }
