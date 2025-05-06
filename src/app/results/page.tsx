@@ -207,12 +207,12 @@ export default function ResultsPage() {
   // Add cold start notification handling with delay
   useEffect(() => {
     if (isLoading) {
-      // Start a timer to show the notification after 3 seconds
+      // Start a timer to show the notification after 1.5 seconds (reduced from 3 seconds)
       noticeTimerRef.current = setTimeout(() => {
         setShowColdStartNotice(true)
-      }, 3000)
+      }, 1500)
     } else {
-      // If loading finishes before 3 seconds, clear the timer and hide notice
+      // If loading finishes before timeout, clear the timer and hide notice
       if (noticeTimerRef.current) {
         clearTimeout(noticeTimerRef.current)
         noticeTimerRef.current = null
@@ -245,13 +245,13 @@ export default function ResultsPage() {
           </div>
           <div className='ml-3'>
             <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
-              Backend Warming Up
+              Search in Progress - Please Wait
             </h3>
             <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
               <p>
-                Our backend runs on a free service that may need to &ldquo;cold
-                start&rdquo; if inactive. Stats and data may take a minute to
-                load while the service comes online. Please be patient.
+                Initial searches may take a moment as our backend warms up. Your
+                results will appear shortly. If this is your first search, it
+                may take up to 15-30 seconds.
               </p>
             </div>
             <div className='mt-3'>
@@ -317,6 +317,9 @@ export default function ResultsPage() {
       return
     }
 
+    // Ensure loading state is set
+    setIsLoading(true)
+
     console.log('Search with direct params:', {
       query,
       docType,
@@ -356,9 +359,13 @@ export default function ResultsPage() {
       e.preventDefault()
     }
 
+    // Set loading state immediately
+    setIsLoading(true)
+
     if (!searchQuery.trim()) {
       setSearchError('Please enter a search term')
       setFetchError(null)
+      setIsLoading(false) // Make sure to clear loading state if validation fails
       return
     }
 
