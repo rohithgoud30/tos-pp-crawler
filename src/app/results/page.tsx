@@ -73,6 +73,9 @@ export default function ResultsPage() {
 
   // Load initial URL parameters
   useEffect(() => {
+    // Set loading immediately when URL params change
+    setIsLoading(true)
+
     const queryParam = searchParams.get('q')
     const typeParam = searchParams.get('type') as 'tos' | 'pp' | undefined
     const perPageParam = searchParams.get('perPage')
@@ -179,18 +182,16 @@ export default function ResultsPage() {
     if (shouldSearch) {
       setHasSearched(true)
 
-      // Use timeout to ensure state updates have been applied
-      setTimeout(() => {
-        console.log('Performing search with document type:', actualTypeFilter)
-        performSearchWithParams(
-          queryParam,
-          actualTypeFilter,
-          actualSortOption,
-          actualSortOrder,
-          actualPage,
-          actualPerPage
-        )
-      }, 100) // Increased timeout for state updates
+      // Perform search immediately with priority to search results
+      console.log('Performing search with document type:', actualTypeFilter)
+      performSearchWithParams(
+        queryParam,
+        actualTypeFilter,
+        actualSortOption,
+        actualSortOrder,
+        actualPage,
+        actualPerPage
+      )
     } else {
       // Load all documents if no search
       loadInitialDocuments(
@@ -299,7 +300,11 @@ export default function ResultsPage() {
       setDisplayedResults([])
       setResultsPagination(null)
     } finally {
-      setIsLoading(false)
+      // Add a small delay before removing loading state to prevent UI flickering
+      // and allow state updates to complete
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 300)
     }
   }
 
@@ -331,6 +336,10 @@ export default function ResultsPage() {
     setFetchError(null)
     setSearchError(null)
 
+    // Create an AbortController to handle cancellation
+    const abortController = new AbortController()
+    const signal = abortController.signal
+
     try {
       const results = await searchDocuments({
         search_text: query,
@@ -341,16 +350,31 @@ export default function ResultsPage() {
         per_page: perPage,
       })
 
-      setResultsPagination(results)
-      setDisplayedResults(results.items)
+      // Only update state if the request wasn't aborted
+      if (!signal.aborted) {
+        setResultsPagination(results)
+        setDisplayedResults(results.items)
+      }
     } catch (err) {
-      console.error('Search error:', err)
-      setFetchError('Search failed. Please try again.')
-      setDisplayedResults([])
-      setResultsPagination(null)
+      // Only show error if the request wasn't aborted
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        console.error('Search error:', err)
+        setFetchError('Search failed. Please try again.')
+        setDisplayedResults([])
+        setResultsPagination(null)
+      }
     } finally {
-      setIsLoading(false)
+      // Add a small delay before removing loading state to prevent UI flickering
+      // and allow state updates to complete
+      if (!signal.aborted) {
+        setTimeout(() => {
+          setIsLoading(false)
+        }, 300)
+      }
     }
+
+    // Return the AbortController so it can be used to cancel the request if needed
+    return abortController
   }
 
   // Handle explicit search action
