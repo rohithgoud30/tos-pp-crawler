@@ -246,19 +246,15 @@ export default function ResultsPage() {
           </div>
           <div className='ml-3'>
             <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
-              Search in Progress - Firebase Limitations
+              Search in Progress
             </h3>
             <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
               <p>
-                Your search is processing on our Firebase backend. Unlike SQL
-                databases, Firebase performs filtering client-side, requiring
-                data download before filtering. With our dataset of ~10K
-                documents, this can take 15-45 seconds for complex queries.
+                Your search is processing our large document database. This
+                might take 15-45 seconds to complete.
               </p>
               <p className='mt-2'>
-                For faster results, try more specific search terms or use basic
-                filters. Firebase is optimized for real-time updates rather than
-                complex queries on large datasets.
+                For faster results, try more specific search terms.
               </p>
             </div>
             <div className='mt-3'>
