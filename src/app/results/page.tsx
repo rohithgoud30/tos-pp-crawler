@@ -2,7 +2,7 @@
 
 import type React from 'react'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Search,
   Filter,
@@ -13,7 +13,6 @@ import {
   Eye,
   Tag,
   FileText,
-  AlertCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -68,8 +67,6 @@ export default function ResultsPage() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
   const { setLastSearchState } = useNavigation()
-  const [showColdStartNotice, setShowColdStartNotice] = useState(false)
-  const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Load initial URL parameters
   useEffect(() => {
@@ -204,71 +201,6 @@ export default function ResultsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
-
-  // Add cold start notification handling with delay
-  useEffect(() => {
-    if (isLoading) {
-      // Start a timer to show the notification after 1.5 seconds (reduced from 3 seconds)
-      noticeTimerRef.current = setTimeout(() => {
-        setShowColdStartNotice(true)
-      }, 1500)
-    } else {
-      // If loading finishes before timeout, clear the timer and hide notice
-      if (noticeTimerRef.current) {
-        clearTimeout(noticeTimerRef.current)
-        noticeTimerRef.current = null
-      }
-      setShowColdStartNotice(false)
-    }
-
-    // Cleanup function to clear timer on unmount or if isLoading changes
-    return () => {
-      if (noticeTimerRef.current) {
-        clearTimeout(noticeTimerRef.current)
-      }
-    }
-  }, [isLoading])
-
-  // Function to dismiss cold start notification
-  const handleDismissNotification = () => {
-    setShowColdStartNotice(false)
-  }
-
-  // Integrated cold start notification
-  const ColdStartAlert = () => {
-    if (!showColdStartNotice) return null
-
-    return (
-      <div className='fixed bottom-4 right-4 z-50 max-w-md p-4 bg-amber-100 border border-amber-200 rounded-lg shadow-lg dark:bg-amber-900 dark:border-amber-800'>
-        <div className='flex items-start'>
-          <div className='flex-shrink-0'>
-            <AlertCircle className='h-5 w-5 text-amber-500' />
-          </div>
-          <div className='ml-3'>
-            <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
-              Search in Progress - Please Wait
-            </h3>
-            <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
-              <p>
-                Initial searches may take a moment as our backend warms up. Your
-                results will appear shortly. If this is your first search, it
-                may take up to 15-30 seconds.
-              </p>
-            </div>
-            <div className='mt-3'>
-              <button
-                type='button'
-                className='text-xs font-medium text-amber-800 dark:text-amber-200 hover:text-amber-600 dark:hover:text-amber-300'
-                onClick={handleDismissNotification}
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // Load initial documents without search query
   const loadInitialDocuments = async (
@@ -1069,7 +1001,6 @@ export default function ResultsPage() {
           </div>
         )}
       </main>
-      <ColdStartAlert />
     </div>
   )
 }
