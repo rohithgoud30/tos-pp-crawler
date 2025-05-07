@@ -8,7 +8,7 @@ export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
     },
     {
       label: 'Average Word Length',
-      value: `${metrics.avg_word_length} characters`,
+      value: `${Number(metrics.avg_word_length).toFixed(2)} characters`,
     },
     {
       label: 'Sentence Count',
@@ -16,11 +16,11 @@ export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
     },
     {
       label: 'Average Sentence Length',
-      value: `${metrics.avg_sentence_length} words`,
+      value: `${Number(metrics.avg_sentence_length).toFixed(2)} words`,
     },
     {
       label: 'Readability Score',
-      value: metrics.readability_score.toFixed(1),
+      value: Number(metrics.readability_score).toFixed(2),
     },
     {
       label: 'Readability Interpretation',
@@ -28,23 +28,23 @@ export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
     },
     {
       label: 'Unique Word Ratio',
-      value: `${metrics.unique_word_ratio.toFixed(2)}%`,
+      value: `${Number(metrics.unique_word_ratio).toFixed(2)}%`,
     },
     {
       label: 'Capital Letter Frequency',
-      value: `${metrics.capital_letter_freq.toFixed(2)}%`,
+      value: `${Number(metrics.capital_letter_freq).toFixed(2)}%`,
     },
     {
       label: 'Punctuation Density',
-      value: metrics.punctuation_density.toFixed(2),
+      value: Number(metrics.punctuation_density).toFixed(2),
     },
     {
       label: 'Question Frequency',
-      value: `${metrics.question_frequency}%`,
+      value: `${Number(metrics.question_frequency).toFixed(2)}%`,
     },
     {
       label: 'Common Word Percentage',
-      value: `${metrics.common_word_percentage.toFixed(2)}%`,
+      value: `${Number(metrics.common_word_percentage).toFixed(2)}%`,
     },
   ]
 
