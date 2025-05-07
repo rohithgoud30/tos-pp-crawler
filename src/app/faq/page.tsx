@@ -17,48 +17,58 @@ const faqItems = [
   {
     question: 'How does CRWLR work?',
     answer:
-      'CRWLR uses text mining and AI analysis to scan and interpret legal documents. Our system processes Terms of Service and Privacy Policy documents separately, identifying key clauses, potential red flags, and summarizing the most important information. For each document type, we provide text mining metrics, word frequency analysis, and both brief and detailed summaries.',
+      'CRWLR uses text mining and AI analysis to scan and interpret legal documents. Our system processes Terms of Service and Privacy Policy documents separately, extracting key metrics like word count, readability scores, and semantic content. We provide text analysis with exact decimal precision (to 2 decimal places), word frequency patterns, and both concise and detailed summaries.',
+  },
+  {
+    question: 'What AI technology powers your summarization features?',
+    answer:
+      'We employ advanced natural language processing models specifically fine-tuned for legal document analysis. Our AI summarization system can process complex legal language and generate both one-sentence overviews and comprehensive 100-word summaries that extract the most important points from lengthy documents. This AI technology makes dense legal text accessible to everyone.',
+  },
+  {
+    question: 'How does your NLP technology analyze legal documents?',
+    answer:
+      'Our NLP (Natural Language Processing) algorithms analyze document structure, identify semantic patterns, and extract key terms from legal texts. The system recognizes important clauses, potential obligations, and significant restrictions by understanding the contextual meaning within complex legal language. This computational linguistic approach allows us to translate legalese into clear, understandable information.',
   },
   {
     question:
       "What's the difference between your Terms of Service and Privacy Policy analysis?",
     answer:
-      'Our Terms of Service analysis focuses on user rights, content ownership, service limitations, and legal obligations. Privacy Policy analysis examines data collection practices, information sharing, user control over data, and compliance with privacy regulations. Each analysis includes document-specific metrics and insights.',
+      'Our Terms of Service analysis focuses on user rights, service limitations, content ownership, and legal obligations. Privacy Policy analysis examines data collection practices, information sharing policies, data retention, and compliance with privacy regulations. Each document type receives specialized analysis with precise metrics displayed consistently to 2 decimal places.',
   },
   {
     question: 'What metrics do you provide in your text mining analysis?',
     answer:
-      'For each document type, we provide metrics including word count, average word length, sentence count, average sentence length, readability score, unique word ratio, capital letter frequency, punctuation density, question frequency, and paragraph count. These metrics help assess the complexity and accessibility of legal documents.',
+      'We provide a comprehensive set of metrics including word count, average word length (to 2 decimal places), sentence count, average sentence length (to 2 decimal places), readability score (to 2 decimal places), unique word ratio, capital letter frequency, punctuation density, question frequency, and common word percentage. These precise measurements help assess document complexity.',
   },
   {
     question: 'How do you generate the word frequency analysis?',
     answer:
-      'We analyze each document type separately to identify the most frequently used terms. This helps highlight what companies emphasize in their Terms of Service versus their Privacy Policies. The word frequency analysis can reveal important patterns and priorities in legal documents.',
+      'Our system analyzes the document text to identify the top 20 most frequently used terms, displaying them with their occurrence count and percentage of the total text. This visualization helps identify key themes and priorities in legal documents. Different patterns typically emerge between Terms of Service and Privacy Policy documents.',
   },
   {
     question: "How accurate is CRWLR's analysis?",
     answer:
-      'While our AI-powered analysis is highly sophisticated, it should not be considered legal advice. We strive for accuracy by analyzing each document type separately with specialized algorithms, but recommend consulting with a legal professional for critical matters. Our system is continuously improving based on user feedback and expert review.',
+      'Our analysis provides precise metrics (to 2 decimal places) and AI-generated summaries. While we strive for accuracy in our measurements and analysis, the interpretative aspects should not be considered legal advice. We recommend consulting with a legal professional for critical matters. Our precise metrics provide reliable quantitative insights into document complexity.',
   },
   {
     question: 'Which websites and services does CRWLR support?',
     answer:
-      'CRWLR can analyze any publicly available Terms of Service or Privacy Policy. We maintain a database of popular services that is updated regularly, and you can request analysis of any URL that contains legal documents. Our database includes major platforms like Google, Facebook, Twitter, Apple, Microsoft, and many others.',
+      'CRWLR can analyze Terms of Service and Privacy Policy documents from any publicly accessible URL. Our database includes popular services and is regularly updated. You can search for existing analyses by company name or URL, or submit new URLs for analysis through our submission form.',
   },
   {
     question: 'How often is the database updated?',
     answer:
-      "We scan for updates to popular services' legal documents weekly. When we detect changes, we analyze the new version and highlight what has changed in both Terms of Service and Privacy Policy documents. This helps you stay informed about changes to the agreements you've accepted.",
+      "Our system regularly checks for updates to popular services' legal documents. When changes are detected, we perform a new analysis and maintain the historical record of previous versions. This allows you to track how Terms of Service and Privacy Policies evolve over time.",
   },
   {
     question: 'What are the one-sentence and 100-word summaries?',
     answer:
-      "For each document type, we provide a one-sentence summary that captures the essential point of the agreement, and a more detailed 100-word summary that covers the key aspects. These summaries are designed to give you a quick understanding of what you're agreeing to without reading the entire document.",
+      "For each document, we generate a one-sentence summary that captures the essential point of the agreement, and a more detailed 100-word summary covering key aspects. These AI-generated summaries distill complex legal text into accessible language, helping you quickly understand what you're agreeing to without reading the entire document.",
   },
   {
     question: 'How does CRWLR calculate readability scores?',
     answer:
-      'We use the Flesch-Kincaid readability test, which measures how difficult a text is to understand. Lower scores indicate more complex text that requires a higher reading level. Most Terms of Service and Privacy Policies score between 30-45, requiring college-level education to fully comprehend, which is why our summaries are so valuable.',
+      'We use the Flesch-Kincaid readability test, which measures text complexity based on sentence length and word syllables. The score is presented with 2 decimal precision (e.g., 92.10 rather than 92.1). Higher scores indicate easier readability, while lower scores indicate more complex text requiring advanced education to comprehend.',
   },
 ]
 
