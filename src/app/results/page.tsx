@@ -247,13 +247,15 @@ export default function ResultsPage() {
             </div>
             <div className='ml-3 flex-1'>
               <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
-                Backend Warming Up
+                Search in Progress
               </h3>
               <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
                 <p>
-                  We&apos;re running on a free service that needs a moment to
-                  start up. Your search results may take 15-30 seconds to
-                  appear. Please wait.
+                  Your search is processing our large document database using
+                  our free service. This will take 15-30 seconds in worst case.
+                </p>
+                <p className='mt-2'>
+                  Please wait while we retrieve your results.
                 </p>
               </div>
               <div className='mt-3 flex justify-end'>
