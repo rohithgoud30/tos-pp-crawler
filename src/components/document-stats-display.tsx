@@ -117,13 +117,12 @@ export function DocumentStatsDisplay() {
           </div>
           <div className='ml-3'>
             <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
-              Backend Warming Up
+              Loading Data
             </h3>
             <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
               <p>
-                Our backend runs on a free service that may need to &ldquo;cold
-                start&rdquo; if inactive. Stats and data may take a minute to
-                load while the service comes online. Please be patient.
+                Our service is starting up. Stats and document data may take a
+                moment to appear. Please wait a few seconds.
               </p>
             </div>
             <div className='mt-3'>
