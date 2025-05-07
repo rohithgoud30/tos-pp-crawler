@@ -14,7 +14,6 @@ import {
   Tag,
   FileText,
   AlertCircle,
-  ArrowLeft,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -71,7 +70,6 @@ export default function ResultsPage() {
   const { setLastSearchState } = useNavigation()
   const [showColdStartNotice, setShowColdStartNotice] = useState(false)
   const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const [showPageResetNotice, setShowPageResetNotice] = useState(false)
 
   // Load initial URL parameters
   useEffect(() => {
@@ -603,9 +601,6 @@ export default function ResultsPage() {
     const perPage = parseInt(value, 10)
     setResultsPerPage(perPage)
 
-    // Check if we need to reset the page
-    const wasOnDifferentPage = currentPage > 1
-
     // Always reset to page 1 when changing results per page
     setCurrentPage(1)
 
@@ -616,15 +611,6 @@ export default function ResultsPage() {
     url.searchParams.delete('page')
 
     window.history.replaceState({}, '', url.toString())
-
-    // Show a brief notification that we're resetting to page 1
-    if (wasOnDifferentPage) {
-      setShowPageResetNotice(true)
-      // Hide the notification after 3 seconds
-      setTimeout(() => {
-        setShowPageResetNotice(false)
-      }, 3000)
-    }
 
     // Update search state with page 1
     setLastSearchState({
@@ -679,32 +665,6 @@ export default function ResultsPage() {
     url.searchParams.set('sort', sortOption)
     url.searchParams.set('order', sortOrder)
     window.history.replaceState({}, '', url.toString())
-  }
-
-  // Add the PageResetAlert component
-  const PageResetAlert = () => {
-    if (!showPageResetNotice) return null
-
-    return (
-      <div className='fixed bottom-4 left-4 z-50 max-w-md p-4 bg-blue-100 border border-blue-200 rounded-lg shadow-lg dark:bg-blue-900 dark:border-blue-800'>
-        <div className='flex items-start'>
-          <div className='flex-shrink-0'>
-            <ArrowLeft className='h-5 w-5 text-blue-500' />
-          </div>
-          <div className='ml-3'>
-            <h3 className='text-sm font-medium text-blue-800 dark:text-blue-200'>
-              Page Reset
-            </h3>
-            <div className='mt-2 text-xs text-blue-700 dark:text-blue-300'>
-              <p>
-                Results per page changed. Returned to page 1 to show your
-                results.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -1125,7 +1085,6 @@ export default function ResultsPage() {
         )}
       </main>
       <ColdStartAlert />
-      <PageResetAlert />
     </div>
   )
 }
