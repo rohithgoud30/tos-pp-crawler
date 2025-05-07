@@ -246,13 +246,19 @@ export default function ResultsPage() {
           </div>
           <div className='ml-3'>
             <h3 className='text-sm font-medium text-amber-800 dark:text-amber-200'>
-              Search in Progress - Please Wait
+              Search in Progress - Free Firebase Instance
             </h3>
             <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
               <p>
-                Initial searches may take a moment as our backend warms up. Your
-                results will appear shortly. If this is your first search, it
-                may take up to 15-30 seconds.
+                Your search is being processed on our free Firebase instance,
+                which has limitations when filtering and searching large
+                datasets. This may take 15-45 seconds for complex queries.
+                Firebase&apos;s free tier restricts query performance to
+                maintain cost efficiency.
+              </p>
+              <p className='mt-2'>
+                For faster results, try more specific search terms or browse
+                with basic filters.
               </p>
             </div>
             <div className='mt-3'>
