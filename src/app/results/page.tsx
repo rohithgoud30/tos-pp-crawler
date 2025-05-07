@@ -250,8 +250,8 @@ export default function ResultsPage() {
             </h3>
             <div className='mt-2 text-xs text-amber-700 dark:text-amber-300'>
               <p>
-                Your search is processing our large document database. This will
-                take 15-45 seconds to complete.
+                Your search is processing our large document database using our
+                free service. This will take 15-30 seconds in worst case.
               </p>
               <p className='mt-2'>
                 Please wait while we retrieve your results.
