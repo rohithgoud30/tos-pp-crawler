@@ -124,9 +124,19 @@ export default function ResultsPage() {
   // Handle errors from hooks
   useEffect(() => {
     if (searchFetchError) {
-      setFetchError('Search failed. Please try again.')
+      if (searchFetchError.message?.includes('404')) {
+        // 404 means no results found, not an error to display
+        setFetchError(null)
+      } else {
+        setFetchError('Search failed. Please try again.')
+      }
     } else if (listFetchError) {
-      setFetchError('Failed to load documents. Please try again.')
+      if (listFetchError.message?.includes('404')) {
+        // 404 means no results found, not an error to display
+        setFetchError(null)
+      } else {
+        setFetchError('Failed to load documents. Please try again.')
+      }
     } else {
       setFetchError(null)
     }
