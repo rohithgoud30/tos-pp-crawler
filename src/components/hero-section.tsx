@@ -178,8 +178,8 @@ export default function HeroSection() {
 
             <div className='text-sm text-gray-500'>
               <p>
-                Search for any website or service to analyze their legal
-                documents.
+                Search for any website or service to view analyzed version of
+                their legal documents.
               </p>
               <p className='mt-1'>
                 Examples: Facebook, Twitter, Netflix, Spotify, or any URL
