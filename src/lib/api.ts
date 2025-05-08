@@ -140,11 +140,34 @@ export async function getDocuments(
   return apiRequest<PaginatedResponse<DocumentItem>>(endpoint)
 }
 
+// Cache for document data to avoid duplicate requests
+const documentCache = new Map<
+  string,
+  { data: DocumentDetail; timestamp: number }
+>()
+const CACHE_EXPIRY = 5 * 60 * 1000 // 5 minutes in milliseconds
+
 // Get document details by ID
 export async function getDocumentById(
   id: string,
-  options: { skipViewIncrement?: boolean; signal?: AbortSignal } = {}
+  options: {
+    skipViewIncrement?: boolean
+    signal?: AbortSignal
+    bypassCache?: boolean
+  } = {}
 ): Promise<DocumentDetail> {
+  // Check cache if not bypassing cache
+  if (!options.bypassCache) {
+    const cachedData = documentCache.get(id)
+    const now = Date.now()
+
+    // Return cached data if it exists and hasn't expired
+    if (cachedData && now - cachedData.timestamp < CACHE_EXPIRY) {
+      console.log(`Retrieved document ${id} from cache`)
+      return cachedData.data
+    }
+  }
+
   const queryParams = new URLSearchParams()
 
   // Add skipViewIncrement parameter to prevent double-counting in React StrictMode
@@ -157,8 +180,16 @@ export async function getDocumentById(
     queryString ? `?${queryString}` : ''
   }`
 
-  // Pass signal to the apiRequest
-  return apiRequest<DocumentDetail>(endpoint, {
+  // Fetch fresh data from API
+  const data = await apiRequest<DocumentDetail>(endpoint, {
     signal: options.signal,
   })
+
+  // Cache the result
+  documentCache.set(id, {
+    data,
+    timestamp: Date.now(),
+  })
+
+  return data
 }

@@ -1,6 +1,13 @@
 import { type TextMiningMetrics } from '@/lib/api'
+import { memo } from 'react'
 
-export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
+// Use memo to prevent unnecessary re-renders
+export const TextMetricsGrid = memo(function TextMetricsGrid({
+  metrics,
+}: {
+  metrics: TextMiningMetrics
+}) {
+  // Pre-calculate metrics data outside of render
   const metricsData = [
     {
       label: 'Word Count',
@@ -51,18 +58,24 @@ export function TextMetricsGrid({ metrics }: { metrics: TextMiningMetrics }) {
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
       {metricsData.map((metric, index) => (
-        <div
-          key={index}
-          className='border border-gray-200 dark:border-gray-700 rounded-md p-4'
-        >
-          <p className='text-sm text-gray-500 dark:text-gray-400 mb-1'>
-            {metric.label}
-          </p>
-          <p className='text-xs font-medium text-black dark:text-white'>
-            {metric.value}
-          </p>
-        </div>
+        <MetricItem key={index} label={metric.label} value={metric.value} />
       ))}
     </div>
   )
-}
+})
+
+// Extract metric item to a separate component for better performance
+const MetricItem = memo(function MetricItem({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className='border border-gray-200 dark:border-gray-700 rounded-md p-4'>
+      <p className='text-sm text-gray-500 dark:text-gray-400 mb-1'>{label}</p>
+      <p className='text-xs font-medium text-black dark:text-white'>{value}</p>
+    </div>
+  )
+})

@@ -29,6 +29,9 @@ export default function AnalysisPage() {
   const tosRef = useRef<HTMLDivElement>(null)
   const ppRef = useRef<HTMLDivElement>(null)
   const fetchControllerRef = useRef<AbortController | null>(null)
+  // Add refs for sections to lazy load
+  const wordFrequencyRef = useRef<HTMLDivElement>(null)
+  const textMiningRef = useRef<HTMLDivElement>(null)
 
   // Get document type from URL parameters and load data
   useEffect(() => {
@@ -59,7 +62,8 @@ export default function AnalysisPage() {
 
         // Only set state if the request wasn't aborted
         if (!signal.aborted) {
-          setAnalysisItem(documentData)
+          // Use functional updates to ensure we don't cause unnecessary re-renders
+          setAnalysisItem(() => documentData)
 
           // Mark this document as viewed for this session
           if (shouldFetchFresh) {
@@ -101,6 +105,35 @@ export default function AnalysisPage() {
       }
     }
   }, [params.id, searchParams])
+
+  // Implement lazy loading of heavy components with intersection observer
+  useEffect(() => {
+    if (!analysisItem) return
+
+    // Create intersection observer to lazy load word frequency and text mining sections
+    const observerOptions = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1,
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          // Add a data-loaded attribute to indicate content is now visible
+          entry.target.setAttribute('data-loaded', 'true')
+          // Stop observing once loaded
+          observer.unobserve(entry.target)
+        }
+      })
+    }, observerOptions)
+
+    // Observe the heavy components
+    if (wordFrequencyRef.current) observer.observe(wordFrequencyRef.current)
+    if (textMiningRef.current) observer.observe(textMiningRef.current)
+
+    return () => observer.disconnect()
+  }, [analysisItem])
 
   // Handle tag click to navigate to the appropriate section
   const handleTagClick = (docType: string) => {
@@ -150,8 +183,8 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        {/* Word Frequency Analysis */}
-        <div className='mb-5'>
+        {/* Word Frequency Analysis - Lazy loaded */}
+        <div className='mb-5' ref={wordFrequencyRef}>
           <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md'>
             <h2 className='text-lg font-semibold'>Word Frequency Analysis</h2>
           </div>
@@ -159,17 +192,17 @@ export default function AnalysisPage() {
             {analysisItem.word_frequencies &&
             analysisItem.word_frequencies.length > 0 ? (
               <WordFrequencyChart
-                wordFrequencies={analysisItem.word_frequencies}
+                wordFrequencies={analysisItem.word_frequencies.slice(0, 20)}
               />
             ) : analysisItem.sections &&
               analysisItem.sections.find((s) => s.type === 'word_frequency') ? (
               // Fallback for backward compatibility
               <WordFrequencyChart
-                wordFrequencies={
+                wordFrequencies={(
                   (analysisItem.sections.find(
                     (s) => s.type === 'word_frequency'
-                  )?.data || []) as WordFrequency[]
-                }
+                  )?.data as unknown as WordFrequency[]) || []
+                ).slice(0, 20)}
               />
             ) : (
               <p className='text-gray-500 dark:text-gray-400'>
@@ -179,8 +212,8 @@ export default function AnalysisPage() {
           </div>
         </div>
 
-        {/* Text Mining Measurements */}
-        <div className='mb-5'>
+        {/* Text Mining Measurements - Lazy loaded */}
+        <div className='mb-5' ref={textMiningRef}>
           <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md flex items-center gap-2'>
             <BarChart3 className='h-4 w-4' />
             <h2 className='text-lg font-semibold'>Text Mining Measurements</h2>
