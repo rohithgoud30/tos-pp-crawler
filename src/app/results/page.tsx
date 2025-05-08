@@ -58,6 +58,7 @@ export default function ResultsPage() {
   const urlParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeSearchQuery, setActiveSearchQuery] = useState('')
   const [documentTypeFilter, setDocumentTypeFilter] = useState<
     'tos' | 'pp' | undefined
   >(undefined)
@@ -72,9 +73,9 @@ export default function ResultsPage() {
   const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Build search parameters for the hooks
-  const searchRequestParams: DocumentSearchParams | null = searchQuery
+  const searchRequestParams: DocumentSearchParams | null = activeSearchQuery
     ? {
-        search_text: searchQuery,
+        search_text: activeSearchQuery,
         document_type: documentTypeFilter,
         sort_by: sortOption,
         sort_order: sortOrder,
@@ -105,14 +106,14 @@ export default function ResultsPage() {
     documents: listResults,
     isLoading: isListLoading,
     error: listFetchError,
-  } = useDocumentList(searchQuery ? undefined : listParams, {
-    revalidateOnMount: !searchQuery, // Only fetch list if not searching
+  } = useDocumentList(!activeSearchQuery ? listParams : undefined, {
+    revalidateOnMount: !activeSearchQuery,
   })
 
   // Determine which results to display
-  const resultsPagination = searchQuery ? searchResults : listResults
+  const resultsPagination = activeSearchQuery ? searchResults : listResults
   const displayedResults = resultsPagination?.items || []
-  const isLoading = searchQuery ? isSearchLoading : isListLoading
+  const isLoading = activeSearchQuery ? isSearchLoading : isListLoading
 
   // Pre-populate cache with list results for faster detail page access
   useEffect(() => {
@@ -229,6 +230,10 @@ export default function ResultsPage() {
 
     if (queryParam) {
       setSearchQuery(queryParam)
+      setActiveSearchQuery(queryParam)
+    } else {
+      setSearchQuery('')
+      setActiveSearchQuery('')
     }
 
     if (typeParam && ['tos', 'pp'].includes(typeParam)) {
@@ -290,7 +295,7 @@ export default function ResultsPage() {
       updateUrlAndSearchState()
     }
   }, [
-    searchQuery,
+    activeSearchQuery,
     documentTypeFilter,
     sortOption,
     sortOrder,
@@ -304,8 +309,8 @@ export default function ResultsPage() {
     // Update URL parameters
     const url = new URL(window.location.href)
 
-    if (searchQuery) {
-      url.searchParams.set('q', searchQuery)
+    if (activeSearchQuery) {
+      url.searchParams.set('q', activeSearchQuery)
     } else {
       url.searchParams.delete('q')
     }
@@ -330,7 +335,7 @@ export default function ResultsPage() {
     // Use replaceState instead of pushState to avoid breaking the back button
     window.history.replaceState(
       {
-        searchQuery,
+        searchQuery: activeSearchQuery,
         documentTypeFilter,
         sortOption,
         sortOrder,
@@ -343,7 +348,7 @@ export default function ResultsPage() {
 
     // Save search state to context
     setLastSearchState({
-      query: searchQuery,
+      query: activeSearchQuery,
       documentType: documentTypeFilter,
       sortOption,
       sortOrder,
@@ -358,18 +363,20 @@ export default function ResultsPage() {
       e.preventDefault()
     }
 
-    if (!searchQuery.trim()) {
-      setSearchError('Please enter a search term')
-      setFetchError(null)
-      return
-    }
-
+    const currentSearchText = searchQuery.trim()
     setSearchError(null)
     setFetchError(null)
+
+    if (!currentSearchText) {
+      // If input is empty, clear the active search to show all results
+      setActiveSearchQuery('')
+    } else {
+      // Otherwise, set the active search query
+      setActiveSearchQuery(currentSearchText)
+    }
+
     setCurrentPage(1)
     setHasSearched(true)
-
-    // The search will be handled by the hooks automatically when state changes
   }
 
   // Handle page change
@@ -454,7 +461,10 @@ export default function ResultsPage() {
 
       if (state) {
         // If we have state in history, restore it
-        if (state.searchQuery !== undefined) setSearchQuery(state.searchQuery)
+        if (state.searchQuery !== undefined) {
+          setSearchQuery(state.searchQuery)
+          setActiveSearchQuery(state.searchQuery)
+        }
         if (state.documentTypeFilter !== undefined)
           setDocumentTypeFilter(state.documentTypeFilter)
         if (state.sortOption !== undefined) setSortOption(state.sortOption)
@@ -474,7 +484,13 @@ export default function ResultsPage() {
           | 'pp'
           | undefined
 
-        if (queryParam) setSearchQuery(queryParam)
+        if (queryParam) {
+          setSearchQuery(queryParam)
+          setActiveSearchQuery(queryParam)
+        } else {
+          setSearchQuery('')
+          setActiveSearchQuery('')
+        }
         if (typeParam && ['tos', 'pp'].includes(typeParam))
           setDocumentTypeFilter(typeParam)
       }
