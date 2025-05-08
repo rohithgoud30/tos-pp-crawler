@@ -61,8 +61,8 @@ export default function ResultsPage() {
   const [documentTypeFilter, setDocumentTypeFilter] = useState<
     'tos' | 'pp' | undefined
   >(undefined)
-  const [sortOption, setSortOption] = useState('company_name')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [sortOption, setSortOption] = useState('relevance')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [resultsPerPage, setResultsPerPage] = useState(6)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -235,13 +235,22 @@ export default function ResultsPage() {
 
     if (
       sortParam &&
-      ['updated_at', 'company_name', 'url', 'views'].includes(sortParam)
+      ['updated_at', 'company_name', 'url', 'views', 'relevance'].includes(
+        sortParam
+      )
     ) {
       setSortOption(sortParam)
+    } else if (!sortParam) {
+      // If no sort param is specified, default to relevance
+      setSortOption('relevance')
+      setSortOrder('desc')
     }
 
     if (orderParam && ['asc', 'desc'].includes(orderParam)) {
       setSortOrder(orderParam)
+    } else if (!orderParam && sortParam === 'relevance') {
+      // If using relevance but no order specified, default to desc
+      setSortOrder('desc')
     }
 
     if (pageParam) {
@@ -554,12 +563,15 @@ export default function ResultsPage() {
                   <Select
                     value={`${sortOption}-${sortOrder}`}
                     onValueChange={handleSortOptionChange}
-                    defaultValue='company_name-asc'
+                    defaultValue='relevance-desc'
                   >
                     <SelectTrigger className='h-10 text-xs sm:text-sm'>
-                      <SelectValue placeholder='Name (A-Z)' />
+                      <SelectValue placeholder='Most Relevant' />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value='relevance-desc'>
+                        Most Relevant
+                      </SelectItem>
                       <SelectItem value='company_name-asc'>
                         Name (A-Z)
                       </SelectItem>
