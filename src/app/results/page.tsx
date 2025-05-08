@@ -251,7 +251,16 @@ export default function ResultsPage() {
       }
     }
 
-    if (queryParam) {
+    // Set hasSearched to true if any search parameters exist, not just queryParam
+    // This ensures the page will update URL and maintain state on refresh
+    if (
+      queryParam ||
+      typeParam ||
+      perPageParam !== null ||
+      sortParam ||
+      orderParam ||
+      pageParam
+    ) {
       setHasSearched(true)
     }
   }, [urlParams])
@@ -288,6 +297,7 @@ export default function ResultsPage() {
       url.searchParams.delete('type')
     }
 
+    // Always include these parameters to maintain state on refresh
     url.searchParams.set('perPage', resultsPerPage.toString())
     url.searchParams.set('sort', sortOption)
     url.searchParams.set('order', sortOrder)
@@ -298,7 +308,19 @@ export default function ResultsPage() {
       url.searchParams.delete('page')
     }
 
-    window.history.replaceState({}, '', url.toString())
+    // Use replaceState instead of pushState to avoid breaking the back button
+    window.history.replaceState(
+      {
+        searchQuery,
+        documentTypeFilter,
+        sortOption,
+        sortOrder,
+        currentPage,
+        resultsPerPage,
+      },
+      '',
+      url.toString()
+    )
 
     // Save search state to context
     setLastSearchState({
@@ -405,6 +427,46 @@ export default function ResultsPage() {
       </div>
     )
   }
+
+  // Handle browser history navigation (back/forward)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state
+
+      if (state) {
+        // If we have state in history, restore it
+        if (state.searchQuery !== undefined) setSearchQuery(state.searchQuery)
+        if (state.documentTypeFilter !== undefined)
+          setDocumentTypeFilter(state.documentTypeFilter)
+        if (state.sortOption !== undefined) setSortOption(state.sortOption)
+        if (state.sortOrder !== undefined) setSortOrder(state.sortOrder)
+        if (state.currentPage !== undefined) setCurrentPage(state.currentPage)
+        if (state.resultsPerPage !== undefined)
+          setResultsPerPage(state.resultsPerPage)
+
+        // Ensure we show results after history navigation
+        setHasSearched(true)
+      } else {
+        // If no state (e.g. user clicked back to initial page load), get from URL params
+        const url = new URL(window.location.href)
+        const queryParam = url.searchParams.get('q')
+        const typeParam = url.searchParams.get('type') as
+          | 'tos'
+          | 'pp'
+          | undefined
+
+        if (queryParam) setSearchQuery(queryParam)
+        if (typeParam && ['tos', 'pp'].includes(typeParam))
+          setDocumentTypeFilter(typeParam)
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
 
   return (
     <div className='min-h-screen bg-white dark:bg-black'>

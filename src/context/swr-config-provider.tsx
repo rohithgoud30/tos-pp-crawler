@@ -15,14 +15,15 @@ export function SWRConfigProvider({ children }: SWRConfigProviderProps) {
   const swrConfig = {
     // Global configuration options
     revalidateOnFocus: false, // Don't revalidate on window focus
-    revalidateIfStale: false, // Don't automatically revalidate stale data
+    revalidateIfStale: true, // Set to true to revalidate stale data
     dedupingInterval: 5 * 60 * 1000, // 5 minutes - deduplicate requests within this time
     errorRetryCount: 2, // Retry failed requests twice
     focusThrottleInterval: 10000, // Throttle revalidation on focus
     // Custom fetcher to handle errors and logging
     fetcher: (resource: string) => fetch(resource).then((res) => res.json()),
     suspense: false, // Disable React Suspense
-    // Avoid LocalStorage persistence that was causing type errors
+    // Configure the provider to handle browser refresh better
+    provider: () => new Map(), // Create a new cache instance on each page load
   }
 
   return <SWRConfig value={swrConfig}>{children}</SWRConfig>
