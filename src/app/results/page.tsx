@@ -599,7 +599,7 @@ export default function ResultsPage() {
         )}
 
         {/* General Fetch Error state - only show this block for fetch errors */}
-        {fetchError && !isLoading && (
+        {fetchError && !isLoading && displayedResults.length === 0 && (
           <div className='bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 rounded-md mb-8'>
             <p className='font-medium'>Error</p>
             <p>{fetchError}</p>
