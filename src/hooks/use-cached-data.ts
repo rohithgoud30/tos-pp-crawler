@@ -1,3 +1,5 @@
+'use client'
+
 import useSWR, { SWRConfiguration, mutate } from 'swr'
 import { useCallback } from 'react'
 import {
