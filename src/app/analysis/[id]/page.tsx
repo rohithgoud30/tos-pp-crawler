@@ -7,14 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
 import { Breadcrumb } from '@/components/breadcrumb'
-import { useSearchParams, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import {
-  getDocumentById,
-  type DocumentDetail,
-  type WordFrequency,
-  type TextMiningMetrics,
-} from '@/lib/api'
+import { type WordFrequency, type TextMiningMetrics } from '@/lib/api'
+import { useDocumentDetail } from '@/hooks/use-cached-data'
 
 // This Map stores document IDs that have already been fetched in the current session
 // It persists between component remounts in StrictMode but is cleared on actual page navigation
@@ -22,89 +18,47 @@ const viewedDocuments = new Map<string, boolean>()
 
 export default function AnalysisPage() {
   const params = useParams()
-  const searchParams = useSearchParams()
-  const [analysisItem, setAnalysisItem] = useState<DocumentDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const tosRef = useRef<HTMLDivElement>(null)
   const ppRef = useRef<HTMLDivElement>(null)
-  const fetchControllerRef = useRef<AbortController | null>(null)
+
   // Add refs for sections to lazy load
   const wordFrequencyRef = useRef<HTMLDivElement>(null)
   const textMiningRef = useRef<HTMLDivElement>(null)
 
-  // Get document type from URL parameters and load data
+  const documentId = params.id as string
+
+  // Check if we've already fetched this document in the current session
+  const shouldSkipViewIncrement = viewedDocuments.has(documentId)
+
+  // Use our SWR hook for data fetching with caching
+  const {
+    document: analysisItem,
+    isLoading,
+    error: fetchError,
+  } = useDocumentDetail(documentId, {
+    // Always skip view increment in development when using React.StrictMode
+    // or if we've already viewed this document
+    skipViewIncrement:
+      process.env.NODE_ENV === 'development' || shouldSkipViewIncrement,
+  })
+
+  // Mark this document as viewed for this session to avoid double-counting views
   useEffect(() => {
-    const documentId = params.id as string
-    if (!documentId) return
+    if (analysisItem && !viewedDocuments.has(documentId)) {
+      viewedDocuments.set(documentId, true)
+      console.log(`Document ${documentId} marked as viewed for this session`)
+    }
+  }, [analysisItem, documentId])
 
-    // Create a new AbortController instance for this request
-    fetchControllerRef.current = new AbortController()
-    const signal = fetchControllerRef.current.signal
-
-    const fetchDocument = async () => {
-      setIsLoading(true)
+  // Set error state if fetch failed
+  useEffect(() => {
+    if (fetchError) {
+      setError('Failed to load document analysis. Please try again.')
+    } else {
       setError(null)
-
-      try {
-        // Check if we've already fetched this document in the current session
-        // This prevents double-counting views in React StrictMode during development
-        const shouldFetchFresh = !viewedDocuments.has(documentId)
-
-        // Get document details from API
-        const documentData = await getDocumentById(documentId, {
-          // Always skip view increment in development when using React.StrictMode
-          skipViewIncrement:
-            process.env.NODE_ENV === 'development' || !shouldFetchFresh,
-          // Pass the abort signal to cancel the request if needed
-          signal: signal,
-        })
-
-        // Only set state if the request wasn't aborted
-        if (!signal.aborted) {
-          // Use functional updates to ensure we don't cause unnecessary re-renders
-          setAnalysisItem(() => documentData)
-
-          // Mark this document as viewed for this session
-          if (shouldFetchFresh) {
-            viewedDocuments.set(documentId, true)
-            console.log(
-              `Document ${documentId} marked as viewed for this session`
-            )
-          } else {
-            console.log(
-              `Document ${documentId} already viewed in this session, not incrementing view count`
-            )
-          }
-        }
-      } catch (err) {
-        // Only set error state if the request wasn't aborted and it's not an abort error
-        if (
-          !signal.aborted &&
-          !(err instanceof DOMException && err.name === 'AbortError')
-        ) {
-          console.error('Error fetching document:', err)
-          setError('Failed to load document analysis. Please try again.')
-        }
-      } finally {
-        // Only update loading state if the request wasn't aborted
-        if (!signal.aborted) {
-          setIsLoading(false)
-        }
-      }
     }
-
-    fetchDocument()
-
-    // Cleanup function to abort any in-flight requests when component unmounts
-    // This prevents state updates after the component unmounts
-    return () => {
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort()
-        fetchControllerRef.current = null
-      }
-    }
-  }, [params.id, searchParams])
+  }, [fetchError])
 
   // Implement lazy loading of heavy components with intersection observer
   useEffect(() => {

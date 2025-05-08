@@ -6,6 +6,7 @@ import { Navbar } from '@/components/ui/navbar'
 import ThemeProvider from '@/components/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { NavigationProvider } from '@/context/navigation-context'
+import { SWRConfigProvider } from '@/context/swr-config-provider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -63,41 +64,43 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className='min-h-screen flex flex-col'>
-            <Navbar />
-            <main className='flex-1 bg-white dark:bg-black text-black dark:text-white mx-auto'>
-              <NavigationProvider>{children}</NavigationProvider>
-            </main>
-            <footer className='w-full border-t border-gray-100 dark:border-white/10 py-3 bg-white dark:bg-black'>
-              <div className='w-full max-w-screen-xl mx-auto px-4 md:px-6'>
-                <div className='flex flex-col sm:flex-row sm:justify-between items-center gap-4 text-xs'>
-                  <p className='text-gray-500 dark:text-gray-400'>
-                    © {new Date().getFullYear()} CRWLR. All rights reserved.
-                  </p>
-                  <div className='flex gap-4'>
-                    <a
-                      href='/about'
-                      className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    >
-                      About
-                    </a>
-                    <a
-                      href='/faq'
-                      className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    >
-                      FAQ
-                    </a>
-                    <a
-                      href='/contact'
-                      className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                    >
-                      Contact
-                    </a>
+          <SWRConfigProvider>
+            <div className='min-h-screen flex flex-col'>
+              <Navbar />
+              <main className='flex-1 bg-white dark:bg-black text-black dark:text-white mx-auto'>
+                <NavigationProvider>{children}</NavigationProvider>
+              </main>
+              <footer className='w-full border-t border-gray-100 dark:border-white/10 py-3 bg-white dark:bg-black'>
+                <div className='w-full max-w-screen-xl mx-auto px-4 md:px-6'>
+                  <div className='flex flex-col sm:flex-row sm:justify-between items-center gap-4 text-xs'>
+                    <p className='text-gray-500 dark:text-gray-400'>
+                      © {new Date().getFullYear()} CRWLR. All rights reserved.
+                    </p>
+                    <div className='flex gap-4'>
+                      <a
+                        href='/about'
+                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      >
+                        About
+                      </a>
+                      <a
+                        href='/faq'
+                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      >
+                        FAQ
+                      </a>
+                      <a
+                        href='/contact'
+                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                      >
+                        Contact
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </footer>
-          </div>
+              </footer>
+            </div>
+          </SWRConfigProvider>
         </ThemeProvider>
       </body>
     </html>
