@@ -36,10 +36,9 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  searchDocuments,
-  getDocuments,
   type DocumentItem,
-  type PaginatedResponse,
+  type DocumentSearchParams,
+  type DocumentListParams,
 } from '@/lib/api'
 import {
   Tooltip,
@@ -49,9 +48,14 @@ import {
 } from '@/components/ui/tooltip'
 import { useNavigation } from '@/context/navigation-context'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  useDocumentSearch,
+  useDocumentList,
+  prefetchFromDocumentList,
+} from '@/hooks/use-cached-data'
 
 export default function ResultsPage() {
-  const searchParams = useSearchParams()
+  const urlParams = useSearchParams()
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [documentTypeFilter, setDocumentTypeFilter] = useState<
@@ -60,10 +64,6 @@ export default function ResultsPage() {
   const [sortOption, setSortOption] = useState('company_name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [resultsPerPage, setResultsPerPage] = useState(6)
-  const [displayedResults, setDisplayedResults] = useState<DocumentItem[]>([])
-  const [resultsPagination, setResultsPagination] =
-    useState<PaginatedResponse<DocumentItem> | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
@@ -71,139 +71,66 @@ export default function ResultsPage() {
   const [showColdStartNotice, setShowColdStartNotice] = useState(false)
   const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load initial URL parameters
+  // Build search parameters for the hooks
+  const searchRequestParams: DocumentSearchParams | null = searchQuery
+    ? {
+        search_text: searchQuery,
+        document_type: documentTypeFilter,
+        sort_by: sortOption,
+        sort_order: sortOrder,
+        page: currentPage,
+        per_page: resultsPerPage,
+      }
+    : null
+
+  // Build document list parameters for the hook
+  const listParams: DocumentListParams = {
+    document_type: documentTypeFilter,
+    sort_by: sortOption,
+    sort_order: sortOrder,
+    page: currentPage,
+    per_page: resultsPerPage,
+  }
+
+  // Use our custom hooks for data fetching
+  const {
+    results: searchResults,
+    isLoading: isSearchLoading,
+    error: searchFetchError,
+  } = useDocumentSearch(searchRequestParams, {
+    revalidateOnMount: true,
+  })
+
+  const {
+    documents: listResults,
+    isLoading: isListLoading,
+    error: listFetchError,
+  } = useDocumentList(searchQuery ? undefined : listParams, {
+    revalidateOnMount: !searchQuery, // Only fetch list if not searching
+  })
+
+  // Determine which results to display
+  const resultsPagination = searchQuery ? searchResults : listResults
+  const displayedResults = resultsPagination?.items || []
+  const isLoading = searchQuery ? isSearchLoading : isListLoading
+
+  // Pre-populate cache with list results for faster detail page access
   useEffect(() => {
-    // Set loading immediately when URL params change
-    setIsLoading(true)
-
-    const queryParam = searchParams.get('q')
-    const typeParam = searchParams.get('type') as 'tos' | 'pp' | undefined
-    const perPageParam = searchParams.get('perPage')
-    const sortParam = searchParams.get('sort')
-    const orderParam = searchParams.get('order') as 'asc' | 'desc' | undefined
-    const pageParam = searchParams.get('page')
-
-    console.log('Initial URL parameters:', {
-      queryParam,
-      typeParam,
-      perPageParam,
-      sortParam,
-      orderParam,
-      pageParam,
-    })
-
-    // Track if we should perform a search after setting state
-    let shouldSearch = false
-    let shouldUpdateUrl = false
-    let actualTypeFilter: 'tos' | 'pp' | undefined = undefined
-    let actualSortOption = 'company_name'
-    let actualSortOrder: 'asc' | 'desc' = 'asc'
-    let actualPerPage = 6
-    let actualPage = 1
-
-    if (queryParam) {
-      setSearchQuery(queryParam)
-      shouldSearch = true
-      shouldUpdateUrl = true
+    if (displayedResults?.length > 0) {
+      prefetchFromDocumentList(displayedResults)
     }
+  }, [displayedResults])
 
-    if (typeParam && ['tos', 'pp'].includes(typeParam)) {
-      console.log('Setting document type filter to:', typeParam)
-      setDocumentTypeFilter(typeParam)
-      actualTypeFilter = typeParam as 'tos' | 'pp'
-      shouldUpdateUrl = true
-    }
-
-    if (perPageParam) {
-      const perPageValue = Number.parseInt(perPageParam, 10)
-      if ([6, 9, 12, 15].includes(perPageValue)) {
-        setResultsPerPage(perPageValue)
-        actualPerPage = perPageValue
-        shouldUpdateUrl = true
-      }
-    }
-
-    if (
-      sortParam &&
-      ['updated_at', 'company_name', 'url', 'views'].includes(sortParam)
-    ) {
-      setSortOption(sortParam)
-      actualSortOption = sortParam
-      shouldUpdateUrl = true
-    }
-
-    if (orderParam && ['asc', 'desc'].includes(orderParam)) {
-      setSortOrder(orderParam)
-      actualSortOrder = orderParam
-      shouldUpdateUrl = true
-    }
-
-    // Handle page parameter
-    if (pageParam) {
-      const pageValue = Number.parseInt(pageParam, 10)
-      if (pageValue > 0) {
-        setCurrentPage(pageValue)
-        actualPage = pageValue
-        shouldUpdateUrl = true
-      }
-    }
-
-    // Update URL to ensure a consistent state
-    if (shouldUpdateUrl) {
-      const url = new URL(window.location.href)
-
-      // Only include parameters with actual values
-      if (queryParam) {
-        url.searchParams.set('q', queryParam)
-      }
-
-      if (actualTypeFilter) {
-        url.searchParams.set('type', actualTypeFilter)
-      } else {
-        url.searchParams.delete('type')
-      }
-
-      url.searchParams.set('perPage', actualPerPage.toString())
-      url.searchParams.set('sort', actualSortOption)
-      url.searchParams.set('order', actualSortOrder)
-
-      // Include page parameter if not page 1
-      if (actualPage > 1) {
-        url.searchParams.set('page', actualPage.toString())
-      } else {
-        url.searchParams.delete('page')
-      }
-
-      // Replace current state to prevent multiple history entries
-      window.history.replaceState({}, '', url.toString())
-    }
-
-    // If we have a search query in the URL, automatically perform search
-    if (shouldSearch) {
-      setHasSearched(true)
-
-      // Perform search immediately with priority to search results
-      console.log('Performing search with document type:', actualTypeFilter)
-      performSearchWithParams(
-        queryParam,
-        actualTypeFilter,
-        actualSortOption,
-        actualSortOrder,
-        actualPage,
-        actualPerPage
-      )
+  // Handle errors from hooks
+  useEffect(() => {
+    if (searchFetchError) {
+      setFetchError('Search failed. Please try again.')
+    } else if (listFetchError) {
+      setFetchError('Failed to load documents. Please try again.')
     } else {
-      // Load all documents if no search
-      loadInitialDocuments(
-        actualTypeFilter,
-        actualSortOption,
-        actualSortOrder,
-        actualPerPage,
-        actualPage
-      )
+      setFetchError(null)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchFetchError, listFetchError])
 
   // Add cold start notification handling with delay
   useEffect(() => {
@@ -272,161 +199,67 @@ export default function ResultsPage() {
     )
   }
 
-  // Load initial documents without search query
-  const loadInitialDocuments = async (
-    docType: 'tos' | 'pp' | undefined,
-    sort: string,
-    order: 'asc' | 'desc',
-    perPage: number,
-    page: number = 1 // Default to page 1 if not provided
-  ) => {
-    setFetchError(null)
-    setSearchError(null)
-    setIsLoading(true) // This will trigger showing the cold start notification
-
-    try {
-      const results = await getDocuments({
-        document_type: docType,
-        sort_by: sort,
-        sort_order: order,
-        page: page,
-        per_page: perPage,
-      })
-
-      setResultsPagination(results)
-      setDisplayedResults(results.items)
-      setHasSearched(true)
-    } catch (err) {
-      console.error('Error loading documents:', err)
-      setFetchError('Failed to load documents. Please try again.')
-      setDisplayedResults([])
-      setResultsPagination(null)
-    } finally {
-      // Add a small delay before removing loading state to prevent UI flickering
-      // and allow state updates to complete
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 300)
-    }
-  }
-
-  // Function that uses direct parameters instead of relying on state
-  const performSearchWithParams = async (
-    query: string | null,
-    docType: 'tos' | 'pp' | undefined,
-    sort: string,
-    order: 'asc' | 'desc',
-    page: number,
-    perPage: number
-  ) => {
-    if (!query) {
-      setIsLoading(false)
-      return
-    }
-
-    // Ensure loading state is set
-    setIsLoading(true)
-
-    console.log('Search with direct params:', {
-      query,
-      docType,
-      sort,
-      order,
-      page,
-      perPage,
-    })
-    setFetchError(null)
-    setSearchError(null)
-
-    // Create an AbortController to handle cancellation
-    const abortController = new AbortController()
-    const signal = abortController.signal
-
-    try {
-      const results = await searchDocuments({
-        search_text: query,
-        document_type: docType,
-        sort_by: sort,
-        sort_order: order,
-        page: page,
-        per_page: perPage,
-      })
-
-      // Only update state if the request wasn't aborted
-      if (!signal.aborted) {
-        setResultsPagination(results)
-        setDisplayedResults(results.items)
-      }
-    } catch (err) {
-      // Only show error if the request wasn't aborted
-      if (!(err instanceof DOMException && err.name === 'AbortError')) {
-        console.error('Search error:', err)
-        setFetchError('Search failed. Please try again.')
-        setDisplayedResults([])
-        setResultsPagination(null)
-      }
-    } finally {
-      // Add a small delay before removing loading state to prevent UI flickering
-      // and allow state updates to complete
-      if (!signal.aborted) {
-        setTimeout(() => {
-          setIsLoading(false)
-        }, 300)
-      }
-    }
-
-    // Return the AbortController so it can be used to cancel the request if needed
-    return abortController
-  }
-
-  // Handle explicit search action
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault()
-    }
-
-    // Set loading state immediately
-    setIsLoading(true)
-
-    if (!searchQuery.trim()) {
-      setSearchError('Please enter a search term')
-      setFetchError(null)
-      setIsLoading(false) // Make sure to clear loading state if validation fails
-      return
-    }
-
-    setSearchError(null)
-    setFetchError(null)
-    setCurrentPage(1)
-    setHasSearched(true)
-
-    // Update URL parameters
-    updateUrlParameters()
-
-    // Save search state to context
-    updateSearchState()
-
-    // Execute search
-    performSearch()
-  }
-
-  // New function to update search state in context
-  const updateSearchState = () => {
-    setLastSearchState({
-      query: searchQuery,
-      documentType: documentTypeFilter,
-      sortOption,
-      sortOrder,
-      page: currentPage,
-      perPage: resultsPerPage,
-    })
-  }
-
-  // Effect to update search state when any search param changes
+  // Load initial URL parameters
   useEffect(() => {
-    // Only save state if we have shown some results
+    const queryParam = urlParams.get('q')
+    const typeParam = urlParams.get('type') as 'tos' | 'pp' | undefined
+    const perPageParam = urlParams.get('perPage')
+    const sortParam = urlParams.get('sort')
+    const orderParam = urlParams.get('order') as 'asc' | 'desc' | undefined
+    const pageParam = urlParams.get('page')
+
+    console.log('Initial URL parameters:', {
+      queryParam,
+      typeParam,
+      perPageParam,
+      sortParam,
+      orderParam,
+      pageParam,
+    })
+
+    if (queryParam) {
+      setSearchQuery(queryParam)
+    }
+
+    if (typeParam && ['tos', 'pp'].includes(typeParam)) {
+      console.log('Setting document type filter to:', typeParam)
+      setDocumentTypeFilter(typeParam)
+    }
+
+    if (perPageParam) {
+      const perPageValue = Number.parseInt(perPageParam, 10)
+      if ([6, 9, 12, 15].includes(perPageValue)) {
+        setResultsPerPage(perPageValue)
+      }
+    }
+
+    if (
+      sortParam &&
+      ['updated_at', 'company_name', 'url', 'views'].includes(sortParam)
+    ) {
+      setSortOption(sortParam)
+    }
+
+    if (orderParam && ['asc', 'desc'].includes(orderParam)) {
+      setSortOrder(orderParam)
+    }
+
+    if (pageParam) {
+      const pageValue = Number.parseInt(pageParam, 10)
+      if (pageValue > 0) {
+        setCurrentPage(pageValue)
+      }
+    }
+
+    if (queryParam) {
+      setHasSearched(true)
+    }
+  }, [urlParams])
+
+  // Update URL parameters and search state when filters change
+  useEffect(() => {
     if (hasSearched) {
-      updateSearchState()
+      updateUrlAndSearchState()
     }
   }, [
     searchQuery,
@@ -438,56 +271,109 @@ export default function ResultsPage() {
     hasSearched,
   ])
 
-  // Actual search logic separated from event handler
-  const performSearch = () => {
-    console.log('Performing search with filter:', documentTypeFilter)
-    performSearchWithParams(
-      searchQuery,
-      documentTypeFilter,
+  // New function to update URL parameters and search state
+  const updateUrlAndSearchState = () => {
+    // Update URL parameters
+    const url = new URL(window.location.href)
+
+    if (searchQuery) {
+      url.searchParams.set('q', searchQuery)
+    } else {
+      url.searchParams.delete('q')
+    }
+
+    if (documentTypeFilter) {
+      url.searchParams.set('type', documentTypeFilter)
+    } else {
+      url.searchParams.delete('type')
+    }
+
+    url.searchParams.set('perPage', resultsPerPage.toString())
+    url.searchParams.set('sort', sortOption)
+    url.searchParams.set('order', sortOrder)
+
+    if (currentPage > 1) {
+      url.searchParams.set('page', currentPage.toString())
+    } else {
+      url.searchParams.delete('page')
+    }
+
+    window.history.replaceState({}, '', url.toString())
+
+    // Save search state to context
+    setLastSearchState({
+      query: searchQuery,
+      documentType: documentTypeFilter,
       sortOption,
       sortOrder,
-      currentPage,
-      resultsPerPage
-    )
+      page: currentPage,
+      perPage: resultsPerPage,
+    })
+  }
+
+  // Handle search submit
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
+
+    if (!searchQuery.trim()) {
+      setSearchError('Please enter a search term')
+      setFetchError(null)
+      return
+    }
+
+    setSearchError(null)
+    setFetchError(null)
+    setCurrentPage(1)
+    setHasSearched(true)
+
+    // The search will be handled by the hooks automatically when state changes
   }
 
   // Handle page change
   const handlePageChange = (page: number) => {
-    setIsLoading(true)
     setCurrentPage(page)
+    // The hooks will automatically refetch with the new page
+  }
 
-    // Update URL parameter for the page
-    const url = new URL(window.location.href)
-    if (page > 1) {
-      url.searchParams.set('page', page.toString())
+  // Handle document type filter change
+  const handleDocumentTypeChange = (value: string) => {
+    let docType: 'tos' | 'pp' | undefined
+
+    if (value === 'tos' || value === 'pp') {
+      docType = value
     } else {
-      url.searchParams.delete('page') // Remove page param if it's page 1
+      docType = undefined // "all" case
     }
-    window.history.replaceState({}, '', url.toString())
 
-    // Save the updated search state with new page
-    updateSearchState()
+    setDocumentTypeFilter(docType)
+    setCurrentPage(1) // Reset to page 1 when filter changes
+  }
 
-    // If we're searching, update search with new page
-    if (searchQuery) {
-      performSearchWithParams(
-        searchQuery,
-        documentTypeFilter,
-        sortOption,
-        sortOrder,
-        page,
-        resultsPerPage
-      )
-    } else {
-      // Otherwise just load documents for the page
-      loadInitialDocuments(
-        documentTypeFilter,
-        sortOption,
-        sortOrder,
-        resultsPerPage,
-        page
-      )
-    }
+  // Handle sort option change
+  const handleSortOptionChange = (value: string) => {
+    const [newSortOption, newSortOrder] = value.split('-')
+
+    setSortOption(newSortOption)
+    setSortOrder(newSortOrder as 'asc' | 'desc')
+    setCurrentPage(1) // Reset to page 1 when sorting changes
+  }
+
+  // Handle results per page change
+  const handleResultsPerPageChange = (value: string) => {
+    const perPage = parseInt(value, 10)
+    setResultsPerPage(perPage)
+    setCurrentPage(1) // Always reset to page 1 when changing results per page
+  }
+
+  // Format updated date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    })
   }
 
   // Document type display
@@ -518,153 +404,6 @@ export default function ResultsPage() {
         ) : null}
       </div>
     )
-  }
-
-  // Handle document type filter change
-  const handleDocumentTypeChange = (value: string) => {
-    let docType: 'tos' | 'pp' | undefined
-
-    if (value === 'tos' || value === 'pp') {
-      docType = value
-    } else {
-      docType = undefined // "all" case
-    }
-
-    setDocumentTypeFilter(docType)
-
-    // Update URL parameter
-    const url = new URL(window.location.href)
-    if (docType) {
-      url.searchParams.set('type', docType)
-    } else {
-      url.searchParams.delete('type')
-    }
-    window.history.replaceState({}, '', url.toString())
-
-    // Update search state
-    updateSearchState()
-
-    // Reapply search with the new filter
-    if (searchQuery) {
-      performSearchWithParams(
-        searchQuery,
-        docType,
-        sortOption,
-        sortOrder,
-        1, // Reset to page 1 when filter changes
-        resultsPerPage
-      )
-    } else {
-      loadInitialDocuments(docType, sortOption, sortOrder, resultsPerPage, 1) // Reset to page 1
-    }
-  }
-
-  // Handle sort option change
-  const handleSortOptionChange = (value: string) => {
-    const [newSortOption, newSortOrder] = value.split('-')
-
-    setSortOption(newSortOption)
-    setSortOrder(newSortOrder as 'asc' | 'desc')
-
-    // Update URL parameters
-    const url = new URL(window.location.href)
-    url.searchParams.set('sort', newSortOption)
-    url.searchParams.set('order', newSortOrder)
-    window.history.replaceState({}, '', url.toString())
-
-    // Update search state
-    updateSearchState()
-
-    // Reapply search with the new sorting
-    if (searchQuery) {
-      performSearchWithParams(
-        searchQuery,
-        documentTypeFilter,
-        newSortOption,
-        newSortOrder as 'asc' | 'desc',
-        1, // Reset to page 1 when sorting changes
-        resultsPerPage
-      )
-    } else {
-      loadInitialDocuments(
-        documentTypeFilter,
-        newSortOption,
-        newSortOrder as 'asc' | 'desc',
-        resultsPerPage,
-        1 // Reset to page 1
-      )
-    }
-  }
-
-  // Handle results per page change
-  const handleResultsPerPageChange = (value: string) => {
-    const perPage = parseInt(value, 10)
-    setResultsPerPage(perPage)
-
-    // Always reset to page 1 when changing results per page
-    setCurrentPage(1)
-
-    // Update URL parameters
-    const url = new URL(window.location.href)
-    url.searchParams.set('perPage', perPage.toString())
-    // Always remove the page parameter to reset to page 1
-    url.searchParams.delete('page')
-
-    window.history.replaceState({}, '', url.toString())
-
-    // Update search state with page 1
-    setLastSearchState({
-      query: searchQuery,
-      documentType: documentTypeFilter,
-      sortOption,
-      sortOrder,
-      page: 1, // Explicitly set to page 1
-      perPage: perPage,
-    })
-
-    // Reapply search with the new size and page 1
-    if (searchQuery) {
-      performSearchWithParams(
-        searchQuery,
-        documentTypeFilter,
-        sortOption,
-        sortOrder,
-        1, // Reset to page 1 when per page changes
-        perPage
-      )
-    } else {
-      loadInitialDocuments(
-        documentTypeFilter,
-        sortOption,
-        sortOrder,
-        perPage,
-        1 // Reset to page 1
-      )
-    }
-  }
-
-  // Format updated date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
-  }
-
-  // Update URL parameters
-  const updateUrlParameters = () => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('q', searchQuery)
-    if (documentTypeFilter) {
-      url.searchParams.set('type', documentTypeFilter)
-    } else {
-      url.searchParams.delete('type')
-    }
-    url.searchParams.set('perPage', resultsPerPage.toString())
-    url.searchParams.set('sort', sortOption)
-    url.searchParams.set('order', sortOrder)
-    window.history.replaceState({}, '', url.toString())
   }
 
   return (
