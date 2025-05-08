@@ -219,14 +219,14 @@ export default function ResultsPage() {
     const orderParam = urlParams.get('order') as 'asc' | 'desc' | undefined
     const pageParam = urlParams.get('page')
 
-    console.log('Initial URL parameters:', {
-      queryParam,
-      typeParam,
-      perPageParam,
-      sortParam,
-      orderParam,
-      pageParam,
-    })
+    // console.log('Initial URL parameters:', {
+    //   queryParam,
+    //   typeParam,
+    //   perPageParam,
+    //   sortParam,
+    //   orderParam,
+    //   pageParam,
+    // })
 
     if (queryParam) {
       setSearchQuery(queryParam)
@@ -237,7 +237,7 @@ export default function ResultsPage() {
     }
 
     if (typeParam && ['tos', 'pp'].includes(typeParam)) {
-      console.log('Setting document type filter to:', typeParam)
+      // console.log('Setting document type filter to:', typeParam)
       setDocumentTypeFilter(typeParam)
     }
 
@@ -248,6 +248,7 @@ export default function ResultsPage() {
       }
     }
 
+    // Set sort options from URL params if they exist, otherwise use defaults
     if (
       sortParam &&
       ['updated_at', 'company_name', 'url', 'views', 'relevance'].includes(
@@ -255,16 +256,16 @@ export default function ResultsPage() {
       )
     ) {
       setSortOption(sortParam)
-    } else if (!sortParam) {
-      // If no sort param is specified, default to relevance
+      if (orderParam && ['asc', 'desc'].includes(orderParam)) {
+        setSortOrder(orderParam)
+      } else if (sortParam === 'relevance') {
+        setSortOrder('desc') // Default to desc for relevance if order is missing
+      } else {
+        setSortOrder('asc') // Default to asc for other sorts if order is missing
+      }
+    } else {
+      // Explicitly set to relevance-desc if no sort params in URL
       setSortOption('relevance')
-      setSortOrder('desc')
-    }
-
-    if (orderParam && ['asc', 'desc'].includes(orderParam)) {
-      setSortOrder(orderParam)
-    } else if (!orderParam && sortParam === 'relevance') {
-      // If using relevance but no order specified, default to desc
       setSortOrder('desc')
     }
 
