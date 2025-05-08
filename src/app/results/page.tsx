@@ -72,6 +72,20 @@ export default function ResultsPage() {
   const [showColdStartNotice, setShowColdStartNotice] = useState(false)
   const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  // For debugging - add console log to show current sort state
+  useEffect(() => {
+    // Removed debug logs
+  }, [sortOption, sortOrder])
+
+  // Force relevance-desc as default on initial render
+  useEffect(() => {
+    // Only run once on component mount - force default sort to be Most Relevant
+    if (sortOption !== 'relevance' && !urlParams.get('sort')) {
+      setSortOption('relevance')
+      setSortOrder('desc')
+    }
+  }, [sortOption, urlParams])
+
   // Build search parameters for the hooks
   const searchRequestParams: DocumentSearchParams | null = activeSearchQuery
     ? {
@@ -219,15 +233,6 @@ export default function ResultsPage() {
     const orderParam = urlParams.get('order') as 'asc' | 'desc' | undefined
     const pageParam = urlParams.get('page')
 
-    // console.log('Initial URL parameters:', {
-    //   queryParam,
-    //   typeParam,
-    //   perPageParam,
-    //   sortParam,
-    //   orderParam,
-    //   pageParam,
-    // })
-
     if (queryParam) {
       setSearchQuery(queryParam)
       setActiveSearchQuery(queryParam)
@@ -237,7 +242,6 @@ export default function ResultsPage() {
     }
 
     if (typeParam && ['tos', 'pp'].includes(typeParam)) {
-      // console.log('Setting document type filter to:', typeParam)
       setDocumentTypeFilter(typeParam)
     }
 
@@ -289,6 +293,15 @@ export default function ResultsPage() {
       setHasSearched(true)
     }
   }, [urlParams])
+
+  // Ensure default sort is 'relevance-desc' on initial load
+  useEffect(() => {
+    // If we haven't searched yet and no sort param is in the URL, set to relevance-desc
+    if (!hasSearched && !urlParams.get('sort')) {
+      setSortOption('relevance')
+      setSortOrder('desc')
+    }
+  }, [hasSearched, urlParams])
 
   // Update URL parameters and search state when filters change
   useEffect(() => {
@@ -587,8 +600,14 @@ export default function ResultsPage() {
                 {/* Sort By */}
                 <div className='flex items-center gap-2 w-full sm:w-auto md:min-w-[180px]'>
                   <ArrowUpDown className='h-4 w-4 text-gray-500 flex-shrink-0' />
+                  {/* Debug current sort value */}
                   <Select
-                    value={`${sortOption}-${sortOrder}`}
+                    key={`sort-select-${sortOption}-${sortOrder}`}
+                    value={
+                      !hasSearched && !urlParams.get('sort')
+                        ? 'relevance-desc'
+                        : `${sortOption}-${sortOrder}`
+                    }
                     onValueChange={handleSortOptionChange}
                     defaultValue='relevance-desc'
                   >
