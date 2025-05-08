@@ -201,9 +201,8 @@ export function prefetchFromDocumentList(
 
   // Pre-fetch document IDs into cache for faster navigation
   documents.forEach((doc) => {
-    // Only store the document item data, not the full detail
-    // This will be replaced with full data when visiting the page
-    mutate(CACHE_KEYS.document(doc.id), doc, false)
+    // Seed the cache with list data and trigger revalidation to fetch full detail
+    mutate(CACHE_KEYS.document(doc.id), doc, true)
   })
 }
 
