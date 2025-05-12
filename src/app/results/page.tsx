@@ -511,14 +511,14 @@ export default function ResultsPage() {
   return (
     <div className='container mx-auto px-2 sm:px-4 py-8 max-w-7xl'>
       <div className='mb-8'>
-        <h1 className='text-3xl font-bold mb-6 text-gray-900 dark:text-gray-50'>
+        <h1 className='text-3xl font-bold mb-6 text-gray-900 dark:text-gray-50 text-center md:text-left'>
           Search Results
         </h1>
 
         <div className='bg-card rounded-lg border shadow-sm p-5'>
           <form onSubmit={handleSearch} className='space-y-4'>
             <div className='flex flex-col md:flex-row gap-3'>
-              <div className='relative flex-1'>
+              <div className='relative flex-1 mx-auto w-full max-w-[500px] md:max-w-none'>
                 <Input
                   type='text'
                   placeholder='Search for a company or service...'
@@ -536,7 +536,7 @@ export default function ResultsPage() {
                 </Button>
               </div>
 
-              <div className='flex flex-wrap gap-2'>
+              <div className='flex flex-wrap justify-center md:justify-start gap-2'>
                 <Select
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
@@ -603,8 +603,8 @@ export default function ResultsPage() {
 
       {/* Results count and current filter - Show if pagination exists, regardless of loading */}
       {resultsPagination && (
-        <div className='flex flex-col md:flex-row justify-between mb-6 text-gray-500 dark:text-gray-400'>
-          <p>
+        <div className='flex flex-col md:flex-row justify-between mb-6 text-gray-500 dark:text-gray-400 text-center md:text-left'>
+          <p className='mb-2 md:mb-0'>
             {/* Show current item count if loading, otherwise use total */}
             Showing{' '}
             {isLoading
@@ -664,8 +664,8 @@ export default function ResultsPage() {
 
       {/* General Fetch Error state - only show this block for fetch errors */}
       {fetchError && !isLoading && displayedResults.length === 0 && (
-        <div className='bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 rounded-md mb-8'>
-          <p className='font-medium'>Error</p>
+        <div className='bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 rounded-md mb-8 text-center mx-auto max-w-lg'>
+          <p className='font-medium mb-2'>Error</p>
           <p>{fetchError}</p>
         </div>
       )}
@@ -676,7 +676,7 @@ export default function ResultsPage() {
           {/* Empty results */}
           {hasSearched &&
             (!displayedResults || displayedResults.length === 0) && (
-              <div className='text-center py-12'>
+              <div className='text-center py-12 mx-auto max-w-lg'>
                 <p className='text-xl font-medium mb-2 text-black dark:text-white'>
                   No results found
                 </p>
