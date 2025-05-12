@@ -39,12 +39,6 @@ import {
   type DocumentSearchParams,
   type DocumentListParams,
 } from '@/lib/api'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { useNavigation } from '@/context/navigation-context'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -515,11 +509,13 @@ export default function ResultsPage() {
   }, [])
 
   return (
-    <div className='container mx-auto px-2 sm:px-4 py-8'>
+    <div className='container mx-auto px-2 sm:px-4 py-8 max-w-7xl'>
       <div className='mb-8'>
-        <h1 className='text-2xl font-bold mb-4'>Search Results</h1>
+        <h1 className='text-3xl font-bold mb-6 text-gray-900 dark:text-gray-50'>
+          Search Results
+        </h1>
 
-        <div className='bg-card rounded-lg border shadow-sm p-4'>
+        <div className='bg-card rounded-lg border shadow-sm p-5'>
           <form onSubmit={handleSearch} className='space-y-4'>
             <div className='flex flex-col md:flex-row gap-3'>
               <div className='relative flex-1'>
@@ -533,7 +529,7 @@ export default function ResultsPage() {
                 <Button
                   type='submit'
                   size='icon'
-                  className='absolute right-1 top-1 h-10 w-10 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
+                  className='absolute right-1 top-1 h-10 w-10 bg-primary text-primary-foreground hover:bg-primary/90'
                 >
                   <Search className='h-4 w-4' />
                   <span className='sr-only'>Search</span>
@@ -545,7 +541,7 @@ export default function ResultsPage() {
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-[140px]'>
+                  <SelectTrigger className='w-[140px] h-12'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -559,7 +555,7 @@ export default function ResultsPage() {
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-[140px]'>
+                  <SelectTrigger className='w-[140px] h-12'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -576,7 +572,7 @@ export default function ResultsPage() {
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-10 h-10'
+                  className='w-12 h-12'
                 >
                   <ArrowUpDown className='h-4 w-4' />
                   <span className='sr-only'>
@@ -589,7 +585,7 @@ export default function ResultsPage() {
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-[100px]'>
+                  <SelectTrigger className='w-[100px] h-12'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
@@ -633,33 +629,33 @@ export default function ResultsPage() {
             >
               <div>
                 <CardHeader className='p-4 pb-2'>
-                  <div className='flex items-center gap-3 mb-2'>
-                    <Skeleton className='h-10 w-10 rounded-md' />
-                    <div className='flex-grow space-y-2'>
-                      <Skeleton className='h-4 w-3/4' />
-                      <Skeleton className='h-3 w-1/2' />
-                    </div>
+                  <div className='flex items-center justify-center mb-3'>
+                    <Skeleton className='h-16 w-16 rounded-md' />
+                  </div>
+                  <div className='flex flex-col items-center gap-2'>
+                    <Skeleton className='h-6 w-36 rounded-md' />
+                    <Skeleton className='h-4 w-48 rounded-md' />
                   </div>
                 </CardHeader>
                 <CardContent className='p-4 pt-2 text-xs'>
                   <div className='grid grid-cols-2 gap-3'>
-                    <div className='space-y-1'>
-                      <Skeleton className='h-3 w-1/3' />
-                      <Skeleton className='h-5 w-1/2' />
+                    <div className='space-y-2'>
+                      <Skeleton className='h-3 w-16' />
+                      <Skeleton className='h-5 w-32' />
                     </div>
-                    <div className='space-y-1 text-right'>
-                      <Skeleton className='h-3 w-1/3 ml-auto' />
-                      <Skeleton className='h-4 w-1/2 ml-auto' />
+                    <div className='space-y-2 text-right'>
+                      <Skeleton className='h-3 w-16 ml-auto' />
+                      <Skeleton className='h-5 w-24 ml-auto' />
                     </div>
                   </div>
-                  <div className='mt-3 text-right space-y-1'>
-                    <Skeleton className='h-3 w-1/4 ml-auto' />
-                    <Skeleton className='h-4 w-1/3 ml-auto' />
+                  <div className='mt-3 text-right space-y-2'>
+                    <Skeleton className='h-3 w-16 ml-auto' />
+                    <Skeleton className='h-5 w-24 ml-auto' />
                   </div>
                 </CardContent>
               </div>
-              <CardFooter className='p-4 pt-0 mt-auto'>
-                <Skeleton className='h-9 w-full' />
+              <CardFooter className='p-4 pt-3 mt-auto'>
+                <Skeleton className='h-10 w-full rounded-md' />
               </CardFooter>
             </Card>
           ))}
@@ -700,15 +696,15 @@ export default function ResultsPage() {
                 return (
                   <Card
                     key={doc.id}
-                    className='group flex flex-col justify-between w-full max-w-[400px] md:max-w-none overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
+                    className='group flex flex-col justify-between w-full max-w-[400px] md:max-w-none overflow-hidden transition-all duration-200 hover:border-primary/30 dark:hover:border-primary/20'
                   >
                     <div>
                       {/* Wrapper for content except footer */}
                       <CardHeader className='p-4 pb-2'>
-                        <div className='flex items-center gap-3 mb-2'>
+                        <div className='flex flex-col items-center text-center mb-2'>
                           {/* Logo display - Reverted to img tag like analysis page */}
                           {doc.logo_url && (
-                            <div className='flex-shrink-0 h-10 w-10 p-1 mr-1 bg-white dark:bg-white rounded-md flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700'>
+                            <div className='flex-shrink-0 h-16 w-16 p-1.5 mb-3 bg-white dark:bg-white rounded-md flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm'>
                               <img
                                 src={doc.logo_url}
                                 alt={`${doc.company_name} logo`}
@@ -716,73 +712,38 @@ export default function ResultsPage() {
                                 onError={(e) => {
                                   // Hide img on error
                                   e.currentTarget.style.display = 'none'
-                                  // Optionally hide parent if needed, but start with just img
-                                  // e.currentTarget.parentElement?.classList.add('hidden');
                                 }}
                               />
                             </div>
                           )}
                           {/* Fallback placeholder if no logo URL */}
                           {!doc.logo_url && (
-                            <div className='w-10 h-10 rounded-md flex-shrink-0 bg-gray-100 dark:bg-gray-800 border dark:border-gray-700 flex items-center justify-center mr-1'>
-                              <FileText className='h-5 w-5 text-gray-400 dark:text-gray-500' />
+                            <div className='w-16 h-16 rounded-md flex-shrink-0 bg-gray-100 dark:bg-gray-800 border dark:border-gray-700 flex items-center justify-center mb-3 shadow-sm'>
+                              <FileText className='h-8 w-8 text-gray-400 dark:text-gray-500' />
                             </div>
                           )}
-                          <div className='flex-grow min-w-0 max-w-full overflow-hidden'>
-                            {' '}
-                            {/* Allow text to wrap */}
-                            {/* Use TooltipProvider for all company names, truncate if > 13 chars */}
-                            <TooltipProvider delayDuration={200}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <CardTitle className='text-lg font-semibold text-black dark:text-white group-hover:text-primary transition-colors cursor-default'>
-                                    {doc.company_name.length > 13
-                                      ? `${doc.company_name.substring(
-                                          0,
-                                          11
-                                        )}...`
-                                      : doc.company_name}
-                                  </CardTitle>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{doc.company_name}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <p className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1'>
-                              <Globe className='h-3 w-3 flex-shrink-0' />
-                              <TooltipProvider delayDuration={200}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className='truncate cursor-default'>
-                                      {doc.url.length > 18
-                                        ? `${doc.url.substring(0, 16)}...`
-                                        : doc.url}
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent side='bottom' align='start'>
-                                    <p>{doc.url}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </p>
-                          </div>
+                          <CardTitle className='text-xl mb-1 group-hover:text-primary transition-colors'>
+                            {doc.company_name}
+                          </CardTitle>
+                          <p className='text-sm text-muted-foreground text-center truncate max-w-full'>
+                            <Globe className='h-3.5 w-3.5 inline-flex mr-1 text-muted-foreground' />
+                            {doc.url}
+                          </p>
                         </div>
                       </CardHeader>
-                      <CardContent className='p-4 pt-2 text-xs'>
+                      <CardContent className='p-4 pt-4 text-xs'>
                         <div className='grid grid-cols-2 gap-3'>
                           <div>
-                            <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center gap-1'>
-                              <FileText className='h-3.5 w-3.5' />
+                            <p className='text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1 flex items-center'>
+                              <FileText className='h-3.5 w-3.5 mr-1' />
                               Doc Type
                             </p>
-                            {getDocumentTypeBadges(doc)}{' '}
-                            {/* Re-use existing badge logic */}
+                            {getDocumentTypeBadges(doc)}
                           </div>
                           <div className='text-right'>
-                            <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
-                              <Clock className='h-3.5 w-3.5' />
-                              Last Updated
+                            <p className='text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1 flex items-center justify-end'>
+                              <Clock className='h-3.5 w-3.5 mr-1' />
+                              Updated
                             </p>
                             <p className='text-gray-700 dark:text-gray-300 font-medium'>
                               {formatDate(doc.updated_at)}
@@ -790,8 +751,8 @@ export default function ResultsPage() {
                           </div>
                         </div>
                         <div className='mt-3 text-right'>
-                          <p className='text-gray-500 dark:text-gray-400 mb-0.5 flex items-center justify-end gap-1'>
-                            <Eye className='h-3.5 w-3.5' />
+                          <p className='text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1 flex items-center justify-end'>
+                            <Eye className='h-3.5 w-3.5 mr-1' />
                             Views
                           </p>
                           <p className='text-gray-700 dark:text-gray-300 font-medium'>
@@ -800,18 +761,14 @@ export default function ResultsPage() {
                         </div>
                       </CardContent>
                     </div>
-                    <CardFooter className='p-4 pt-0 mt-auto'>
-                      {' '}
-                      {/* Ensure footer is at the bottom */}
+                    <CardFooter className='p-4 pt-3 mt-auto'>
                       <Button
-                        className='w-full gap-2 group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-600 transition-colors'
+                        className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors'
                         variant='outline'
                         size='sm'
                         asChild
                       >
                         <Link href={analysisUrl}>
-                          {' '}
-                          {/* Use the constructed URL */}
                           View Analysis
                           <ExternalLink className='h-4 w-4' />
                         </Link>
@@ -827,18 +784,17 @@ export default function ResultsPage() {
 
       {/* Pagination */}
       {resultsPagination && resultsPagination.total_pages > 1 && (
-        <div className='flex justify-center mt-8'>
+        <div className='flex justify-center mt-10 mb-4'>
           <div className='flex flex-wrap justify-center gap-2 items-center'>
             <Button
               variant='outline'
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!resultsPagination.has_prev}
-              className='mb-2 sm:mb-0'
+              className='mb-2 sm:mb-0 h-10 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
             >
               Previous
             </Button>
 
-            {/* Page numbers - Google Style */}
             <div className='flex flex-wrap justify-center gap-2'>
               {(() => {
                 const totalPages = resultsPagination.total_pages
@@ -871,11 +827,11 @@ export default function ResultsPage() {
                     onClick={() => handlePageChange(pageNumber)}
                     className={
                       currentPage === pageNumber
-                        ? 'bg-black text-white dark:bg-white dark:text-black'
-                        : ''
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }
                     size='icon' // Make buttons square
-                    style={{ minWidth: '2.5rem' }} // Ensure consistent width
+                    style={{ minWidth: '2.5rem', height: '2.5rem' }} // Ensure consistent width
                   >
                     {pageNumber}
                   </Button>
@@ -887,7 +843,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!resultsPagination.has_next}
-              className='mb-2 sm:mb-0'
+              className='mb-2 sm:mb-0 h-10 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
             >
               Next
             </Button>

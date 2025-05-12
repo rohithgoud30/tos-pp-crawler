@@ -44,16 +44,27 @@ export function SearchResults({
             key={i}
             className='overflow-hidden w-full max-w-[400px] md:max-w-none'
           >
-            <CardHeader className='pb-2'>
-              <Skeleton className='h-6 w-3/4 mb-2' />
-              <Skeleton className='h-4 w-1/2' />
+            <CardHeader className='pb-0'>
+              <div className='flex flex-col items-center mb-2'>
+                <Skeleton className='h-16 w-16 rounded-md mb-3' />
+                <Skeleton className='h-6 w-36 mb-2' />
+              </div>
+              <Skeleton className='h-4 w-48 mx-auto' />
             </CardHeader>
-            <CardContent className='pb-2'>
-              <Skeleton className='h-4 w-full mb-2' />
-              <Skeleton className='h-4 w-2/3' />
+            <CardContent className='pb-2 pt-4'>
+              <div className='flex justify-between items-center'>
+                <div className='space-y-2'>
+                  <Skeleton className='h-3 w-16' />
+                  <Skeleton className='h-5 w-32' />
+                </div>
+                <div className='space-y-2'>
+                  <Skeleton className='h-3 w-16 ml-auto' />
+                  <Skeleton className='h-5 w-24 ml-auto' />
+                </div>
+              </div>
             </CardContent>
-            <CardFooter>
-              <Skeleton className='h-9 w-full' />
+            <CardFooter className='pt-3'>
+              <Skeleton className='h-10 w-full' />
             </CardFooter>
           </Card>
         ))}
@@ -78,13 +89,13 @@ export function SearchResults({
         {results.items.map((item) => (
           <Card
             key={item.id}
-            className='group transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 w-full max-w-[400px] md:max-w-none'
+            className='group transition-all duration-200 hover:border-primary/30 dark:hover:border-primary/20 w-full max-w-[400px] md:max-w-none'
           >
             <div className='relative'>
               <CardHeader className='pb-0'>
                 <div className='flex flex-col items-center text-center mb-2'>
                   {item.logo_url && (
-                    <div className='w-16 h-16 mb-2 rounded-lg overflow-hidden bg-white flex items-center justify-center p-1'>
+                    <div className='w-16 h-16 mb-3 rounded-md overflow-hidden bg-white flex items-center justify-center p-1.5 border border-gray-100 shadow-sm'>
                       <img
                         src={item.logo_url}
                         alt={`${item.company_name} logo`}
@@ -95,7 +106,7 @@ export function SearchResults({
                       />
                     </div>
                   )}
-                  <CardTitle className='text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                  <CardTitle className='text-xl group-hover:text-primary transition-colors'>
                     {item.company_name}
                   </CardTitle>
                 </div>
@@ -106,26 +117,28 @@ export function SearchResults({
               <CardContent className='pt-4'>
                 <div className='flex justify-between items-center'>
                   <div>
-                    <p className='text-sm text-muted-foreground'>Doc Type</p>
-                    <p className='capitalize font-medium'>
+                    <p className='text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1'>
+                      Doc Type
+                    </p>
+                    <p className='capitalize font-medium text-sm'>
                       {item.document_type === 'tos'
                         ? 'Terms of Service'
                         : 'Privacy Policy'}
                     </p>
                   </div>
                   <div>
-                    <p className='text-sm text-muted-foreground'>
-                      Last updated
+                    <p className='text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1 text-right'>
+                      Updated
                     </p>
-                    <p className='text-right font-medium'>
+                    <p className='text-right font-medium text-sm'>
                       {new Date(item.updated_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className='pt-2'>
+              <CardFooter className='pt-3'>
                 <Button
-                  className='w-full gap-2 group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-600 transition-colors'
+                  className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors'
                   variant='outline'
                   asChild
                 >
