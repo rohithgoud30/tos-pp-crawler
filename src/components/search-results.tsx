@@ -38,9 +38,12 @@ export function SearchResults({
 
   if (state === 'loading') {
     return (
-      <div className='grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 place-items-center md:place-items-stretch'>
         {[1, 2, 3].map((i) => (
-          <Card key={i} className='overflow-hidden'>
+          <Card
+            key={i}
+            className='overflow-hidden w-full max-w-[400px] md:max-w-none'
+          >
             <CardHeader className='pb-2'>
               <Skeleton className='h-6 w-3/4 mb-2' />
               <Skeleton className='h-4 w-1/2' />
@@ -71,11 +74,11 @@ export function SearchResults({
 
   return (
     <div className='space-y-6'>
-      <div className='grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 place-items-center md:place-items-stretch'>
         {results.items.map((item) => (
           <Card
             key={item.id}
-            className='group transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
+            className='group transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 w-full max-w-[400px] md:max-w-none'
           >
             <div className='relative'>
               <CardHeader className='pb-0'>

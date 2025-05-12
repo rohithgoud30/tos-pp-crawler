@@ -515,7 +515,7 @@ export default function ResultsPage() {
   }, [])
 
   return (
-    <div className='container mx-auto px-4 py-8'>
+    <div className='container mx-auto px-2 sm:px-4 py-8'>
       <div className='mb-8'>
         <h1 className='text-2xl font-bold mb-4'>Search Results</h1>
 
@@ -625,11 +625,11 @@ export default function ResultsPage() {
 
       {/* Loading state - Skeleton Grid */}
       {isLoading && (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 place-items-center md:place-items-stretch'>
           {Array.from({ length: resultsPerPage }).map((_, index) => (
             <Card
               key={`skeleton-${index}`}
-              className='flex flex-col justify-between'
+              className='flex flex-col justify-between w-full max-w-[400px] md:max-w-none'
             >
               <div>
                 <CardHeader className='p-4 pb-2'>
@@ -692,7 +692,7 @@ export default function ResultsPage() {
 
           {/* Results grid */}
           {displayedResults && displayedResults.length > 0 && (
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8'>
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 place-items-center md:place-items-stretch'>
               {displayedResults.map((doc) => {
                 // Just create a simple analysis URL without backTo parameter
                 const analysisUrl = `/analysis/${doc.id}`
@@ -700,7 +700,7 @@ export default function ResultsPage() {
                 return (
                   <Card
                     key={doc.id}
-                    className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
+                    className='group flex flex-col justify-between w-full max-w-[400px] md:max-w-none overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
                   >
                     <div>
                       {/* Wrapper for content except footer */}
@@ -828,59 +828,66 @@ export default function ResultsPage() {
       {/* Pagination */}
       {resultsPagination && resultsPagination.total_pages > 1 && (
         <div className='flex justify-center mt-8'>
-          <div className='flex space-x-2 items-center'>
+          <div className='flex flex-wrap justify-center gap-2 items-center'>
             <Button
               variant='outline'
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!resultsPagination.has_prev}
+              className='mb-2 sm:mb-0'
             >
               Previous
             </Button>
 
             {/* Page numbers - Google Style */}
-            {(() => {
-              const totalPages = resultsPagination.total_pages
-              const MAX_VISIBLE_PAGES = 10
-              const pagesToShow = Math.min(MAX_VISIBLE_PAGES, totalPages)
+            <div className='flex flex-wrap justify-center gap-2'>
+              {(() => {
+                const totalPages = resultsPagination.total_pages
+                const MAX_VISIBLE_PAGES = Math.min(5, totalPages) // Show fewer pages on mobile
+                const pagesToShow = Math.min(MAX_VISIBLE_PAGES, totalPages)
 
-              let startPage = Math.max(
-                1,
-                currentPage - Math.floor(pagesToShow / 2)
-              )
-              const endPage = Math.min(totalPages, startPage + pagesToShow - 1)
+                let startPage = Math.max(
+                  1,
+                  currentPage - Math.floor(pagesToShow / 2)
+                )
+                const endPage = Math.min(
+                  totalPages,
+                  startPage + pagesToShow - 1
+                )
 
-              // Adjust startPage if endPage hits the limit
-              if (endPage === totalPages) {
-                startPage = Math.max(1, totalPages - pagesToShow + 1)
-              }
+                // Adjust startPage if endPage hits the limit
+                if (endPage === totalPages) {
+                  startPage = Math.max(1, totalPages - pagesToShow + 1)
+                }
 
-              const pageNumbers = []
-              for (let i = startPage; i <= endPage; i++) {
-                pageNumbers.push(i)
-              }
+                const pageNumbers = []
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(i)
+                }
 
-              return pageNumbers.map((pageNumber) => (
-                <Button
-                  key={pageNumber}
-                  variant={currentPage === pageNumber ? 'default' : 'outline'}
-                  onClick={() => handlePageChange(pageNumber)}
-                  className={
-                    currentPage === pageNumber
-                      ? 'bg-black text-white dark:bg-white dark:text-black'
-                      : ''
-                  }
-                  size='icon' // Make buttons square
-                  style={{ minWidth: '2.5rem' }} // Ensure consistent width
-                >
-                  {pageNumber}
-                </Button>
-              ))
-            })()}
+                return pageNumbers.map((pageNumber) => (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? 'default' : 'outline'}
+                    onClick={() => handlePageChange(pageNumber)}
+                    className={
+                      currentPage === pageNumber
+                        ? 'bg-black text-white dark:bg-white dark:text-black'
+                        : ''
+                    }
+                    size='icon' // Make buttons square
+                    style={{ minWidth: '2.5rem' }} // Ensure consistent width
+                  >
+                    {pageNumber}
+                  </Button>
+                ))
+              })()}
+            </div>
 
             <Button
               variant='outline'
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!resultsPagination.has_next}
+              className='mb-2 sm:mb-0'
             >
               Next
             </Button>
