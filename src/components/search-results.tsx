@@ -38,7 +38,7 @@ export function SearchResults({
 
   if (state === 'loading') {
     return (
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
         {[1, 2, 3].map((i) => (
           <Card key={i} className='overflow-hidden'>
             <CardHeader className='pb-2'>
@@ -71,11 +71,11 @@ export function SearchResults({
 
   return (
     <div className='space-y-6'>
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
         {results.items.map((item) => (
           <Card
             key={item.id}
-            className='group transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
+            className='group transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600 w-full'
           >
             <div className='relative'>
               <CardHeader className='pb-0'>
@@ -92,17 +92,17 @@ export function SearchResults({
                       />
                     </div>
                   )}
-                  <CardTitle className='text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                  <CardTitle className='text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors break-words'>
                     {item.company_name}
                   </CardTitle>
                 </div>
-                <p className='text-sm text-muted-foreground text-center truncate'>
+                <p className='text-sm text-muted-foreground text-center truncate max-w-full'>
                   {item.url}
                 </p>
               </CardHeader>
               <CardContent className='pt-4'>
-                <div className='flex justify-between items-center'>
-                  <div>
+                <div className='flex justify-between items-center flex-wrap gap-2'>
+                  <div className='min-w-[120px]'>
                     <p className='text-sm text-muted-foreground'>Doc Type</p>
                     <p className='capitalize font-medium'>
                       {item.document_type === 'tos'
@@ -110,11 +110,11 @@ export function SearchResults({
                         : 'Privacy Policy'}
                     </p>
                   </div>
-                  <div>
+                  <div className='text-right'>
                     <p className='text-sm text-muted-foreground'>
                       Last updated
                     </p>
-                    <p className='text-right font-medium'>
+                    <p className='font-medium'>
                       {new Date(item.updated_at).toLocaleDateString()}
                     </p>
                   </div>
