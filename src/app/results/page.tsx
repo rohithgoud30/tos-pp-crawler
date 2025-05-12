@@ -528,12 +528,12 @@ export default function ResultsPage() {
                   placeholder='Search for a company or service...'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className='pr-10'
+                  className='pr-12 h-12'
                 />
                 <Button
                   type='submit'
                   size='icon'
-                  className='absolute right-0 top-0 h-full rounded-l-none'
+                  className='absolute right-1 top-1 h-10 w-10 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-900 dark:hover:bg-gray-200'
                 >
                   <Search className='h-4 w-4' />
                   <span className='sr-only'>Search</span>
@@ -700,7 +700,7 @@ export default function ResultsPage() {
                 return (
                   <Card
                     key={doc.id}
-                    className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-primary/30 dark:hover:border-primary/40'
+                    className='group flex flex-col justify-between w-full min-w-0 overflow-hidden transition-all duration-200 hover:shadow-lg hover:border-gray-400 dark:hover:border-gray-600'
                   >
                     <div>
                       {/* Wrapper for content except footer */}
@@ -804,7 +804,7 @@ export default function ResultsPage() {
                       {' '}
                       {/* Ensure footer is at the bottom */}
                       <Button
-                        className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary/90 dark:group-hover:text-primary-foreground transition-colors'
+                        className='w-full gap-2 group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-600 transition-colors'
                         variant='outline'
                         size='sm'
                         asChild
