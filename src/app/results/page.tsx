@@ -46,6 +46,12 @@ import {
   useDocumentList,
   prefetchFromDocumentList,
 } from '@/hooks/use-cached-data'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export default function ResultsPage() {
   const urlParams = useSearchParams()
@@ -722,13 +728,35 @@ export default function ResultsPage() {
                               <FileText className='h-8 w-8 text-gray-400 dark:text-gray-500' />
                             </div>
                           )}
-                          <CardTitle className='text-xl mb-1 group-hover:text-primary transition-colors'>
-                            {doc.company_name}
-                          </CardTitle>
-                          <p className='text-sm text-muted-foreground text-center truncate max-w-full'>
-                            <Globe className='h-3.5 w-3.5 inline-flex mr-1 text-muted-foreground' />
-                            {doc.url}
-                          </p>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <CardTitle className='text-xl mb-1 group-hover:text-primary transition-colors truncate max-w-[180px] sm:max-w-[250px] md:max-w-[200px] lg:max-w-[220px] cursor-default'>
+                                  {doc.company_name.length > 20
+                                    ? `${doc.company_name.substring(0, 18)}...`
+                                    : doc.company_name}
+                                </CardTitle>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{doc.company_name}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <p className='text-sm text-muted-foreground text-center truncate max-w-[220px] sm:max-w-[280px] cursor-default'>
+                                  <Globe className='h-3.5 w-3.5 inline-flex mr-1 text-muted-foreground' />
+                                  {doc.url.length > 25
+                                    ? `${doc.url.substring(0, 23)}...`
+                                    : doc.url}
+                                </p>
+                              </TooltipTrigger>
+                              <TooltipContent side='bottom'>
+                                <p>{doc.url}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </CardHeader>
                       <CardContent className='p-4 pt-4 text-xs'>

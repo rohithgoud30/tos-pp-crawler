@@ -11,6 +11,12 @@ import {
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { DocumentItem, PaginatedResponse } from '@/lib/api'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 type ResultState = 'empty' | 'loading' | 'results'
 
@@ -106,13 +112,35 @@ export function SearchResults({
                       />
                     </div>
                   )}
-                  <CardTitle className='text-xl group-hover:text-primary transition-colors'>
-                    {item.company_name}
-                  </CardTitle>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <CardTitle className='text-xl group-hover:text-primary transition-colors truncate max-w-[180px] sm:max-w-[250px] md:max-w-[200px] lg:max-w-[220px] cursor-default'>
+                          {item.company_name.length > 20
+                            ? `${item.company_name.substring(0, 18)}...`
+                            : item.company_name}
+                        </CardTitle>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{item.company_name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-                <p className='text-sm text-muted-foreground text-center truncate'>
-                  {item.url}
-                </p>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className='text-sm text-muted-foreground text-center truncate max-w-[220px] sm:max-w-[280px] cursor-default'>
+                        {item.url.length > 25
+                          ? `${item.url.substring(0, 23)}...`
+                          : item.url}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent side='bottom'>
+                      <p>{item.url}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </CardHeader>
               <CardContent className='pt-4'>
                 <div className='flex justify-between items-center'>
