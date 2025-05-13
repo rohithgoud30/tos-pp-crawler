@@ -543,13 +543,13 @@ export default function ResultsPage() {
             </div>
 
             {/* Filter controls on bottom row */}
-            <div className='grid grid-cols-1 sm:grid-cols-4 justify-center gap-3'>
-              <div className='w-full sm:w-40'>
+            <div className='grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3'>
+              <div className='col-span-1'>
                 <Select
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-full h-12'>
+                  <SelectTrigger className='w-full sm:w-auto h-12'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -559,12 +559,13 @@ export default function ResultsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className='w-full sm:w-40'>
+
+              <div className='col-span-1'>
                 <Select
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-full h-12'>
+                  <SelectTrigger className='w-full sm:w-auto h-12'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -575,26 +576,28 @@ export default function ResultsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className='w-full sm:w-40'>
+
+              <div className='col-span-1'>
                 <Button
                   variant='outline'
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full h-12 flex items-center justify-center border-input'
+                  className='w-full sm:w-auto h-12 flex items-center justify-center border-input'
                 >
                   <ArrowUpDown className='h-4 w-4 mr-2' />
-                  <span>
+                  <span className='whitespace-nowrap'>
                     {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                   </span>
                 </Button>
               </div>
-              <div className='w-full sm:w-40'>
+
+              <div className='col-span-1'>
                 <Select
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-full h-12'>
+                  <SelectTrigger className='w-full sm:w-auto h-12'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
@@ -821,7 +824,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!resultsPagination.has_prev}
-              className='mb-2 sm:mb-0 h-12 w-40 border-input flex items-center justify-center'
+              className='mb-2 sm:mb-0 h-12 w-auto px-4 border-input flex items-center justify-center'
             >
               Previous
             </Button>
@@ -872,7 +875,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!resultsPagination.has_next}
-              className='mb-2 sm:mb-0 h-12 w-40 border-input flex items-center justify-center'
+              className='mb-2 sm:mb-0 h-12 w-auto px-4 border-input flex items-center justify-center'
             >
               Next
             </Button>
