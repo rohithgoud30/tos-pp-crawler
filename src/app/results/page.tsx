@@ -583,7 +583,7 @@ export default function ResultsPage() {
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full sm:w-auto h-12 flex items-center justify-center border-input'
+                  className='w-full sm:w-auto h-12 flex items-center justify-center px-4'
                 >
                   <ArrowUpDown className='h-4 w-4 mr-2' />
                   <span className='whitespace-nowrap'>
