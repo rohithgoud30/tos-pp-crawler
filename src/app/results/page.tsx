@@ -543,13 +543,13 @@ export default function ResultsPage() {
             </div>
 
             {/* Filter controls on bottom row */}
-            <div className='grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3'>
-              <div className='col-span-1'>
+            <div className='grid grid-cols-1 sm:grid-cols-4 justify-center gap-3'>
+              <div className='w-full sm:w-40'>
                 <Select
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-full sm:w-40 h-12'>
+                  <SelectTrigger className='w-full h-12'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -559,13 +559,12 @@ export default function ResultsPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className='col-span-1'>
+              <div className='w-full sm:w-40'>
                 <Select
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-full sm:w-40 h-12'>
+                  <SelectTrigger className='w-full h-12'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -576,28 +575,26 @@ export default function ResultsPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className='col-span-1'>
+              <div className='w-full sm:w-40'>
                 <Button
                   variant='outline'
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full sm:w-40 h-12 flex items-center justify-center border-input'
+                  className='w-full h-12 flex items-center justify-center border-input'
                 >
                   <ArrowUpDown className='h-4 w-4 mr-2' />
-                  <span className='hidden sm:inline-block'>
+                  <span>
                     {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                   </span>
                 </Button>
               </div>
-
-              <div className='col-span-1'>
+              <div className='w-full sm:w-40'>
                 <Select
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-full sm:w-40 h-12'>
+                  <SelectTrigger className='w-full h-12'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
