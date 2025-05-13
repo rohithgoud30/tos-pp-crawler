@@ -549,7 +549,7 @@ export default function ResultsPage() {
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-full sm:w-[145px] h-12'>
+                  <SelectTrigger className='w-full sm:w-40 h-12'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -565,7 +565,7 @@ export default function ResultsPage() {
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-full sm:w-[145px] h-12'>
+                  <SelectTrigger className='w-full sm:w-40 h-12'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -583,7 +583,7 @@ export default function ResultsPage() {
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full sm:w-[145px] h-12 flex items-center justify-center border-input'
+                  className='w-full sm:w-40 h-12 flex items-center justify-center border-input'
                 >
                   <ArrowUpDown className='h-4 w-4 mr-2' />
                   <span className='hidden sm:inline-block'>
@@ -597,7 +597,7 @@ export default function ResultsPage() {
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-full sm:w-[145px] h-12'>
+                  <SelectTrigger className='w-full sm:w-40 h-12'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
@@ -824,7 +824,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!resultsPagination.has_prev}
-              className='mb-2 sm:mb-0 h-12 w-[145px] border-input flex items-center justify-center'
+              className='mb-2 sm:mb-0 h-12 w-40 border-input flex items-center justify-center'
             >
               Previous
             </Button>
@@ -875,7 +875,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!resultsPagination.has_next}
-              className='mb-2 sm:mb-0 h-12 w-[145px] border-input flex items-center justify-center'
+              className='mb-2 sm:mb-0 h-12 w-40 border-input flex items-center justify-center'
             >
               Next
             </Button>
