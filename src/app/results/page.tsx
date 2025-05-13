@@ -523,31 +523,33 @@ export default function ResultsPage() {
 
         <div className='bg-card rounded-lg border shadow-sm p-5'>
           <form onSubmit={handleSearch} className='space-y-4'>
-            <div className='flex flex-col md:flex-row gap-3'>
-              <div className='relative flex-1 mx-auto w-full max-w-[500px] md:max-w-none'>
-                <Input
-                  type='text'
-                  placeholder='Search for a company or service...'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className='pr-12 h-12'
-                />
-                <Button
-                  type='submit'
-                  size='icon'
-                  className='absolute right-1 top-1 h-10 w-10 bg-primary text-primary-foreground hover:bg-primary/90'
-                >
-                  <Search className='h-4 w-4' />
-                  <span className='sr-only'>Search</span>
-                </Button>
-              </div>
+            {/* Search input on full width top row */}
+            <div className='relative w-full'>
+              <Input
+                type='text'
+                placeholder='Search for a company or service...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pr-12 h-12 w-full'
+              />
+              <Button
+                type='submit'
+                size='icon'
+                className='absolute right-1 top-1 h-10 w-10 bg-primary text-primary-foreground hover:bg-primary/90'
+              >
+                <Search className='h-4 w-4' />
+                <span className='sr-only'>Search</span>
+              </Button>
+            </div>
 
-              <div className='flex flex-wrap justify-center md:justify-start gap-2'>
+            {/* Filter controls on bottom row */}
+            <div className='grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3'>
+              <div className='col-span-1'>
                 <Select
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-[140px] h-12'>
+                  <SelectTrigger className='w-full sm:w-[145px] h-12'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -556,12 +558,14 @@ export default function ResultsPage() {
                     <SelectItem value='pp'>Privacy Policy</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
 
+              <div className='col-span-1'>
                 <Select
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-[140px] h-12'>
+                  <SelectTrigger className='w-full sm:w-[145px] h-12'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -571,14 +575,16 @@ export default function ResultsPage() {
                     <SelectItem value='view_count'>Most Viewed</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
 
+              <div className='col-span-1'>
                 <Button
                   variant='outline'
                   size='icon'
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-12 h-12'
+                  className='w-full sm:w-12 h-12 flex items-center justify-center'
                 >
                   <ArrowUpDown className='h-4 w-4' />
                   <span className='sr-only'>
@@ -586,12 +592,14 @@ export default function ResultsPage() {
                     {sortOrder === 'asc' ? 'ascending' : 'descending'})
                   </span>
                 </Button>
+              </div>
 
+              <div className='col-span-1'>
                 <Select
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-[100px] h-12'>
+                  <SelectTrigger className='w-full sm:w-[145px] h-12'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
@@ -818,7 +826,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!resultsPagination.has_prev}
-              className='mb-2 sm:mb-0 h-10 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+              className='mb-2 sm:mb-0 h-10 w-[100px] border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
             >
               Previous
             </Button>
@@ -858,8 +866,8 @@ export default function ResultsPage() {
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }
-                    size='icon' // Make buttons square
-                    style={{ minWidth: '2.5rem', height: '2.5rem' }} // Ensure consistent width
+                    size='icon'
+                    style={{ width: '40px', height: '40px' }} // Fixed size for all page buttons
                   >
                     {pageNumber}
                   </Button>
@@ -871,7 +879,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!resultsPagination.has_next}
-              className='mb-2 sm:mb-0 h-10 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+              className='mb-2 sm:mb-0 h-10 w-[100px] border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
             >
               Next
             </Button>
