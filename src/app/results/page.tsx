@@ -543,13 +543,13 @@ export default function ResultsPage() {
             </div>
 
             {/* Filter controls on bottom row */}
-            <div className='grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3 items-center'>
+            <div className='flex flex-col sm:flex-row sm:flex-wrap justify-center gap-4 items-stretch'>
               <div className='col-span-1'>
                 <Select
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-full sm:w-[200px] h-12'>
+                  <SelectTrigger className='w-full sm:w-[200px] h-12 text-left'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -565,7 +565,7 @@ export default function ResultsPage() {
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-full sm:w-[200px] h-12'>
+                  <SelectTrigger className='w-full sm:w-[200px] h-12 text-left'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -597,7 +597,7 @@ export default function ResultsPage() {
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-full sm:w-[200px] h-12'>
+                  <SelectTrigger className='w-full sm:w-[200px] h-12 text-left'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
