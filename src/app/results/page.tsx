@@ -580,16 +580,14 @@ export default function ResultsPage() {
               <div className='col-span-1'>
                 <Button
                   variant='outline'
-                  size='icon'
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full sm:w-12 h-12 flex items-center justify-center'
+                  className='w-full sm:w-[145px] h-12 flex items-center justify-center border-input'
                 >
-                  <ArrowUpDown className='h-4 w-4' />
-                  <span className='sr-only'>
-                    Toggle sort order (
-                    {sortOrder === 'asc' ? 'ascending' : 'descending'})
+                  <ArrowUpDown className='h-4 w-4 mr-2' />
+                  <span className='hidden sm:inline-block'>
+                    {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                   </span>
                 </Button>
               </div>
@@ -821,17 +819,17 @@ export default function ResultsPage() {
       {/* Pagination */}
       {resultsPagination && resultsPagination.total_pages > 1 && (
         <div className='flex justify-center mt-10 mb-4'>
-          <div className='flex flex-wrap justify-center gap-2 items-center'>
+          <div className='flex flex-wrap justify-center gap-3 items-center'>
             <Button
               variant='outline'
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={!resultsPagination.has_prev}
-              className='mb-2 sm:mb-0 h-10 w-[100px] border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+              className='mb-2 sm:mb-0 h-12 w-[145px] border-input flex items-center justify-center'
             >
               Previous
             </Button>
 
-            <div className='flex flex-wrap justify-center gap-2'>
+            <div className='flex flex-wrap justify-center gap-3'>
               {(() => {
                 const totalPages = resultsPagination.total_pages
                 const MAX_VISIBLE_PAGES = Math.min(5, totalPages) // Show fewer pages on mobile
@@ -863,11 +861,9 @@ export default function ResultsPage() {
                     onClick={() => handlePageChange(pageNumber)}
                     className={
                       currentPage === pageNumber
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        : 'border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 h-12 w-12'
+                        : 'border-input hover:bg-accent hover:text-accent-foreground h-12 w-12'
                     }
-                    size='icon'
-                    style={{ width: '40px', height: '40px' }} // Fixed size for all page buttons
                   >
                     {pageNumber}
                   </Button>
@@ -879,7 +875,7 @@ export default function ResultsPage() {
               variant='outline'
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={!resultsPagination.has_next}
-              className='mb-2 sm:mb-0 h-10 w-[100px] border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+              className='mb-2 sm:mb-0 h-12 w-[145px] border-input flex items-center justify-center'
             >
               Next
             </Button>
