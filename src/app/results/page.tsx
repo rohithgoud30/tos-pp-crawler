@@ -543,13 +543,13 @@ export default function ResultsPage() {
             </div>
 
             {/* Filter controls on bottom row */}
-            <div className='grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3'>
+            <div className='grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-3 items-center'>
               <div className='col-span-1'>
                 <Select
                   value={documentTypeFilter || 'all'}
                   onValueChange={handleDocumentTypeChange}
                 >
-                  <SelectTrigger className='w-full sm:w-auto h-12'>
+                  <SelectTrigger className='w-full sm:w-[200px] h-12'>
                     <SelectValue placeholder='Document Type' />
                   </SelectTrigger>
                   <SelectContent>
@@ -565,7 +565,7 @@ export default function ResultsPage() {
                   value={sortOption}
                   onValueChange={handleSortOptionChange}
                 >
-                  <SelectTrigger className='w-full sm:w-auto h-12'>
+                  <SelectTrigger className='w-full sm:w-[200px] h-12'>
                     <SelectValue placeholder='Sort By' />
                   </SelectTrigger>
                   <SelectContent>
@@ -583,12 +583,12 @@ export default function ResultsPage() {
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full sm:w-auto h-12 flex items-center justify-center px-4'
+                  className='w-full sm:w-[200px] h-12 flex items-center justify-between px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground'
                 >
-                  <ArrowUpDown className='h-4 w-4 mr-2' />
                   <span className='whitespace-nowrap'>
                     {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                   </span>
+                  <ArrowUpDown className='h-4 w-4 ml-2 opacity-50' />
                 </Button>
               </div>
 
@@ -597,7 +597,7 @@ export default function ResultsPage() {
                   value={resultsPerPage.toString()}
                   onValueChange={handleResultsPerPageChange}
                 >
-                  <SelectTrigger className='w-full sm:w-auto h-12'>
+                  <SelectTrigger className='w-full sm:w-[200px] h-12'>
                     <SelectValue placeholder='Per Page' />
                   </SelectTrigger>
                   <SelectContent>
