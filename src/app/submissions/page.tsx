@@ -416,9 +416,10 @@ export default function SubmissionsPage() {
         mutateSearch()
       }
 
-      // If successful and has document_id, we can enable redirect
+      // If successful and has document_id, store it for the View button
       if (result.status === 'success' && result.document_id) {
         setSuccessfulRetryId(result.document_id)
+        // Do not redirect - let user choose when to navigate
       }
     } catch (error) {
       console.error('Retry error:', error)
@@ -427,14 +428,14 @@ export default function SubmissionsPage() {
         error instanceof Error ? error.message : 'Failed to retry submission'
       )
     } finally {
-      // Don't reset the retry status immediately for success
-      if (retryStatus !== 'success') {
-        // Reset retry status after a delay
+      // For errors, reset retry status after a delay
+      if (retryStatus === 'error') {
         setTimeout(() => {
           setRetryingId(null)
           setRetryStatus('idle')
         }, 3000)
       }
+      // Success state persists until user takes action
     }
   }
 
@@ -800,17 +801,38 @@ export default function SubmissionsPage() {
                             (retryingId === submission.id &&
                             retryStatus === 'success' &&
                             successfulRetryId ? (
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                asChild
-                                className='bg-green-50 text-green-600 border-green-200'
-                              >
-                                <Link href={`/analysis/${successfulRetryId}`}>
-                                  <FileText className='mr-1 h-4 w-4' />
-                                  View
-                                </Link>
-                              </Button>
+                              <div className='flex flex-col w-full'>
+                                <div className='p-3 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-md mb-3 flex items-center'>
+                                  <Check className='h-5 w-5 mr-2' />
+                                  Analysis successful! Document is ready.
+                                </div>
+                                <div className='flex space-x-3'>
+                                  <Button
+                                    type='button'
+                                    variant='outline'
+                                    onClick={() => {
+                                      setCreateDialogOpen(false)
+                                      // Refresh the list after closing dialog
+                                      mutateList()
+                                    }}
+                                  >
+                                    Close
+                                  </Button>
+                                  <Button
+                                    type='button'
+                                    variant='default'
+                                    className='bg-green-600 hover:bg-green-700'
+                                    asChild
+                                  >
+                                    <Link
+                                      href={`/analysis/${successfulRetryId}`}
+                                    >
+                                      <FileText className='mr-2 h-4 w-4' />
+                                      View Analysis
+                                    </Link>
+                                  </Button>
+                                </div>
+                              </div>
                             ) : (
                               <Button
                                 variant='outline'
@@ -1138,18 +1160,36 @@ export default function SubmissionsPage() {
                 (s) => s.url === submissionForm.url && s.status === 'failed'
               ) ? (
                 successfulRetryId ? (
-                  <Button
-                    type='button'
-                    variant='default'
-                    className='bg-green-600 hover:bg-green-700'
-                    onClick={() => {
-                      setCreateDialogOpen(false)
-                      router.push(`/analysis/${successfulRetryId}`)
-                    }}
-                  >
-                    <FileText className='mr-2 h-4 w-4' />
-                    View Document
-                  </Button>
+                  <div className='flex flex-col w-full'>
+                    <div className='p-3 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-md mb-3 flex items-center'>
+                      <Check className='h-5 w-5 mr-2' />
+                      Analysis successful! Document is ready.
+                    </div>
+                    <div className='flex space-x-3'>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        onClick={() => {
+                          setCreateDialogOpen(false)
+                          // Refresh the list after closing dialog
+                          mutateList()
+                        }}
+                      >
+                        Close
+                      </Button>
+                      <Button
+                        type='button'
+                        variant='default'
+                        className='bg-green-600 hover:bg-green-700'
+                        asChild
+                      >
+                        <Link href={`/analysis/${successfulRetryId}`}>
+                          <FileText className='mr-2 h-4 w-4' />
+                          View Analysis
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <Button
                     type='button'
