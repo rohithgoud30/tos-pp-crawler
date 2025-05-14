@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Plus,
   RefreshCw,
+  Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,6 +58,8 @@ import {
   createSubmission,
   type SubmissionListParams,
   type SubmissionSearchParams,
+  type SubmissionRetryParams,
+  retrySubmission,
 } from '@/lib/api'
 import {
   useSubmissionsList,
@@ -127,6 +130,14 @@ export default function SubmissionsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [retryingId, setRetryingId] = useState<string | null>(null)
+  const [retryStatus, setRetryStatus] = useState<
+    'idle' | 'retrying' | 'success' | 'error'
+  >('idle')
+  const [retryError, setRetryError] = useState<string | null>(null)
+  const [successfulRetryId, setSuccessfulRetryId] = useState<string | null>(
+    null
+  )
 
   // Redirect to login if not signed in
   useEffect(() => {
@@ -370,6 +381,60 @@ export default function SubmissionsPage() {
       )
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Handle retry submission
+  const handleRetrySubmission = async (
+    submissionId: string,
+    document_url?: string
+  ) => {
+    if (!submissionForm.user_email) {
+      setRetryError('User is not authenticated. Please log in.')
+      return
+    }
+
+    setRetryingId(submissionId)
+    setRetryStatus('retrying')
+    setRetryError(null)
+    setSuccessfulRetryId(null)
+
+    try {
+      const retryParams: SubmissionRetryParams = {
+        document_url: document_url || '',
+        user_email: submissionForm.user_email,
+      }
+
+      const result = await retrySubmission(submissionId, retryParams)
+
+      // Set success status
+      setRetryStatus('success')
+
+      // Refresh the submission list
+      mutateList()
+      if (activeSearchQuery) {
+        mutateSearch()
+      }
+
+      // If successful and has document_id, we can enable redirect
+      if (result.status === 'success' && result.document_id) {
+        setSuccessfulRetryId(result.document_id)
+      }
+    } catch (error) {
+      console.error('Retry error:', error)
+      setRetryStatus('error')
+      setRetryError(
+        error instanceof Error ? error.message : 'Failed to retry submission'
+      )
+    } finally {
+      // Don't reset the retry status immediately for success
+      if (retryStatus !== 'success') {
+        // Reset retry status after a delay
+        setTimeout(() => {
+          setRetryingId(null)
+          setRetryStatus('idle')
+        }, 3000)
+      }
     }
   }
 
@@ -731,25 +796,88 @@ export default function SubmissionsPage() {
                                 </Link>
                               </Button>
                             )}
-                          {submission.status === 'failed' && (
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              onClick={() => {
-                                // Open retry dialog
-                                setSubmissionForm((prev) => ({
-                                  ...prev,
-                                  url: submission.url,
-                                  document_type: submission.document_type,
-                                  document_url: '',
-                                }))
-                                setCreateDialogOpen(true)
-                              }}
-                            >
-                              <RefreshCw className='mr-1 h-4 w-4' />
-                              Retry
-                            </Button>
-                          )}
+                          {submission.status === 'failed' &&
+                            (retryingId === submission.id &&
+                            retryStatus === 'success' &&
+                            successfulRetryId ? (
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                asChild
+                                className='bg-green-50 text-green-600 border-green-200'
+                              >
+                                <Link href={`/analysis/${successfulRetryId}`}>
+                                  <FileText className='mr-1 h-4 w-4' />
+                                  View
+                                </Link>
+                              </Button>
+                            ) : (
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => {
+                                  // Direct retry if we have submission id
+                                  if (submission.document_url) {
+                                    // If we already have document_url, retry directly
+                                    handleRetrySubmission(
+                                      submission.id,
+                                      submission.document_url
+                                    )
+                                  } else {
+                                    // Otherwise open dialog for user to enter document URL
+                                    setSubmissionForm((prev) => ({
+                                      ...prev,
+                                      url: submission.url,
+                                      document_type: submission.document_type,
+                                      document_url: '',
+                                    }))
+                                    setCreateDialogOpen(true)
+                                  }
+                                }}
+                                disabled={
+                                  retryingId === submission.id &&
+                                  retryStatus === 'retrying'
+                                }
+                                className={
+                                  retryingId === submission.id
+                                    ? retryStatus === 'success'
+                                      ? 'bg-green-50 text-green-600 border-green-200'
+                                      : retryStatus === 'error'
+                                      ? 'bg-red-50 text-red-600 border-red-200'
+                                      : ''
+                                    : ''
+                                }
+                              >
+                                {retryingId === submission.id ? (
+                                  retryStatus === 'retrying' ? (
+                                    <>
+                                      <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
+                                      Retrying...
+                                    </>
+                                  ) : retryStatus === 'success' ? (
+                                    <>
+                                      <Check className='mr-1 h-4 w-4' />
+                                      Success
+                                    </>
+                                  ) : retryStatus === 'error' ? (
+                                    <>
+                                      <AlertCircle className='mr-1 h-4 w-4' />
+                                      Failed
+                                    </>
+                                  ) : (
+                                    <>
+                                      <RefreshCw className='mr-1 h-4 w-4' />
+                                      Retry
+                                    </>
+                                  )
+                                ) : (
+                                  <>
+                                    <RefreshCw className='mr-1 h-4 w-4' />
+                                    Retry
+                                  </>
+                                )}
+                              </Button>
+                            ))}
                           <Button variant='ghost' size='sm' asChild>
                             <a
                               href={submission.url}
@@ -995,16 +1123,82 @@ export default function SubmissionsPage() {
             )}
 
             <DialogFooter>
-              <Button type='submit' disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                    Submitting...
-                  </>
+              {/* Show retry error message */}
+              {retryError && (
+                <div className='p-3 w-full rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200 mb-3'>
+                  <p className='flex items-center'>
+                    <AlertCircle className='h-4 w-4 mr-2' />
+                    {retryError}
+                  </p>
+                </div>
+              )}
+
+              {/* If this is a retry for a specific submission */}
+              {displayedResults.some(
+                (s) => s.url === submissionForm.url && s.status === 'failed'
+              ) ? (
+                successfulRetryId ? (
+                  <Button
+                    type='button'
+                    variant='default'
+                    className='bg-green-600 hover:bg-green-700'
+                    onClick={() => {
+                      setCreateDialogOpen(false)
+                      router.push(`/analysis/${successfulRetryId}`)
+                    }}
+                  >
+                    <FileText className='mr-2 h-4 w-4' />
+                    View Document
+                  </Button>
                 ) : (
-                  'Submit URL for Analysis'
-                )}
-              </Button>
+                  <Button
+                    type='button'
+                    onClick={() => {
+                      const failedSubmission = displayedResults.find(
+                        (s) =>
+                          s.url === submissionForm.url && s.status === 'failed'
+                      )
+                      if (failedSubmission) {
+                        handleRetrySubmission(
+                          failedSubmission.id,
+                          submissionForm.document_url
+                        )
+                      }
+                    }}
+                    disabled={isSubmitting || retryStatus === 'retrying'}
+                    className={
+                      retryStatus === 'error'
+                        ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                        : ''
+                    }
+                  >
+                    {retryStatus === 'retrying' ? (
+                      <>
+                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                        Retrying...
+                      </>
+                    ) : retryStatus === 'error' ? (
+                      <>
+                        <AlertCircle className='mr-2 h-4 w-4' />
+                        Retry Failed
+                      </>
+                    ) : (
+                      'Retry Analysis'
+                    )}
+                  </Button>
+                )
+              ) : (
+                <Button type='submit' disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit URL for Analysis'
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
