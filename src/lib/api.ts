@@ -336,9 +336,10 @@ export async function adminSearchAllSubmissions(
     queryParams.append('document_type', params.document_type)
   if (params.status) queryParams.append('status', params.status)
   queryParams.append('role', 'admin') // Always required
+  queryParams.append('api_key', API_KEY) // Add the API key as required
 
   const queryString = queryParams.toString()
-  const endpoint = `/api/v1/admin/search-all-submissions?${queryString}`
+  const endpoint = `/admin/search-all-submissions?${queryString}`
 
   return apiRequest<PaginatedResponse<SubmissionItem>>(endpoint)
 }
