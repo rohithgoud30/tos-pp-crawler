@@ -7,6 +7,7 @@ import ThemeProvider from '@/components/theme-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { NavigationProvider } from '@/context/navigation-context'
 import { SWRConfigProvider } from '@/context/swr-config-provider'
+import { Toaster } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -99,6 +100,7 @@ export default function RootLayout({
                   </div>
                 </div>
               </footer>
+              <Toaster />
             </div>
           </SWRConfigProvider>
         </ThemeProvider>

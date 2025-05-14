@@ -1,6 +1,14 @@
 'use client'
 
-import { BarChart3, ExternalLink, Tag, RefreshCw } from 'lucide-react'
+import {
+  BarChart3,
+  ExternalLink,
+  Tag,
+  RefreshCw,
+  Edit,
+  Check,
+  X,
+} from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +20,8 @@ import { useEffect, useState, useRef } from 'react'
 import { type WordFrequency, type TextMiningMetrics } from '@/lib/api'
 import { useDocumentDetail } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/use-toast'
 
 // This Map stores document IDs that have already been fetched in the current session
 // It persists between component remounts in StrictMode but is cleared on actual page navigation
@@ -24,6 +34,12 @@ export default function AnalysisPage() {
   const ppRef = useRef<HTMLDivElement>(null)
   const { user, isSignedIn } = useUser()
   const isAdmin = isSignedIn && user?.publicMetadata?.role === 'admin'
+  const { toast } = useToast()
+
+  // Add state for URL editing and reanalysis
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedUrl, setEditedUrl] = useState('')
+  const [isReanalyzing, setIsReanalyzing] = useState(false)
 
   // Add refs for sections to lazy load
   const wordFrequencyRef = useRef<HTMLDivElement>(null)
@@ -98,6 +114,61 @@ export default function AnalysisPage() {
       tosRef.current?.scrollIntoView({ behavior: 'smooth' })
     } else if (docType === 'privacy') {
       ppRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  // Add function to handle reanalysis
+  const handleReanalyze = async () => {
+    if (!analysisItem) return
+
+    setIsReanalyzing(true)
+
+    try {
+      const endpoint =
+        analysisItem.document_type === 'tos'
+          ? '/api/reanalyze-tos'
+          : '/api/reanalyze-pp'
+
+      const payload =
+        isEditing && editedUrl.trim() !== ''
+          ? { document_id: documentId, url: editedUrl.trim() }
+          : { document_id: documentId }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        toast({
+          title: 'Reanalysis successful',
+          description: 'The document has been reanalyzed successfully.',
+          variant: 'default',
+        })
+        // Refresh the page to show updated analysis
+        window.location.reload()
+      } else {
+        toast({
+          title: 'Reanalysis failed',
+          description: data.message || 'An error occurred during reanalysis.',
+          variant: 'destructive',
+        })
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to reanalyze document. Please try again.',
+        variant: 'destructive',
+      })
+      console.error('Reanalysis error:', err)
+    } finally {
+      setIsReanalyzing(false)
+      setIsEditing(false)
     }
   }
 
@@ -368,15 +439,68 @@ export default function AnalysisPage() {
         {/* View Original Source Button or Reanalyze Button for admins */}
         <div className='flex justify-center mt-4 mb-4'>
           {analysisItem.retrieved_url && isAdmin ? (
-            <Button
-              className='flex items-center bg-amber-600 hover:bg-amber-700 text-white'
-              onClick={() =>
-                alert('Reanalyze functionality will be implemented later')
-              }
-            >
-              Reanalyze
-              <RefreshCw className='h-3 w-3 ml-2' />
-            </Button>
+            <div className='flex flex-col gap-3 items-center'>
+              {isEditing ? (
+                <div className='flex w-full max-w-md gap-2'>
+                  <Input
+                    type='text'
+                    value={editedUrl}
+                    onChange={(e) => setEditedUrl(e.target.value)}
+                    placeholder={analysisItem.retrieved_url}
+                    className='flex-grow'
+                  />
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    onClick={() => {
+                      setIsEditing(false)
+                      setEditedUrl('')
+                    }}
+                    className='text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
+                  >
+                    <X className='h-4 w-4' />
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    onClick={() => setIsEditing(false)}
+                    className='text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
+                  >
+                    <Check className='h-4 w-4' />
+                  </Button>
+                </div>
+              ) : (
+                <div className='flex items-center gap-2'>
+                  <p className='text-sm text-gray-600 dark:text-gray-400'>
+                    Current URL: {analysisItem.retrieved_url}
+                  </p>
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    onClick={() => {
+                      setIsEditing(true)
+                      setEditedUrl(analysisItem.retrieved_url || '')
+                    }}
+                    className='text-gray-500 border-gray-200'
+                  >
+                    <Edit className='h-4 w-4' />
+                  </Button>
+                </div>
+              )}
+
+              <Button
+                className='flex items-center bg-amber-600 hover:bg-amber-700 text-white'
+                onClick={handleReanalyze}
+                disabled={isReanalyzing}
+              >
+                {isReanalyzing ? 'Processing...' : 'Reanalyze'}
+                <RefreshCw
+                  className={`h-3 w-3 ml-2 ${
+                    isReanalyzing ? 'animate-spin' : ''
+                  }`}
+                />
+              </Button>
+            </div>
           ) : (
             analysisItem.retrieved_url && (
               <a
