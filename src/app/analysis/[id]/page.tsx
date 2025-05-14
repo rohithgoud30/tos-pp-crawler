@@ -413,18 +413,34 @@ export default function AnalysisPage() {
 
           {/* Admin-specific: Show document URLs */}
           {isAdmin && analysisItem.retrieved_url && (
-            <div className='mt-2 text-sm text-gray-600 dark:text-gray-400 border p-2 border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-900'>
-              <div className='flex items-center gap-2'>
-                <p className='flex-shrink-0'>
-                  {analysisItem.document_type === 'tos' ? 'ToS' : 'PP'} URL:
-                </p>
+            <div className='mt-2 mb-5'>
+              <div className='bg-slate-800 text-white py-2 px-4 rounded-t-md flex items-center'>
+                <h2 className='text-lg font-semibold'>
+                  {analysisItem.document_type === 'tos' ? 'ToS' : 'PP'} URL
+                </h2>
+                {!isEditing && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => {
+                      setIsEditing(true)
+                      setEditedUrl(analysisItem.retrieved_url || '')
+                    }}
+                    className='ml-2 h-7 px-2 bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white'
+                  >
+                    <Edit className='h-3 w-3 mr-1' />
+                    Edit
+                  </Button>
+                )}
+              </div>
+              <div className='bg-slate-50 dark:bg-slate-900 border border-t-0 border-slate-300 dark:border-slate-700 p-3 rounded-b-md'>
                 {isEditing ? (
-                  <div className='flex flex-1 gap-2'>
+                  <div className='flex gap-2'>
                     <Input
                       type='text'
                       value={editedUrl}
                       onChange={(e) => setEditedUrl(e.target.value)}
-                      className='flex-1 h-8 py-1'
+                      className='flex-1'
                     />
                     <Button
                       variant='outline'
@@ -433,7 +449,7 @@ export default function AnalysisPage() {
                         setIsEditing(false)
                         setEditedUrl('')
                       }}
-                      className='h-8 px-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
+                      className='text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
                     >
                       <X className='h-4 w-4 mr-1' />
                       Cancel
@@ -442,35 +458,21 @@ export default function AnalysisPage() {
                       variant='outline'
                       size='sm'
                       onClick={() => setIsEditing(false)}
-                      className='h-8 px-2 text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
+                      className='text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
                     >
                       <Check className='h-4 w-4 mr-1' />
                       Save
                     </Button>
                   </div>
                 ) : (
-                  <div className='flex flex-1 items-center'>
-                    <a
-                      href={analysisItem.retrieved_url}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[450px]'
-                    >
-                      {analysisItem.retrieved_url}
-                    </a>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => {
-                        setIsEditing(true)
-                        setEditedUrl(analysisItem.retrieved_url || '')
-                      }}
-                      className='ml-2 h-7 px-2 text-gray-500 border-gray-200'
-                    >
-                      <Edit className='h-3 w-3 mr-1' />
-                      Edit
-                    </Button>
-                  </div>
+                  <a
+                    href={analysisItem.retrieved_url}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-blue-600 dark:text-blue-400 hover:underline text-sm break-all'
+                  >
+                    {analysisItem.retrieved_url}
+                  </a>
                 )}
               </div>
             </div>
