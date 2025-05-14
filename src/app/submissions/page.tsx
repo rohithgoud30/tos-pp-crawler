@@ -16,6 +16,7 @@ import {
   Plus,
   RefreshCw,
   Check,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -60,6 +61,8 @@ import {
   type SubmissionSearchParams,
   type SubmissionRetryParams,
   retrySubmission,
+  adminSearchAllSubmissions,
+  type AdminSearchSubmissionsParams,
 } from '@/lib/api'
 import {
   useSubmissionsList,
@@ -138,6 +141,10 @@ export default function SubmissionsPage() {
   const [successfulRetryId, setSuccessfulRetryId] = useState<string | null>(
     null
   )
+  const [adminSearchResults, setAdminSearchResults] =
+    useState<PaginatedSubmissionResponse | null>(null)
+  const [isAdminSearching, setIsAdminSearching] = useState(false)
+  const [adminSearchError, setAdminSearchError] = useState<string | null>(null)
 
   // Redirect to login if not signed in
   useEffect(() => {
@@ -256,22 +263,90 @@ export default function SubmissionsPage() {
     mutate: () => void
   }
 
+  // Handle admin search
+  const handleAdminSearch = async () => {
+    if (!isAdmin || !adminMode) {
+      return
+    }
+
+    setIsAdminSearching(true)
+    setAdminSearchError(null)
+
+    try {
+      const params: AdminSearchSubmissionsParams = {
+        role: 'admin',
+        page: currentPage,
+        size: resultsPerPage,
+        sort_order: sortOrder,
+      }
+
+      // Only add parameters that have values
+      if (searchQuery.trim()) params.query = searchQuery.trim()
+      if (adminUserEmail.trim()) params.user_email = adminUserEmail.trim()
+      if (documentTypeFilter) params.document_type = documentTypeFilter
+      if (statusFilter) params.status = statusFilter
+
+      const results = await adminSearchAllSubmissions(params)
+      setAdminSearchResults(results as unknown as PaginatedSubmissionResponse)
+
+      // Update active search query to indicate search was performed
+      setActiveSearchQuery(searchQuery)
+    } catch (error) {
+      console.error('Admin search error:', error)
+      setAdminSearchError(
+        error instanceof Error ? error.message : 'Admin search failed'
+      )
+      setAdminSearchResults(null)
+    } finally {
+      setIsAdminSearching(false)
+    }
+  }
+
+  // Handle normal search
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault()
+
+    if (adminMode && isAdmin) {
+      // Use admin search instead
+      handleAdminSearch()
+    } else {
+      // Regular search behavior
+      setActiveSearchQuery(searchQuery)
+    }
+
+    setCurrentPage(1)
+  }
+
   // Determine which results to display
-  const resultsPagination = activeSearchQuery ? searchResults : listResults
+  const resultsPagination =
+    adminMode && adminSearchResults
+      ? adminSearchResults
+      : activeSearchQuery
+      ? searchResults
+      : listResults
+
   const displayedResults = resultsPagination?.items || []
-  const isLoading = activeSearchQuery ? isSearchLoading : isListLoading
+  const isLoading =
+    adminMode && isAdmin
+      ? isAdminSearching
+      : activeSearchQuery
+      ? isSearchLoading
+      : isListLoading
   const isEmpty =
     !isLoading && (!resultsPagination || displayedResults.length === 0)
 
   // Only treat as error if it's a real error, not just empty results
   const hasError =
     !isLoading &&
-    resultsPagination?.error_status === true &&
-    !resultsPagination.error_message?.includes('No submissions found')
+    (adminSearchError != null ||
+      (resultsPagination?.error_status === true &&
+        !resultsPagination.error_message?.includes('No submissions found')))
 
   // Handle errors from hooks
   useEffect(() => {
-    if (searchFetchError) {
+    if (adminSearchError) {
+      setFetchError(adminSearchError)
+    } else if (searchFetchError) {
       setFetchError('Search failed. Please try again.')
     } else if (listFetchError) {
       setFetchError('Failed to load submissions. Please try again.')
@@ -288,7 +363,7 @@ export default function SubmissionsPage() {
     } else {
       setFetchError(null)
     }
-  }, [searchFetchError, listFetchError, resultsPagination])
+  }, [adminSearchError, searchFetchError, listFetchError, resultsPagination])
 
   // Load URL parameters
   useEffect(() => {
@@ -439,35 +514,40 @@ export default function SubmissionsPage() {
     }
   }
 
-  // Handle search
-  const handleSearch = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    setActiveSearchQuery(searchQuery)
-    setCurrentPage(1)
-  }
-
   // Handle document type filter change
   const handleDocumentTypeChange = (value: string) => {
     setDocumentTypeFilter(value === 'all' ? undefined : (value as 'tos' | 'pp'))
-    setCurrentPage(1)
+    // Only reset page, don't trigger search
+    if (!adminMode) {
+      setCurrentPage(1)
+    }
   }
 
   // Handle status filter change
   const handleStatusChange = (value: string) => {
     setStatusFilter(value === 'all' ? undefined : value)
-    setCurrentPage(1)
+    // Only reset page, don't trigger search
+    if (!adminMode) {
+      setCurrentPage(1)
+    }
   }
 
   // Handle sort order change
   const handleSortOrderChange = () => {
     setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'))
-    setCurrentPage(1)
+    // Only reset page, don't trigger search
+    if (!adminMode) {
+      setCurrentPage(1)
+    }
   }
 
   // Handle results per page change
   const handleResultsPerPageChange = (value: string) => {
     setResultsPerPage(parseInt(value, 10))
-    setCurrentPage(1)
+    // Only reset page, don't trigger search
+    if (!adminMode) {
+      setCurrentPage(1)
+    }
   }
 
   // Helper to format dates
@@ -497,6 +577,28 @@ export default function SubmissionsPage() {
         return <Badge variant='outline'>Initialized</Badge>
       default:
         return <Badge variant='secondary'>{status}</Badge>
+    }
+  }
+
+  // Add handler to clear admin search
+  const handleClearAdminSearch = () => {
+    setSearchQuery('')
+    setActiveSearchQuery('')
+    setAdminUserEmail('')
+    setDocumentTypeFilter(undefined)
+    setStatusFilter(undefined)
+    setAdminSearchResults(null)
+    setCurrentPage(1)
+  }
+
+  // Handle pagination for admin search
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+
+    // In admin mode, we need to perform a new search
+    if (adminMode && isAdmin) {
+      // Wait for state to update, then perform search
+      setTimeout(() => handleAdminSearch(), 0)
     }
   }
 
@@ -552,7 +654,7 @@ export default function SubmissionsPage() {
               <div className='text-sm text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md'>
                 <strong>Note:</strong> Admin search functionality requires
                 backend support. Make sure your backend API has been updated to
-                support the admin role parameter.
+                support the admin search endpoint.
               </div>
               <div className='flex items-center gap-2 mb-2'>
                 <Checkbox
@@ -573,14 +675,36 @@ export default function SubmissionsPage() {
                   >
                     Filter by User Email (optional)
                   </Label>
-                  <Input
-                    id='adminUserEmail'
-                    type='email'
-                    placeholder='Enter user email to filter...'
-                    value={adminUserEmail}
-                    onChange={(e) => setAdminUserEmail(e.target.value)}
-                    className='w-full'
-                  />
+                  <div className='flex gap-2 items-center mb-3'>
+                    <div className='flex-1'>
+                      <Input
+                        id='adminUserEmail'
+                        type='email'
+                        placeholder='Enter user email to filter...'
+                        value={adminUserEmail}
+                        onChange={(e) => setAdminUserEmail(e.target.value)}
+                        className='w-full'
+                      />
+                    </div>
+                    <Button
+                      type='button'
+                      onClick={handleAdminSearch}
+                      disabled={isAdminSearching}
+                      className='whitespace-nowrap'
+                    >
+                      {isAdminSearching ? (
+                        <>
+                          <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                          Searching...
+                        </>
+                      ) : (
+                        <>
+                          <Search className='mr-2 h-4 w-4' />
+                          Search All
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -663,6 +787,37 @@ export default function SubmissionsPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Add Apply Filters button for admin mode */}
+          {adminMode && isAdmin && (
+            <div className='flex justify-end gap-3 mt-3'>
+              <Button
+                variant='outline'
+                onClick={handleClearAdminSearch}
+                className='border-slate-300'
+              >
+                <X className='mr-2 h-4 w-4' />
+                Clear Filters
+              </Button>
+              <Button
+                onClick={handleAdminSearch}
+                disabled={isAdminSearching}
+                className='bg-slate-800 hover:bg-slate-700'
+              >
+                {isAdminSearching ? (
+                  <>
+                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                    Applying Filters...
+                  </>
+                ) : (
+                  <>
+                    <Search className='mr-2 h-4 w-4' />
+                    Apply Filters
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* New submission button above table */}
@@ -1031,7 +1186,7 @@ export default function SubmissionsPage() {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                  onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeft className='h-4 w-4' />
@@ -1043,7 +1198,7 @@ export default function SubmissionsPage() {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => setCurrentPage(currentPage + 1)}
+                  onClick={() => handlePageChange(currentPage + 1)}
                   disabled={
                     currentPage >=
                     Math.ceil(resultsPagination.total / resultsPerPage)

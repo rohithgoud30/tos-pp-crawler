@@ -120,6 +120,17 @@ export interface DocumentDetail extends DocumentItem {
   created_at: string
 }
 
+export interface AdminSearchSubmissionsParams {
+  query?: string
+  user_email?: string
+  page?: number
+  size?: number
+  sort_order?: 'asc' | 'desc'
+  document_type?: 'tos' | 'pp'
+  status?: string
+  role: 'admin'
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || ''
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
 
@@ -306,6 +317,28 @@ export async function searchSubmissions(
 
   const queryString = queryParams.toString()
   const endpoint = `/api/v1/search-submissions?${queryString}`
+
+  return apiRequest<PaginatedResponse<SubmissionItem>>(endpoint)
+}
+
+// Admin-specific API functions
+export async function adminSearchAllSubmissions(
+  params: AdminSearchSubmissionsParams
+): Promise<PaginatedResponse<SubmissionItem>> {
+  const queryParams = new URLSearchParams()
+
+  if (params.query) queryParams.append('query', params.query)
+  if (params.user_email) queryParams.append('user_email', params.user_email)
+  if (params.page) queryParams.append('page', params.page.toString())
+  if (params.size) queryParams.append('size', params.size.toString())
+  if (params.sort_order) queryParams.append('sort_order', params.sort_order)
+  if (params.document_type)
+    queryParams.append('document_type', params.document_type)
+  if (params.status) queryParams.append('status', params.status)
+  queryParams.append('role', 'admin') // Always required
+
+  const queryString = queryParams.toString()
+  const endpoint = `/api/v1/admin/search-all-submissions?${queryString}`
 
   return apiRequest<PaginatedResponse<SubmissionItem>>(endpoint)
 }
