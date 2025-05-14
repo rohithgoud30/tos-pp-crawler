@@ -13,6 +13,7 @@ import {
   FileText,
   AlertCircle,
   Tag,
+  RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -69,6 +70,13 @@ export default function ResultsPage() {
   const { setLastSearchState } = useNavigation()
   const [showColdStartNotice, setShowColdStartNotice] = useState(false)
   const noticeTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const [reanalyzing, setReanalyzing] = useState<Record<string, boolean>>({})
+  const [reanalyzeError, setReanalyzeError] = useState<Record<string, string>>(
+    {}
+  )
+  const [reanalyzeSuccess, setReanalyzeSuccess] = useState<
+    Record<string, boolean>
+  >({})
 
   // For debugging - add console log to show current sort state
   useEffect(() => {
@@ -514,6 +522,89 @@ export default function ResultsPage() {
     }
   }, [])
 
+  // Function to handle reanalyze request
+  const handleReanalyze = async (
+    documentId: string,
+    documentType: 'tos' | 'pp'
+  ) => {
+    // Clear any previous error
+    setReanalyzeError((prev) => ({ ...prev, [documentId]: '' }))
+    setReanalyzeSuccess((prev) => ({ ...prev, [documentId]: false }))
+
+    // Set loading state
+    setReanalyzing((prev) => ({ ...prev, [documentId]: true }))
+
+    try {
+      // First, fetch the document details to get the retrieved_url
+      const documentDetailsResponse = await fetch(
+        `/api/v1/documents/${documentId}`,
+        {
+          method: 'GET',
+          headers: {
+            accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+
+      if (!documentDetailsResponse.ok) {
+        throw new Error('Failed to fetch document details')
+      }
+
+      const documentDetails = await documentDetailsResponse.json()
+      const retrievedUrl = documentDetails.retrieved_url
+
+      if (!retrievedUrl) {
+        throw new Error('Document has no retrieved URL')
+      }
+
+      // Determine the correct endpoint based on document type
+      const endpoint =
+        documentType === 'tos'
+          ? 'https://crwlr-server-662250507742.us-east4.run.app/api/v1/reanalyze-tos'
+          : 'https://crwlr-server-662250507742.us-east4.run.app/api/v1/reanalyze-pp'
+
+      // Make the API request with retrieved_url
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'X-API-Key': '6e878bf1-c92d-4ba1-99c9-50e3343efd5d',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          document_id: documentId,
+          url: retrievedUrl,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: 'Failed to reanalyze document' }))
+        throw new Error(errorData.message || 'Failed to reanalyze document')
+      }
+
+      // Set success state
+      setReanalyzeSuccess((prev) => ({ ...prev, [documentId]: true }))
+
+      // Clear success after 3 seconds
+      setTimeout(() => {
+        setReanalyzeSuccess((prev) => ({ ...prev, [documentId]: false }))
+      }, 3000)
+    } catch (error) {
+      setReanalyzeError((prev) => ({
+        ...prev,
+        [documentId]:
+          error instanceof Error
+            ? error.message
+            : 'Failed to reanalyze document',
+      }))
+    } finally {
+      setReanalyzing((prev) => ({ ...prev, [documentId]: false }))
+    }
+  }
+
   return (
     <div className='container mx-auto px-2 sm:px-4 py-8 max-w-7xl'>
       <div className='mb-8'>
@@ -796,17 +887,51 @@ export default function ResultsPage() {
                       </CardContent>
                     </div>
                     <CardFooter className='p-4 pt-3 mt-auto'>
-                      <Button
-                        className='w-full gap-2 hover:bg-primary hover:text-primary-foreground dark:hover:bg-white dark:hover:text-black transition-colors'
-                        variant='outline'
-                        size='sm'
-                        asChild
-                      >
-                        <Link href={analysisUrl}>
-                          View Analysis
-                          <ExternalLink className='h-4 w-4' />
-                        </Link>
-                      </Button>
+                      <div className='w-full space-y-2'>
+                        <Button
+                          className='w-full gap-2 hover:bg-primary hover:text-primary-foreground dark:hover:bg-white dark:hover:text-black transition-colors'
+                          variant='outline'
+                          size='sm'
+                          asChild
+                        >
+                          <Link href={analysisUrl}>
+                            View Analysis
+                            <ExternalLink className='h-4 w-4' />
+                          </Link>
+                        </Button>
+
+                        <Button
+                          className='w-full gap-2 hover:bg-blue-500 hover:text-white transition-colors'
+                          variant='outline'
+                          size='sm'
+                          onClick={() =>
+                            handleReanalyze(
+                              doc.id,
+                              doc.document_type as 'tos' | 'pp'
+                            )
+                          }
+                          disabled={reanalyzing[doc.id]}
+                        >
+                          {reanalyzing[doc.id] ? (
+                            <RefreshCw className='h-4 w-4 animate-spin' />
+                          ) : (
+                            <RefreshCw className='h-4 w-4' />
+                          )}
+                          {reanalyzing[doc.id] ? 'Reanalyzing...' : 'Reanalyze'}
+                        </Button>
+
+                        {reanalyzeError[doc.id] && (
+                          <p className='text-xs text-red-500 mt-1 text-center'>
+                            {reanalyzeError[doc.id]}
+                          </p>
+                        )}
+
+                        {reanalyzeSuccess[doc.id] && (
+                          <p className='text-xs text-green-500 mt-1 text-center'>
+                            Reanalysis successfully queued!
+                          </p>
+                        )}
+                      </div>
                     </CardFooter>
                   </Card>
                 )
