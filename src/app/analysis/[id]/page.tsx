@@ -126,8 +126,8 @@ export default function AnalysisPage() {
     try {
       const endpoint =
         analysisItem.document_type === 'tos'
-          ? '/api/reanalyze-tos'
-          : '/api/reanalyze-pp'
+          ? '/api/v1/reanalyze-tos'
+          : '/api/v1/reanalyze-pp'
 
       // Create the base payload with just the document ID
       const payload: { document_id: string; url?: string } = {
