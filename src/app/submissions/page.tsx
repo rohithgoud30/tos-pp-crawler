@@ -930,9 +930,9 @@ export default function SubmissionsPage() {
               <Input
                 id='url'
                 name='url'
-                type='url'
+                type='text'
                 required
-                placeholder='https://example.com'
+                placeholder='example.com'
                 value={submissionForm.url}
                 onChange={handleInputChange}
               />
@@ -973,8 +973,8 @@ export default function SubmissionsPage() {
                   <Input
                     id='document_url'
                     name='document_url'
-                    type='url'
-                    placeholder='https://example.com/terms'
+                    type='text'
+                    placeholder='example.com/terms'
                     value={submissionForm.document_url || ''}
                     onChange={handleInputChange}
                   />
