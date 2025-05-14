@@ -66,11 +66,6 @@ const Navbar = ({
   const { openUserProfile } = useClerk()
   const [isSheetOpen, setIsSheetOpen] = useState(false)
 
-  // Filter menu items based on user role
-  const filteredMenu = isAdmin
-    ? [{ title: 'Home', url: '/' }] // Admin only sees Home
-    : menu // Regular users see all menu items
-
   // Add admin text to logo title if admin
   const logoTitle = isAdmin ? `${logo.title} Admin` : logo.title
 
@@ -92,7 +87,7 @@ const Navbar = ({
           {/* Center: Menu */}
           <div className='flex-1 flex items-center justify-center'>
             <div className='flex space-x-6'>
-              {filteredMenu.map((item) => (
+              {menu.map((item) => (
                 <Link
                   key={item.title}
                   className='inline-flex h-10 items-center justify-center px-4 py-2 text-sm font-medium text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md'
@@ -193,7 +188,7 @@ const Navbar = ({
                   </SheetHeader>
                   <div className='my-6 flex flex-col gap-6'>
                     <div className='flex flex-col gap-4'>
-                      {filteredMenu.map((item) => (
+                      {menu.map((item) => (
                         <Link
                           key={item.title}
                           href={item.url}

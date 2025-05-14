@@ -103,6 +103,7 @@ export default function SubmissionsPage() {
   const urlParams = useSearchParams()
   const router = useRouter()
   const { user, isLoaded, isSignedIn } = useUser()
+  const isAdmin = isSignedIn && user?.publicMetadata?.role === 'admin'
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
@@ -149,19 +150,26 @@ export default function SubmissionsPage() {
     setResultsPerPage(adminMode ? 10 : 6)
   }, [adminMode])
 
+  // Update adminMode when isAdmin changes - ensure only admin users can enable this mode
+  useEffect(() => {
+    if (!isAdmin) {
+      setAdminMode(false)
+    }
+  }, [isAdmin])
+
   // Build submission list parameters with safe conversion for hooks
   const submissionListParams =
-    isSignedIn && (adminMode ? true : submissionForm.user_email)
+    isSignedIn && (adminMode && isAdmin ? true : submissionForm.user_email)
       ? ({
           user_email:
-            adminMode && adminUserEmail
+            adminMode && isAdmin && adminUserEmail
               ? adminUserEmail
               : submissionForm.user_email,
           page: currentPage,
           size: resultsPerPage,
           sort_order: sortOrder,
           search_url: activeSearchQuery || undefined,
-          role: adminMode ? 'admin' : undefined,
+          role: adminMode && isAdmin ? 'admin' : undefined,
         } as AdminSubmissionListParams)
       : null
 
@@ -172,7 +180,7 @@ export default function SubmissionsPage() {
         // Ensure user_email is always a string as required by the hook
         user_email:
           submissionListParams.user_email ||
-          (adminMode ? '' : submissionForm.user_email),
+          (adminMode && isAdmin ? '' : submissionForm.user_email),
       } as SubmissionListParams)
     : null
 
@@ -180,11 +188,11 @@ export default function SubmissionsPage() {
   const submissionSearchParams =
     isSignedIn &&
     activeSearchQuery &&
-    (adminMode ? true : submissionForm.user_email)
+    (adminMode && isAdmin ? true : submissionForm.user_email)
       ? ({
           query: activeSearchQuery,
           user_email:
-            adminMode && adminUserEmail
+            adminMode && isAdmin && adminUserEmail
               ? adminUserEmail
               : submissionForm.user_email,
           page: currentPage,
@@ -192,7 +200,7 @@ export default function SubmissionsPage() {
           sort_order: sortOrder,
           document_type: documentTypeFilter,
           status: statusFilter,
-          role: adminMode ? 'admin' : undefined,
+          role: adminMode && isAdmin ? 'admin' : undefined,
         } as AdminSubmissionSearchParams)
       : null
 
@@ -472,40 +480,45 @@ export default function SubmissionsPage() {
             </form>
           </div>
 
-          {/* Admin mode toggle and user email */}
-          <div className='mb-4'>
-            <div className='text-sm text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md'>
-              <strong>Note:</strong> Admin search functionality requires backend
-              support. Make sure your backend API has been updated to support
-              the admin role parameter.
-            </div>
-            <div className='flex items-center gap-2 mb-2'>
-              <Checkbox
-                id='adminMode'
-                checked={adminMode}
-                onCheckedChange={(checked: boolean) => setAdminMode(checked)}
-              />
-              <Label htmlFor='adminMode' className='font-medium'>
-                Admin Search Mode
-              </Label>
-            </div>
-
-            {adminMode && (
-              <div className='mt-2'>
-                <Label htmlFor='adminUserEmail' className='text-sm mb-1 block'>
-                  Filter by User Email (optional)
-                </Label>
-                <Input
-                  id='adminUserEmail'
-                  type='email'
-                  placeholder='Enter user email to filter...'
-                  value={adminUserEmail}
-                  onChange={(e) => setAdminUserEmail(e.target.value)}
-                  className='w-full'
-                />
+          {/* Admin mode toggle and user email - only visible to admins */}
+          {isAdmin && (
+            <div className='mb-4'>
+              <div className='text-sm text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md'>
+                <strong>Note:</strong> Admin search functionality requires
+                backend support. Make sure your backend API has been updated to
+                support the admin role parameter.
               </div>
-            )}
-          </div>
+              <div className='flex items-center gap-2 mb-2'>
+                <Checkbox
+                  id='adminMode'
+                  checked={adminMode}
+                  onCheckedChange={(checked: boolean) => setAdminMode(checked)}
+                />
+                <Label htmlFor='adminMode' className='font-medium'>
+                  Admin Search Mode
+                </Label>
+              </div>
+
+              {adminMode && (
+                <div className='mt-2'>
+                  <Label
+                    htmlFor='adminUserEmail'
+                    className='text-sm mb-1 block'
+                  >
+                    Filter by User Email (optional)
+                  </Label>
+                  <Input
+                    id='adminUserEmail'
+                    type='email'
+                    placeholder='Enter user email to filter...'
+                    value={adminUserEmail}
+                    onChange={(e) => setAdminUserEmail(e.target.value)}
+                    className='w-full'
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Filters row */}
           <div className='grid grid-cols-1 md:grid-cols-4 gap-3'>
