@@ -546,7 +546,7 @@ export default function AnalysisPage() {
                     setIsEditingName(true)
                     setEditedCompanyName(analysisItem.company_name)
                   }}
-                  className='ml-2 h-7 px-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300 outline outline-1 outline-black/40 dark:outline-white/40 hover:outline-black/80 dark:hover:outline-white/80'
+                  className='ml-2 h-7 px-2 bg-black text-white hover:bg-gray-800 hover:text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 dark:hover:text-black border border-gray-200 dark:border-gray-300'
                 >
                   <Edit className='h-3 w-3' />
                 </Button>
