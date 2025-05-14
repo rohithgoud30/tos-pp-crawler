@@ -709,49 +709,51 @@ export default function AnalysisPage() {
         </div>
 
         {/* Action buttons for admins or view original source - consolidated in a single row */}
-        <div className='flex justify-center gap-4 mt-6 mb-8'>
-          {/* Reanalyze button (admins only) */}
-          {analysisItem.retrieved_url && isAdmin && (
-            <Button
-              className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white'
-              onClick={handleReanalyze}
-              disabled={isReanalyzing}
-            >
-              {isReanalyzing ? (
-                <RefreshCw className='h-4 w-4 animate-spin' />
-              ) : (
-                <RefreshCw className='h-4 w-4' />
-              )}
-              {isReanalyzing ? 'Processing...' : 'Reanalyze'}
-            </Button>
-          )}
+        <div className='flex justify-center items-center mt-6 mb-8'>
+          <div className='inline-flex gap-4'>
+            {/* Reanalyze button (admins only) */}
+            {analysisItem.retrieved_url && isAdmin && (
+              <Button
+                className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white'
+                onClick={handleReanalyze}
+                disabled={isReanalyzing}
+              >
+                {isReanalyzing ? (
+                  <RefreshCw className='h-4 w-4 animate-spin' />
+                ) : (
+                  <RefreshCw className='h-4 w-4' />
+                )}
+                {isReanalyzing ? 'Processing...' : 'Reanalyze'}
+              </Button>
+            )}
 
-          {/* Delete button (admins only) */}
-          {isAdmin && (
-            <Button
-              variant='destructive'
-              className='flex items-center gap-2 h-10 px-4'
-              onClick={() => {
-                setIsDeleteDialogOpen(true)
-              }}
-            >
-              <Trash2 className='h-4 w-4' />
-              Delete
-            </Button>
-          )}
+            {/* Delete button (admins only) */}
+            {isAdmin && (
+              <Button
+                variant='destructive'
+                className='flex items-center gap-2 h-10 px-4'
+                onClick={() => {
+                  setIsDeleteDialogOpen(true)
+                }}
+              >
+                <Trash2 className='h-4 w-4' />
+                Delete
+              </Button>
+            )}
 
-          {/* View Original Source (non-admins) */}
-          {analysisItem.retrieved_url && !isAdmin && (
-            <a
-              href={analysisItem.retrieved_url}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded'
-            >
-              View Original Source
-              <ExternalLink className='h-4 w-4' />
-            </a>
-          )}
+            {/* View Original Source (non-admins) */}
+            {analysisItem.retrieved_url && !isAdmin && (
+              <a
+                href={analysisItem.retrieved_url}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded'
+              >
+                View Original Source
+                <ExternalLink className='h-4 w-4' />
+              </a>
+            )}
+          </div>
         </div>
       </main>
 
