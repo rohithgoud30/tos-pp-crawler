@@ -25,10 +25,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import {
   Tooltip,
   TooltipContent,
@@ -43,15 +50,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { type SubmissionCreateParams, createSubmission } from '@/lib/api'
 import {
@@ -86,7 +84,6 @@ export default function SubmissionsPage() {
   const urlParams = useSearchParams()
   const router = useRouter()
   const { user, isLoaded, isSignedIn } = useUser()
-  const [activeTab, setActiveTab] = useState('create')
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
@@ -218,17 +215,12 @@ export default function SubmissionsPage() {
 
   // Load URL parameters
   useEffect(() => {
-    const tabParam = urlParams.get('tab')
     const queryParam = urlParams.get('q')
     const typeParam = urlParams.get('type') as 'tos' | 'pp' | undefined
     const statusParam = urlParams.get('status')
     const perPageParam = urlParams.get('perPage')
     const orderParam = urlParams.get('order') as 'asc' | 'desc' | undefined
     const pageParam = urlParams.get('page')
-
-    if (tabParam && ['create', 'list'].includes(tabParam)) {
-      setActiveTab(tabParam)
-    }
 
     if (queryParam) {
       setSearchQuery(queryParam)
@@ -304,7 +296,7 @@ export default function SubmissionsPage() {
       setCreateDialogOpen(false)
 
       // Switch to the list tab
-      setActiveTab('list')
+      setActiveSearchQuery('')
     } catch (error) {
       console.error('Submission error:', error)
       setSubmitError(
@@ -394,80 +386,6 @@ export default function SubmissionsPage() {
     return null
   }
 
-  // Render submission form
-  const renderSubmissionForm = () => {
-    return (
-      <div className='w-full max-w-3xl mx-auto p-4'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Submit URL for Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='url'>Website URL</Label>
-                <Input
-                  id='url'
-                  name='url'
-                  type='url'
-                  required
-                  placeholder='https://example.com'
-                  value={submissionForm.url}
-                  onChange={handleInputChange}
-                />
-                <p className='text-sm text-muted-foreground'>
-                  Enter the website&apos;s main URL
-                </p>
-              </div>
-
-              <div className='space-y-2'>
-                <Label htmlFor='document_type'>Document Type</Label>
-                <Select
-                  name='document_type'
-                  value={submissionForm.document_type}
-                  onValueChange={(value) =>
-                    setSubmissionForm((prev) => ({
-                      ...prev,
-                      document_type: value as 'tos' | 'pp',
-                    }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='Select document type' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='tos'>Terms of Service</SelectItem>
-                    <SelectItem value='pp'>Privacy Policy</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {submitError && (
-                <div className='p-3 rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'>
-                  <p className='flex items-center'>
-                    <AlertCircle className='h-4 w-4 mr-2' />
-                    {submitError}
-                  </p>
-                </div>
-              )}
-
-              <Button type='submit' className='w-full' disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit URL for Analysis'
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   // Render table of submissions
   const renderSubmissionsTable = () => {
     return (
@@ -479,7 +397,7 @@ export default function SubmissionsPage() {
             <form onSubmit={handleSearch} className='flex w-full space-x-2'>
               <div className='relative flex-1'>
                 <Input
-                  type='search'
+                  type='text'
                   placeholder='Search by URL...'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -531,7 +449,7 @@ export default function SubmissionsPage() {
               </SelectContent>
             </Select>
 
-            {/* Sort order control - restored the button */}
+            {/* Sort order control */}
             <div className='flex items-center'>
               <Button
                 variant='outline'
@@ -564,7 +482,7 @@ export default function SubmissionsPage() {
           </div>
         </div>
 
-        {/* New submission button above the table */}
+        {/* New submission button above table */}
         <div className='flex justify-end mb-4'>
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
@@ -573,98 +491,6 @@ export default function SubmissionsPage() {
                 New
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Submit New URL</DialogTitle>
-                <DialogDescription>
-                  Enter the details of the URL you want to analyze
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className='space-y-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='dialog_url'>Website URL</Label>
-                  <Input
-                    id='dialog_url'
-                    name='url'
-                    type='url'
-                    required
-                    placeholder='https://example.com'
-                    value={submissionForm.url}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className='space-y-2'>
-                  <Label htmlFor='dialog_document_type'>Document Type</Label>
-                  <Select
-                    name='document_type'
-                    value={submissionForm.document_type}
-                    onValueChange={(value) =>
-                      setSubmissionForm((prev) => ({
-                        ...prev,
-                        document_type: value as 'tos' | 'pp',
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder='Select document type' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='tos'>Terms of Service</SelectItem>
-                      <SelectItem value='pp'>Privacy Policy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Only show document_url field in retry dialog for failed submissions */}
-                {submissionForm.url &&
-                  displayedResults.some(
-                    (s) => s.url === submissionForm.url && s.status === 'failed'
-                  ) && (
-                    <div className='space-y-2'>
-                      <Label htmlFor='dialog_document_url'>Document URL</Label>
-                      <Input
-                        id='dialog_document_url'
-                        name='document_url'
-                        type='url'
-                        placeholder='https://example.com/terms'
-                        value={submissionForm.document_url || ''}
-                        onChange={handleInputChange}
-                      />
-                      <p className='text-sm text-muted-foreground'>
-                        Since the previous submission failed, please provide the
-                        exact URL to the document
-                      </p>
-                    </div>
-                  )}
-
-                {submitError && (
-                  <div className='p-3 rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'>
-                    <p className='flex items-center'>
-                      <AlertCircle className='h-4 w-4 mr-2' />
-                      {submitError}
-                    </p>
-                  </div>
-                )}
-
-                <DialogFooter>
-                  <Button
-                    type='submit'
-                    className='w-full'
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                        Submitting...
-                      </>
-                    ) : (
-                      'Submit URL for Analysis'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
           </Dialog>
         </div>
 
@@ -691,6 +517,19 @@ export default function SubmissionsPage() {
                 Try Again
               </Button>
             )}
+          </div>
+        )}
+
+        {/* Results count summary */}
+        {resultsPagination && (
+          <div className='flex flex-col md:flex-row justify-between mb-6 text-gray-500 dark:text-gray-400 text-center md:text-left'>
+            <p className='mb-2 md:mb-0'>
+              Showing{' '}
+              {isLoading
+                ? displayedResults.length
+                : resultsPagination.items.length}{' '}
+              of {resultsPagination.total} results
+            </p>
           </div>
         )}
 
@@ -954,22 +793,105 @@ export default function SubmissionsPage() {
 
   return (
     <main className='container mx-auto py-6'>
-      <h1 className='text-3xl font-bold mb-6'>URL Submissions</h1>
+      <h1 className='text-3xl font-bold mb-6 text-center'>URL Submissions</h1>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className='w-full max-w-md mb-4'>
-          <TabsTrigger value='create' className='flex-1'>
-            Create Submission
-          </TabsTrigger>
-          <TabsTrigger value='list' className='flex-1'>
-            My Submissions
-          </TabsTrigger>
-        </TabsList>
+      {renderSubmissionsTable()}
 
-        <TabsContent value='create'>{renderSubmissionForm()}</TabsContent>
+      {/* Dialog for creating a new submission */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className='sm:max-w-[500px]'>
+          <DialogHeader>
+            <DialogTitle>Submit URL for Analysis</DialogTitle>
+            <DialogDescription>
+              Enter the URL you want to analyze for legal documents.
+            </DialogDescription>
+          </DialogHeader>
 
-        <TabsContent value='list'>{renderSubmissionsTable()}</TabsContent>
-      </Tabs>
+          <form onSubmit={handleSubmit} className='space-y-4'>
+            <div className='space-y-2'>
+              <Label htmlFor='url'>Website URL</Label>
+              <Input
+                id='url'
+                name='url'
+                type='url'
+                required
+                placeholder='https://example.com'
+                value={submissionForm.url}
+                onChange={handleInputChange}
+              />
+              <p className='text-sm text-muted-foreground'>
+                Enter the website&apos;s main URL
+              </p>
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='document_type'>Document Type</Label>
+              <Select
+                name='document_type'
+                value={submissionForm.document_type}
+                onValueChange={(value) =>
+                  setSubmissionForm((prev) => ({
+                    ...prev,
+                    document_type: value as 'tos' | 'pp',
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder='Select document type' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='tos'>Terms of Service</SelectItem>
+                  <SelectItem value='pp'>Privacy Policy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Only show document_url field in retry dialog for failed submissions */}
+            {submissionForm.url &&
+              displayedResults.some(
+                (s) => s.url === submissionForm.url && s.status === 'failed'
+              ) && (
+                <div className='space-y-2'>
+                  <Label htmlFor='document_url'>Document URL</Label>
+                  <Input
+                    id='document_url'
+                    name='document_url'
+                    type='url'
+                    placeholder='https://example.com/terms'
+                    value={submissionForm.document_url || ''}
+                    onChange={handleInputChange}
+                  />
+                  <p className='text-sm text-muted-foreground'>
+                    Since the previous submission failed, please provide the
+                    exact URL to the document
+                  </p>
+                </div>
+              )}
+
+            {submitError && (
+              <div className='p-3 rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'>
+                <p className='flex items-center'>
+                  <AlertCircle className='h-4 w-4 mr-2' />
+                  {submitError}
+                </p>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button type='submit' disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit URL for Analysis'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
