@@ -39,6 +39,7 @@ export default function AnalysisPage() {
   // Add state for URL editing and reanalysis
   const [isEditing, setIsEditing] = useState(false)
   const [editedUrl, setEditedUrl] = useState('')
+  const [displayedUrl, setDisplayedUrl] = useState('') // New state for displayed URL
   const [isReanalyzing, setIsReanalyzing] = useState(false)
 
   // Add refs for sections to lazy load
@@ -78,6 +79,13 @@ export default function AnalysisPage() {
       setError(null)
     }
   }, [fetchError])
+
+  // Set displayed URL when analysis item loads
+  useEffect(() => {
+    if (analysisItem?.retrieved_url) {
+      setDisplayedUrl(analysisItem.retrieved_url)
+    }
+  }, [analysisItem?.retrieved_url])
 
   // Implement lazy loading of heavy components with intersection observer
   useEffect(() => {
@@ -134,12 +142,12 @@ export default function AnalysisPage() {
         document_id: documentId,
       }
 
-      // Use the edited URL if it exists and is different from the original URL
+      // Use the displayed URL if it's different from the original retrieved URL
       if (
-        editedUrl.trim() !== '' &&
-        editedUrl.trim() !== analysisItem.retrieved_url
+        displayedUrl.trim() !== '' &&
+        displayedUrl.trim() !== analysisItem.retrieved_url
       ) {
-        payload.url = editedUrl.trim()
+        payload.url = displayedUrl.trim()
       }
 
       // Get API key from environment
@@ -436,7 +444,7 @@ export default function AnalysisPage() {
                     size='sm'
                     onClick={() => {
                       setIsEditing(true)
-                      setEditedUrl(analysisItem.retrieved_url || '')
+                      setEditedUrl(displayedUrl || '')
                     }}
                     className='ml-2 h-7 px-2 bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white'
                   >
@@ -470,6 +478,10 @@ export default function AnalysisPage() {
                       variant='outline'
                       size='sm'
                       onClick={() => {
+                        // Save the edited URL to displayedUrl
+                        if (editedUrl.trim() !== '') {
+                          setDisplayedUrl(editedUrl.trim())
+                        }
                         // Just save the URL without triggering reanalysis
                         setIsEditing(false)
                         // Don't trigger reanalysis automatically
@@ -482,12 +494,12 @@ export default function AnalysisPage() {
                   </div>
                 ) : (
                   <a
-                    href={analysisItem.retrieved_url}
+                    href={displayedUrl}
                     target='_blank'
                     rel='noopener noreferrer'
                     className='text-blue-600 dark:text-blue-400 hover:underline text-sm break-all'
                   >
-                    {analysisItem.retrieved_url}
+                    {displayedUrl}
                   </a>
                 )}
               </div>
