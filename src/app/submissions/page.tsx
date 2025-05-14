@@ -16,11 +16,9 @@ import {
   Plus,
   RefreshCw,
   Check,
-  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -100,7 +98,6 @@ export default function SubmissionsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
-  const [adminMode, setAdminMode] = useState(false)
   const [adminUserEmail, setAdminUserEmail] = useState('')
   const [documentTypeFilter, setDocumentTypeFilter] = useState<
     'tos' | 'pp' | undefined
@@ -109,7 +106,7 @@ export default function SubmissionsPage() {
     undefined
   )
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [resultsPerPage, setResultsPerPage] = useState(adminMode ? 10 : 6)
+  const [resultsPerPage, setResultsPerPage] = useState(6)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [submissionForm, setSubmissionForm] = useState<SubmissionCreateParams>({
     url: '',
@@ -150,15 +147,10 @@ export default function SubmissionsPage() {
     }
   }, [isSignedIn, user])
 
-  // Update resultsPerPage when adminMode changes
+  // Ensure default results per page for admins
   useEffect(() => {
-    setResultsPerPage(adminMode ? 10 : 6)
-  }, [adminMode])
-
-  // Update adminMode when isAdmin changes - ensure only admin users can enable this mode
-  useEffect(() => {
-    if (!isAdmin) {
-      setAdminMode(false)
+    if (isAdmin) {
+      setResultsPerPage(10)
     }
   }, [isAdmin])
 
@@ -175,7 +167,7 @@ export default function SubmissionsPage() {
 
   // Build submission list parameters with safe conversion for hooks
   const submissionListParams =
-    isSignedIn && !adminMode && submissionForm.user_email
+    isSignedIn && !isAdmin && submissionForm.user_email
       ? ({
           user_email: submissionForm.user_email,
           page: currentPage,
@@ -186,13 +178,13 @@ export default function SubmissionsPage() {
       : null
 
   // Only use hooks for non-admin mode
-  const hookListParams = !adminMode ? submissionListParams : null
+  const hookListParams = !isAdmin ? submissionListParams : null
 
   // Build submission search parameters
   const submissionSearchParams =
     isSignedIn &&
     activeSearchQuery &&
-    !adminMode && // Only build regular search params when not in admin mode
+    !isAdmin && // Only build regular search params when not in admin mode
     submissionForm.user_email
       ? ({
           query: activeSearchQuery,
@@ -206,7 +198,7 @@ export default function SubmissionsPage() {
       : null
 
   // Only use hooks for non-admin searches
-  const hookSearchParams = !adminMode ? submissionSearchParams : null
+  const hookSearchParams = !isAdmin ? submissionSearchParams : null
 
   // Fetch submissions data
   const {
@@ -215,7 +207,7 @@ export default function SubmissionsPage() {
     error: listFetchError,
     mutate: mutateList,
   } = useSubmissionsList(hookListParams, {
-    revalidateOnMount: !adminMode, // Only revalidate if not in admin mode
+    revalidateOnMount: !isAdmin, // Only revalidate if not in admin mode
   }) as {
     submissions: PaginatedSubmissionResponse | null
     isLoading: boolean
@@ -230,7 +222,7 @@ export default function SubmissionsPage() {
     error: searchFetchError,
     mutate: mutateSearch,
   } = useSubmissionSearch(hookSearchParams, {
-    revalidateOnMount: activeSearchQuery && !adminMode ? true : false, // Only revalidate if not in admin mode
+    revalidateOnMount: activeSearchQuery && !isAdmin ? true : false, // Only revalidate if not in admin mode
   }) as {
     results: PaginatedSubmissionResponse | null
     isLoading: boolean
@@ -240,13 +232,8 @@ export default function SubmissionsPage() {
 
   // Handle admin search
   const handleAdminSearch = async () => {
-    if (!isAdmin || !adminMode) {
-      console.log(
-        'Admin search aborted: isAdmin =',
-        isAdmin,
-        'adminMode =',
-        adminMode
-      )
+    if (!isAdmin) {
+      console.log('Admin search aborted: isAdmin =', isAdmin)
       return
     }
 
@@ -299,7 +286,7 @@ export default function SubmissionsPage() {
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault()
 
-    if (adminMode && isAdmin) {
+    if (isAdmin) {
       // Use admin search instead
       handleAdminSearch()
     } else {
@@ -312,19 +299,18 @@ export default function SubmissionsPage() {
 
   // Determine which results to display
   const resultsPagination =
-    adminMode && adminSearchResults
+    isAdmin && adminSearchResults
       ? adminSearchResults
       : activeSearchQuery
       ? searchResults
       : listResults
 
   const displayedResults = resultsPagination?.items || []
-  const isLoading =
-    adminMode && isAdmin
-      ? isAdminSearching
-      : activeSearchQuery
-      ? isSearchLoading
-      : isListLoading
+  const isLoading = isAdmin
+    ? isAdminSearching
+    : activeSearchQuery
+    ? isSearchLoading
+    : isListLoading
   const isEmpty =
     !isLoading && (!resultsPagination || displayedResults.length === 0)
 
@@ -511,7 +497,7 @@ export default function SubmissionsPage() {
   const handleDocumentTypeChange = (value: string) => {
     setDocumentTypeFilter(value === 'all' ? undefined : (value as 'tos' | 'pp'))
     // Only reset page, don't trigger search
-    if (!adminMode) {
+    if (!isAdmin) {
       setCurrentPage(1)
     }
   }
@@ -520,7 +506,7 @@ export default function SubmissionsPage() {
   const handleStatusChange = (value: string) => {
     setStatusFilter(value === 'all' ? undefined : value)
     // Only reset page, don't trigger search
-    if (!adminMode) {
+    if (!isAdmin) {
       setCurrentPage(1)
     }
   }
@@ -529,7 +515,7 @@ export default function SubmissionsPage() {
   const handleSortOrderChange = () => {
     setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'))
     // Only reset page, don't trigger search
-    if (!adminMode) {
+    if (!isAdmin) {
       setCurrentPage(1)
     }
   }
@@ -538,7 +524,7 @@ export default function SubmissionsPage() {
   const handleResultsPerPageChange = (value: string) => {
     setResultsPerPage(parseInt(value, 10))
     // Only reset page, don't trigger search
-    if (!adminMode) {
+    if (!isAdmin) {
       setCurrentPage(1)
     }
   }
@@ -573,23 +559,12 @@ export default function SubmissionsPage() {
     }
   }
 
-  // Add handler to clear admin search
-  const handleClearAdminSearch = () => {
-    setSearchQuery('')
-    setActiveSearchQuery('')
-    setAdminUserEmail('')
-    setDocumentTypeFilter(undefined)
-    setStatusFilter(undefined)
-    setAdminSearchResults(null)
-    setCurrentPage(1)
-  }
-
   // Handle pagination for admin search
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage)
 
-    // In admin mode, we need to perform a new search
-    if (adminMode && isAdmin) {
+    // For admins, perform a new search
+    if (isAdmin) {
       // Wait for state to update, then perform search
       setTimeout(() => handleAdminSearch(), 0)
     }
@@ -644,62 +619,19 @@ export default function SubmissionsPage() {
           {/* Admin mode toggle and user email - only visible to admins */}
           {isAdmin && (
             <div className='mb-4'>
-              <div className='text-sm text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md'>
-                <strong>Note:</strong> Admin search functionality requires
-                backend support. Make sure your backend API has been updated to
-                support the admin search endpoint.
-              </div>
-              <div className='flex items-center gap-2 mb-2'>
-                <Checkbox
-                  id='adminMode'
-                  checked={adminMode}
-                  onCheckedChange={(checked: boolean) => setAdminMode(checked)}
-                />
-                <Label htmlFor='adminMode' className='font-medium'>
-                  Admin Search Mode
+              <div className='mt-2 mb-3'>
+                <Label htmlFor='adminUserEmail' className='text-sm mb-1 block'>
+                  Filter by User Email (optional)
                 </Label>
+                <Input
+                  id='adminUserEmail'
+                  type='email'
+                  placeholder='Enter user email to filter...'
+                  value={adminUserEmail}
+                  onChange={(e) => setAdminUserEmail(e.target.value)}
+                  className='w-full'
+                />
               </div>
-
-              {adminMode && (
-                <div className='mt-2'>
-                  <Label
-                    htmlFor='adminUserEmail'
-                    className='text-sm mb-1 block'
-                  >
-                    Filter by User Email (optional)
-                  </Label>
-                  <div className='flex gap-2 items-center mb-3'>
-                    <div className='flex-1'>
-                      <Input
-                        id='adminUserEmail'
-                        type='email'
-                        placeholder='Enter user email to filter...'
-                        value={adminUserEmail}
-                        onChange={(e) => setAdminUserEmail(e.target.value)}
-                        className='w-full'
-                      />
-                    </div>
-                    <Button
-                      type='button'
-                      onClick={handleAdminSearch}
-                      disabled={isAdminSearching}
-                      className='whitespace-nowrap'
-                    >
-                      {isAdminSearching ? (
-                        <>
-                          <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                          Searching...
-                        </>
-                      ) : (
-                        <>
-                          <Search className='mr-2 h-4 w-4' />
-                          Search All
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -762,7 +694,7 @@ export default function SubmissionsPage() {
                 <SelectValue placeholder='Results per page' />
               </SelectTrigger>
               <SelectContent>
-                {adminMode ? (
+                {isAdmin ? (
                   <>
                     <SelectItem value='10'>10 / page</SelectItem>
                     <SelectItem value='20'>20 / page</SelectItem>
@@ -780,37 +712,6 @@ export default function SubmissionsPage() {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Add Apply Filters button for admin mode */}
-          {adminMode && isAdmin && (
-            <div className='flex justify-end gap-3 mt-3'>
-              <Button
-                variant='outline'
-                onClick={handleClearAdminSearch}
-                className='border-slate-300'
-              >
-                <X className='mr-2 h-4 w-4' />
-                Clear Filters
-              </Button>
-              <Button
-                onClick={handleAdminSearch}
-                disabled={isAdminSearching}
-                className='bg-slate-800 hover:bg-slate-700'
-              >
-                {isAdminSearching ? (
-                  <>
-                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                    Applying Filters...
-                  </>
-                ) : (
-                  <>
-                    <Search className='mr-2 h-4 w-4' />
-                    Apply Filters
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* New submission button above table */}
