@@ -583,12 +583,15 @@ export default function ResultsPage() {
                   onClick={() =>
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
                   }
-                  className='w-full sm:w-[200px] h-12 flex items-center justify-between px-3 border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+                  className='w-full sm:w-[200px] flex items-center justify-between'
+                  title={`Currently sorting ${
+                    sortOrder === 'asc' ? 'Ascending' : 'Descending'
+                  }`}
                 >
-                  <span className='whitespace-nowrap'>
+                  <span>
                     {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
                   </span>
-                  <ArrowUpDown className='h-4 w-4 ml-2 opacity-50' />
+                  <ArrowUpDown className='h-4 w-4 ml-2' />
                 </Button>
               </div>
 

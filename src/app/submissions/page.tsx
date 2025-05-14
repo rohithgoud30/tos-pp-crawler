@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Search,
@@ -58,9 +58,34 @@ import {
   useSubmissionsList,
   useSubmissionSearch,
 } from '@/hooks/use-cached-data'
+import { useUser } from '@clerk/nextjs'
+
+// Define enhanced submission response types to match backend
+interface SubmissionItem {
+  id: string
+  url: string
+  document_type: 'tos' | 'pp'
+  document_url?: string
+  status: string
+  created_at: string
+  updated_at: string
+  document_id?: string
+  user_email: string
+}
+
+interface PaginatedSubmissionResponse {
+  items: SubmissionItem[]
+  total: number
+  page: number
+  size: number
+  error_status?: boolean
+  error_message?: string
+}
 
 export default function SubmissionsPage() {
   const urlParams = useSearchParams()
+  const router = useRouter()
+  const { user, isLoaded, isSignedIn } = useUser()
   const [activeTab, setActiveTab] = useState('create')
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
@@ -84,33 +109,48 @@ export default function SubmissionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // Load the user email from localStorage
+  // Redirect to login if not signed in
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail') || ''
-    setSubmissionForm((prev) => ({ ...prev, user_email: storedEmail }))
-  }, [])
+    if (isLoaded && !isSignedIn) {
+      router.push('/auth/login')
+    }
+  }, [isLoaded, isSignedIn, router])
+
+  // Set user email from Clerk
+  useEffect(() => {
+    if (isSignedIn && user?.emailAddresses?.length) {
+      const primaryEmail =
+        user.primaryEmailAddress?.emailAddress ||
+        user.emailAddresses[0].emailAddress
+      setSubmissionForm((prev) => ({ ...prev, user_email: primaryEmail }))
+    }
+  }, [isSignedIn, user])
 
   // Build submission list parameters
-  const submissionListParams = {
-    user_email: submissionForm.user_email,
-    page: currentPage,
-    size: resultsPerPage,
-    sort_order: sortOrder,
-    search_url: activeSearchQuery || undefined,
-  }
+  const submissionListParams =
+    isSignedIn && submissionForm.user_email
+      ? {
+          user_email: submissionForm.user_email,
+          page: currentPage,
+          size: resultsPerPage,
+          sort_order: sortOrder,
+          search_url: activeSearchQuery || undefined,
+        }
+      : null
 
   // Build submission search parameters
-  const submissionSearchParams = activeSearchQuery
-    ? {
-        query: activeSearchQuery,
-        user_email: submissionForm.user_email,
-        page: currentPage,
-        size: resultsPerPage,
-        sort_order: sortOrder,
-        document_type: documentTypeFilter,
-        status: statusFilter,
-      }
-    : null
+  const submissionSearchParams =
+    isSignedIn && activeSearchQuery && submissionForm.user_email
+      ? {
+          query: activeSearchQuery,
+          user_email: submissionForm.user_email,
+          page: currentPage,
+          size: resultsPerPage,
+          sort_order: sortOrder,
+          document_type: documentTypeFilter,
+          status: statusFilter,
+        }
+      : null
 
   // Fetch submissions data
   const {
@@ -118,12 +158,14 @@ export default function SubmissionsPage() {
     isLoading: isListLoading,
     error: listFetchError,
     mutate: mutateList,
-  } = useSubmissionsList(
-    submissionForm.user_email ? submissionListParams : null,
-    {
-      revalidateOnMount: true,
-    }
-  )
+  } = useSubmissionsList(submissionListParams, {
+    revalidateOnMount: true,
+  }) as {
+    submissions: PaginatedSubmissionResponse | null
+    isLoading: boolean
+    error: Error | null
+    mutate: () => void
+  }
 
   // Fetch search results
   const {
@@ -131,19 +173,27 @@ export default function SubmissionsPage() {
     isLoading: isSearchLoading,
     error: searchFetchError,
     mutate: mutateSearch,
-  } = useSubmissionSearch(
-    activeSearchQuery && submissionForm.user_email
-      ? submissionSearchParams
-      : null,
-    {
-      revalidateOnMount: activeSearchQuery ? true : false,
-    }
-  )
+  } = useSubmissionSearch(submissionSearchParams, {
+    revalidateOnMount: activeSearchQuery ? true : false,
+  }) as {
+    results: PaginatedSubmissionResponse | null
+    isLoading: boolean
+    error: Error | null
+    mutate: () => void
+  }
 
   // Determine which results to display
   const resultsPagination = activeSearchQuery ? searchResults : listResults
   const displayedResults = resultsPagination?.items || []
   const isLoading = activeSearchQuery ? isSearchLoading : isListLoading
+  const isEmpty =
+    !isLoading && (!resultsPagination || displayedResults.length === 0)
+
+  // Only treat as error if it's a real error, not just empty results
+  const hasError =
+    !isLoading &&
+    resultsPagination?.error_status === true &&
+    !resultsPagination.error_message?.includes('No submissions found')
 
   // Handle errors from hooks
   useEffect(() => {
@@ -151,10 +201,20 @@ export default function SubmissionsPage() {
       setFetchError('Search failed. Please try again.')
     } else if (listFetchError) {
       setFetchError('Failed to load submissions. Please try again.')
+    } else if (
+      resultsPagination?.error_status &&
+      resultsPagination.error_message
+    ) {
+      // Only set error for actual error conditions, not when just no submissions are found
+      if (!resultsPagination.error_message.includes('No submissions found')) {
+        setFetchError(resultsPagination.error_message)
+      } else {
+        setFetchError(null)
+      }
     } else {
       setFetchError(null)
     }
-  }, [searchFetchError, listFetchError])
+  }, [searchFetchError, listFetchError, resultsPagination])
 
   // Load URL parameters
   useEffect(() => {
@@ -208,11 +268,6 @@ export default function SubmissionsPage() {
   ) => {
     const { name, value } = e.target
     setSubmissionForm((prev) => ({ ...prev, [name]: value }))
-
-    // Save the email to localStorage if it's the email field
-    if (name === 'user_email') {
-      localStorage.setItem('userEmail', value)
-    }
   }
 
   // Handle form submission
@@ -227,7 +282,7 @@ export default function SubmissionsPage() {
         throw new Error('URL is required')
       }
       if (!submissionForm.user_email) {
-        throw new Error('Email is required')
+        throw new Error('User is not authenticated. Please log in.')
       }
 
       await createSubmission(submissionForm)
@@ -321,6 +376,24 @@ export default function SubmissionsPage() {
     }
   }
 
+  // If not loaded yet, show loading state
+  if (!isLoaded) {
+    return (
+      <main className='container mx-auto py-6 flex justify-center items-center min-h-[70vh]'>
+        <div className='text-center'>
+          <Skeleton className='h-12 w-12 rounded-full mx-auto mb-4' />
+          <Skeleton className='h-4 w-32 mx-auto mb-2' />
+          <Skeleton className='h-4 w-48 mx-auto' />
+        </div>
+      </main>
+    )
+  }
+
+  // If not signed in, don't render - we'll be redirected to login
+  if (!isSignedIn) {
+    return null
+  }
+
   // Render submission form
   const renderSubmissionForm = () => {
     return (
@@ -331,22 +404,6 @@ export default function SubmissionsPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='user_email'>Email</Label>
-                <Input
-                  id='user_email'
-                  name='user_email'
-                  type='email'
-                  required
-                  placeholder='Your email address'
-                  value={submissionForm.user_email}
-                  onChange={handleInputChange}
-                />
-                <p className='text-sm text-muted-foreground'>
-                  We&apos;ll use this to track your submissions
-                </p>
-              </div>
-
               <div className='space-y-2'>
                 <Label htmlFor='url'>Website URL</Label>
                 <Input
@@ -385,21 +442,6 @@ export default function SubmissionsPage() {
                 </Select>
               </div>
 
-              <div className='space-y-2'>
-                <Label htmlFor='document_url'>Document URL (Optional)</Label>
-                <Input
-                  id='document_url'
-                  name='document_url'
-                  type='url'
-                  placeholder='https://example.com/terms'
-                  value={submissionForm.document_url || ''}
-                  onChange={handleInputChange}
-                />
-                <p className='text-sm text-muted-foreground'>
-                  If you know the exact URL of the document, enter it here
-                </p>
-              </div>
-
               {submitError && (
                 <div className='p-3 rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'>
                   <p className='flex items-center'>
@@ -430,34 +472,39 @@ export default function SubmissionsPage() {
   const renderSubmissionsTable = () => {
     return (
       <div className='w-full mx-auto p-4'>
-        <div className='mb-4 flex flex-col space-y-4 md:flex-row md:justify-between md:space-y-0'>
-          {/* Search bar */}
-          <div className='flex w-full max-w-sm items-center space-x-2'>
-            <form
-              onSubmit={handleSearch}
-              className='flex w-full max-w-sm space-x-2'
-            >
-              <Input
-                type='search'
-                placeholder='Search by URL...'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className='w-full'
-              />
-              <Button type='submit' size='icon'>
-                <Search className='h-4 w-4' />
-              </Button>
+        {/* Search section - redesigned to match the reference image */}
+        <div className='mb-6 p-6 bg-card rounded-lg border shadow-sm'>
+          {/* Search bar at the top */}
+          <div className='mb-4 w-full'>
+            <form onSubmit={handleSearch} className='flex w-full space-x-2'>
+              <div className='relative flex-1'>
+                <Input
+                  type='search'
+                  placeholder='Search by URL...'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className='w-full pr-10 h-12 bg-background border-muted-foreground/20 text-base'
+                />
+                <Button
+                  type='submit'
+                  size='icon'
+                  className='absolute right-1 top-1 h-10 w-10 rounded-md'
+                >
+                  <Search className='h-5 w-5' />
+                </Button>
+              </div>
             </form>
           </div>
 
-          <div className='flex items-center space-x-2'>
+          {/* Filters row */}
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-3'>
             {/* Document type filter */}
             <Select
               value={documentTypeFilter || 'all'}
               onValueChange={handleDocumentTypeChange}
             >
-              <SelectTrigger className='w-[180px]'>
-                <SelectValue placeholder='Document Type' />
+              <SelectTrigger>
+                <SelectValue placeholder='All Documents' />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='all'>All Types</SelectItem>
@@ -471,7 +518,7 @@ export default function SubmissionsPage() {
               value={statusFilter || 'all'}
               onValueChange={handleStatusChange}
             >
-              <SelectTrigger className='w-[180px]'>
+              <SelectTrigger>
                 <SelectValue placeholder='Status' />
               </SelectTrigger>
               <SelectContent>
@@ -484,115 +531,141 @@ export default function SubmissionsPage() {
               </SelectContent>
             </Select>
 
-            {/* Sort order control */}
-            <Button
-              variant='outline'
-              size='icon'
-              onClick={handleSortOrderChange}
-              title={`Currently sorting by date ${
-                sortOrder === 'desc' ? 'newest first' : 'oldest first'
-              }`}
+            {/* Sort order control - restored the button */}
+            <div className='flex items-center'>
+              <Button
+                variant='outline'
+                className='flex items-center justify-between w-full'
+                onClick={handleSortOrderChange}
+                title={`Currently sorting by date ${
+                  sortOrder === 'desc' ? 'newest first' : 'oldest first'
+                }`}
+              >
+                <span>{sortOrder === 'desc' ? 'Descending' : 'Ascending'}</span>
+                <ArrowUpDown className='h-4 w-4 ml-2' />
+              </Button>
+            </div>
+
+            {/* Results per page */}
+            <Select
+              value={resultsPerPage.toString()}
+              onValueChange={handleResultsPerPageChange}
             >
-              <ArrowUpDown className='h-4 w-4' />
-            </Button>
+              <SelectTrigger>
+                <SelectValue placeholder='Results per page' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='6'>6 / page</SelectItem>
+                <SelectItem value='9'>9 / page</SelectItem>
+                <SelectItem value='12'>12 / page</SelectItem>
+                <SelectItem value='15'>15 / page</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-            {/* New submission button */}
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className='flex items-center'>
-                  <Plus className='mr-2 h-4 w-4' />
-                  New
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Submit New URL</DialogTitle>
-                  <DialogDescription>
-                    Enter the details of the URL you want to analyze
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='dialog_url'>Website URL</Label>
-                    <Input
-                      id='dialog_url'
-                      name='url'
-                      type='url'
-                      required
-                      placeholder='https://example.com'
-                      value={submissionForm.url}
-                      onChange={handleInputChange}
-                    />
-                  </div>
+        {/* New submission button above the table */}
+        <div className='flex justify-end mb-4'>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className='flex items-center'>
+                <Plus className='mr-2 h-4 w-4' />
+                New
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Submit New URL</DialogTitle>
+                <DialogDescription>
+                  Enter the details of the URL you want to analyze
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className='space-y-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='dialog_url'>Website URL</Label>
+                  <Input
+                    id='dialog_url'
+                    name='url'
+                    type='url'
+                    required
+                    placeholder='https://example.com'
+                    value={submissionForm.url}
+                    onChange={handleInputChange}
+                  />
+                </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='dialog_document_type'>Document Type</Label>
-                    <Select
-                      name='document_type'
-                      value={submissionForm.document_type}
-                      onValueChange={(value) =>
-                        setSubmissionForm((prev) => ({
-                          ...prev,
-                          document_type: value as 'tos' | 'pp',
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select document type' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='tos'>Terms of Service</SelectItem>
-                        <SelectItem value='pp'>Privacy Policy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='dialog_document_type'>Document Type</Label>
+                  <Select
+                    name='document_type'
+                    value={submissionForm.document_type}
+                    onValueChange={(value) =>
+                      setSubmissionForm((prev) => ({
+                        ...prev,
+                        document_type: value as 'tos' | 'pp',
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder='Select document type' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='tos'>Terms of Service</SelectItem>
+                      <SelectItem value='pp'>Privacy Policy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='dialog_document_url'>
-                      Document URL (Optional)
-                    </Label>
-                    <Input
-                      id='dialog_document_url'
-                      name='document_url'
-                      type='url'
-                      placeholder='https://example.com/terms'
-                      value={submissionForm.document_url || ''}
-                      onChange={handleInputChange}
-                    />
-                    <p className='text-sm text-muted-foreground'>
-                      If you know the exact URL of the document, enter it here
-                    </p>
-                  </div>
-
-                  {submitError && (
-                    <div className='p-3 rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'>
-                      <p className='flex items-center'>
-                        <AlertCircle className='h-4 w-4 mr-2' />
-                        {submitError}
+                {/* Only show document_url field in retry dialog for failed submissions */}
+                {submissionForm.url &&
+                  displayedResults.some(
+                    (s) => s.url === submissionForm.url && s.status === 'failed'
+                  ) && (
+                    <div className='space-y-2'>
+                      <Label htmlFor='dialog_document_url'>Document URL</Label>
+                      <Input
+                        id='dialog_document_url'
+                        name='document_url'
+                        type='url'
+                        placeholder='https://example.com/terms'
+                        value={submissionForm.document_url || ''}
+                        onChange={handleInputChange}
+                      />
+                      <p className='text-sm text-muted-foreground'>
+                        Since the previous submission failed, please provide the
+                        exact URL to the document
                       </p>
                     </div>
                   )}
 
-                  <DialogFooter>
-                    <Button
-                      type='submit'
-                      className='w-full'
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                          Submitting...
-                        </>
-                      ) : (
-                        'Submit URL for Analysis'
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+                {submitError && (
+                  <div className='p-3 rounded-md bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'>
+                    <p className='flex items-center'>
+                      <AlertCircle className='h-4 w-4 mr-2' />
+                      {submitError}
+                    </p>
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button
+                    type='submit'
+                    className='w-full'
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                        Submitting...
+                      </>
+                    ) : (
+                      'Submit URL for Analysis'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {fetchError && (
@@ -601,33 +674,23 @@ export default function SubmissionsPage() {
               <AlertCircle className='h-4 w-4 mr-2' />
               {fetchError}
             </p>
-          </div>
-        )}
-
-        {/* Email required notice */}
-        {!submissionForm.user_email && (
-          <div className='mb-4 p-3 rounded-md bg-yellow-50 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200'>
-            <p className='flex items-center'>
-              <AlertCircle className='h-4 w-4 mr-2' />
-              Please enter your email to view your submissions.
-            </p>
-            <div className='mt-2 flex items-center space-x-2'>
-              <Input
-                type='email'
-                placeholder='Your email address'
-                name='user_email'
-                value={submissionForm.user_email}
-                onChange={handleInputChange}
-                className='max-w-xs'
-              />
+            {fetchError.includes('Failed to load') && (
               <Button
-                variant='secondary'
+                variant='outline'
                 size='sm'
-                onClick={() => mutateList()}
+                className='mt-2'
+                onClick={() => {
+                  // Refresh data
+                  mutateList()
+                  if (activeSearchQuery) {
+                    mutateSearch()
+                  }
+                }}
               >
-                Load
+                <RefreshCw className='mr-2 h-4 w-4' />
+                Try Again
               </Button>
-            </div>
+            )}
           </div>
         )}
 
@@ -744,87 +807,147 @@ export default function SubmissionsPage() {
                       </TableCell>
                     </TableRow>
                   ))
-                : !isLoading && (
+                : isEmpty &&
+                  !hasError && (
                     <TableRow>
                       <TableCell colSpan={5} className='text-center py-8'>
                         <div className='flex flex-col items-center justify-center text-muted-foreground'>
                           <FileText className='h-8 w-8 mb-2' />
                           <p>No submissions found</p>
                           <p className='text-sm'>
-                            {activeSearchQuery
+                            {activeSearchQuery ||
+                            documentTypeFilter ||
+                            statusFilter
                               ? 'Try a different search term or clear filters'
                               : 'Submit a URL to get started'}
                           </p>
                           <Button
                             variant='outline'
                             className='mt-4'
-                            onClick={() => setCreateDialogOpen(true)}
+                            onClick={() => {
+                              // Clear filters if they exist
+                              if (
+                                activeSearchQuery ||
+                                documentTypeFilter ||
+                                statusFilter
+                              ) {
+                                setActiveSearchQuery('')
+                                setSearchQuery('')
+                                setDocumentTypeFilter(undefined)
+                                setStatusFilter(undefined)
+                              } else {
+                                setCreateDialogOpen(true)
+                              }
+                            }}
                           >
-                            <Plus className='mr-2 h-4 w-4' />
-                            Submit New URL
+                            {activeSearchQuery ||
+                            documentTypeFilter ||
+                            statusFilter ? (
+                              <>Clear Filters</>
+                            ) : (
+                              <>
+                                <Plus className='mr-2 h-4 w-4' />
+                                Submit New URL
+                              </>
+                            )}
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
+              {hasError && (
+                <TableRow>
+                  <TableCell colSpan={5} className='text-center py-8'>
+                    <div className='flex flex-col items-center justify-center text-muted-foreground'>
+                      <AlertCircle className='h-8 w-8 mb-2 text-red-500' />
+                      <p className='text-red-500 font-medium'>
+                        Error Loading Submissions
+                      </p>
+                      <p className='text-sm max-w-md text-center mt-1'>
+                        {resultsPagination?.error_message ||
+                          'There was a problem connecting to the server. Please try again.'}
+                      </p>
+                      <div className='flex space-x-3 mt-4'>
+                        <Button
+                          variant='outline'
+                          onClick={() => {
+                            // Refresh data
+                            mutateList()
+                            if (activeSearchQuery) {
+                              mutateSearch()
+                            }
+                          }}
+                        >
+                          <RefreshCw className='mr-2 h-4 w-4' />
+                          Try Again
+                        </Button>
+                        {(activeSearchQuery ||
+                          documentTypeFilter ||
+                          statusFilter) && (
+                          <Button
+                            variant='secondary'
+                            onClick={() => {
+                              // Clear filters
+                              setActiveSearchQuery('')
+                              setSearchQuery('')
+                              setDocumentTypeFilter(undefined)
+                              setStatusFilter(undefined)
+                            }}
+                          >
+                            Clear Filters
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
 
         {/* Pagination controls */}
-        {resultsPagination && resultsPagination.total > 0 && (
-          <div className='flex items-center justify-between mt-4'>
-            <div className='flex items-center space-x-2'>
-              <p className='text-sm text-muted-foreground'>
-                Showing{' '}
-                <span className='font-medium'>{displayedResults.length}</span>{' '}
-                of{' '}
-                <span className='font-medium'>{resultsPagination.total}</span>{' '}
-                results
-              </p>
-              <Select
-                value={resultsPerPage.toString()}
-                onValueChange={handleResultsPerPageChange}
-              >
-                <SelectTrigger className='w-[70px]'>
-                  <SelectValue placeholder={`${resultsPerPage}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='6'>6</SelectItem>
-                  <SelectItem value='9'>9</SelectItem>
-                  <SelectItem value='12'>12</SelectItem>
-                  <SelectItem value='15'>15</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {resultsPagination &&
+          resultsPagination.total > 0 &&
+          !resultsPagination.error_status && (
+            <div className='flex items-center justify-between mt-4'>
+              <div className='flex items-center space-x-2'>
+                <p className='text-sm text-muted-foreground'>
+                  Showing{' '}
+                  <span className='font-medium'>{displayedResults.length}</span>{' '}
+                  of{' '}
+                  <span className='font-medium'>{resultsPagination.total}</span>{' '}
+                  results
+                </p>
+              </div>
 
-            <div className='flex items-center space-x-2'>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className='h-4 w-4' />
-              </Button>
-              <span className='text-sm'>
-                Page {currentPage} of{' '}
-                {Math.ceil(resultsPagination.total / resultsPerPage) || 1}
-              </span>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={
-                  currentPage >=
-                  Math.ceil(resultsPagination.total / resultsPerPage)
-                }
-              >
-                <ChevronRight className='h-4 w-4' />
-              </Button>
+              <div className='flex items-center space-x-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className='h-4 w-4' />
+                </Button>
+                <span className='text-sm'>
+                  Page {currentPage} of{' '}
+                  {Math.ceil(resultsPagination.total / resultsPerPage) || 1}
+                </span>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={
+                    currentPage >=
+                    Math.ceil(resultsPagination.total / resultsPerPage)
+                  }
+                >
+                  <ChevronRight className='h-4 w-4' />
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
     )
   }
