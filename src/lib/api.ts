@@ -32,6 +32,7 @@ export interface SubmissionListParams {
   size?: number
   sort_order?: 'asc' | 'desc'
   search_url?: string
+  role?: string
 }
 
 export interface SubmissionSearchParams {
@@ -42,6 +43,7 @@ export interface SubmissionSearchParams {
   sort_order?: 'asc' | 'desc'
   document_type?: 'tos' | 'pp'
   status?: string
+  role?: string
 }
 
 export interface SubmissionRetryParams {
@@ -256,6 +258,7 @@ export async function getSubmissions(
   if (params.size) queryParams.append('size', params.size.toString())
   if (params.sort_order) queryParams.append('sort_order', params.sort_order)
   if (params.search_url) queryParams.append('search_url', params.search_url)
+  if (params.role) queryParams.append('role', params.role)
 
   const queryString = queryParams.toString()
   const endpoint = `/api/v1/submissions?${queryString}`
@@ -265,10 +268,12 @@ export async function getSubmissions(
 
 export async function getSubmissionById(
   id: string,
-  userEmail: string
+  userEmail: string,
+  role?: string
 ): Promise<SubmissionItem> {
   const queryParams = new URLSearchParams()
   queryParams.append('user_email', userEmail)
+  if (role) queryParams.append('role', role)
 
   const endpoint = `/api/v1/submissions/${id}?${queryParams.toString()}`
   return apiRequest<SubmissionItem>(endpoint)
@@ -297,6 +302,7 @@ export async function searchSubmissions(
   if (params.document_type)
     queryParams.append('document_type', params.document_type)
   if (params.status) queryParams.append('status', params.status)
+  if (params.role) queryParams.append('role', params.role)
 
   const queryString = queryParams.toString()
   const endpoint = `/api/v1/search-submissions?${queryString}`

@@ -570,7 +570,7 @@ export default function SubmissionsPage() {
               </Button>
             </div>
 
-            {/* Results per page */}
+            {/* Select results per page */}
             <Select
               value={resultsPerPage.toString()}
               onValueChange={handleResultsPerPageChange}
