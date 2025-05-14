@@ -1,3 +1,5 @@
+'use client'
+
 // Adapted from https://ui.shadcn.com/
 import * as React from 'react'
 
