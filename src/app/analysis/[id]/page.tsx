@@ -305,8 +305,8 @@ export default function AnalysisPage() {
           description: 'The document has been deleted successfully.',
           variant: 'default',
         })
-        // Navigate back to results page
-        router.push('/results')
+        // Navigate to home page
+        router.push('/')
       } else {
         toast({
           title: 'Deletion failed',
