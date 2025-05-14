@@ -713,7 +713,7 @@ export default function AnalysisPage() {
           {/* Reanalyze button (admins only) */}
           {analysisItem.retrieved_url && isAdmin && (
             <Button
-              className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white'
+              className='flex items-center justify-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white min-w-[120px]'
               onClick={handleReanalyze}
               disabled={isReanalyzing}
             >
@@ -730,7 +730,7 @@ export default function AnalysisPage() {
           {isAdmin && (
             <Button
               variant='destructive'
-              className='flex items-center gap-2 h-10 px-4'
+              className='flex items-center justify-center gap-2 h-10 px-4 min-w-[120px]'
               onClick={() => {
                 setIsDeleteDialogOpen(true)
               }}
