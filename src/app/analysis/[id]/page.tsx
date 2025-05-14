@@ -414,17 +414,65 @@ export default function AnalysisPage() {
           {/* Admin-specific: Show document URLs */}
           {isAdmin && analysisItem.retrieved_url && (
             <div className='mt-2 text-sm text-gray-600 dark:text-gray-400 border p-2 border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-900'>
-              <p>
-                {analysisItem.document_type === 'tos' ? 'ToS' : 'PP'} URL:{' '}
-                <a
-                  href={analysisItem.retrieved_url}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
-                >
-                  {analysisItem.retrieved_url}
-                </a>
-              </p>
+              <div className='flex items-center gap-2'>
+                <p className='flex-shrink-0'>
+                  {analysisItem.document_type === 'tos' ? 'ToS' : 'PP'} URL:
+                </p>
+                {isEditing ? (
+                  <div className='flex flex-1 gap-2'>
+                    <Input
+                      type='text'
+                      value={editedUrl}
+                      onChange={(e) => setEditedUrl(e.target.value)}
+                      className='flex-1 h-8 py-1'
+                    />
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => {
+                        setIsEditing(false)
+                        setEditedUrl('')
+                      }}
+                      className='h-8 px-2 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
+                    >
+                      <X className='h-4 w-4 mr-1' />
+                      Cancel
+                    </Button>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => setIsEditing(false)}
+                      className='h-8 px-2 text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
+                    >
+                      <Check className='h-4 w-4 mr-1' />
+                      Save
+                    </Button>
+                  </div>
+                ) : (
+                  <div className='flex flex-1 items-center'>
+                    <a
+                      href={analysisItem.retrieved_url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[450px]'
+                    >
+                      {analysisItem.retrieved_url}
+                    </a>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      onClick={() => {
+                        setIsEditing(true)
+                        setEditedUrl(analysisItem.retrieved_url || '')
+                      }}
+                      className='ml-2 h-7 px-2 text-gray-500 border-gray-200'
+                    >
+                      <Edit className='h-3 w-3 mr-1' />
+                      Edit
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -439,68 +487,18 @@ export default function AnalysisPage() {
         {/* View Original Source Button or Reanalyze Button for admins */}
         <div className='flex justify-center mt-4 mb-4'>
           {analysisItem.retrieved_url && isAdmin ? (
-            <div className='flex flex-col gap-3 items-center'>
-              {isEditing ? (
-                <div className='flex w-full max-w-md gap-2'>
-                  <Input
-                    type='text'
-                    value={editedUrl}
-                    onChange={(e) => setEditedUrl(e.target.value)}
-                    placeholder={analysisItem.retrieved_url}
-                    className='flex-grow'
-                  />
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => {
-                      setIsEditing(false)
-                      setEditedUrl('')
-                    }}
-                    className='text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
-                  >
-                    <X className='h-4 w-4' />
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => setIsEditing(false)}
-                    className='text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
-                  >
-                    <Check className='h-4 w-4' />
-                  </Button>
-                </div>
-              ) : (
-                <div className='flex items-center gap-2'>
-                  <p className='text-sm text-gray-600 dark:text-gray-400'>
-                    Current URL: {analysisItem.retrieved_url}
-                  </p>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => {
-                      setIsEditing(true)
-                      setEditedUrl(analysisItem.retrieved_url || '')
-                    }}
-                    className='text-gray-500 border-gray-200'
-                  >
-                    <Edit className='h-4 w-4' />
-                  </Button>
-                </div>
-              )}
-
-              <Button
-                className='flex items-center bg-amber-600 hover:bg-amber-700 text-white'
-                onClick={handleReanalyze}
-                disabled={isReanalyzing}
-              >
-                {isReanalyzing ? 'Processing...' : 'Reanalyze'}
-                <RefreshCw
-                  className={`h-3 w-3 ml-2 ${
-                    isReanalyzing ? 'animate-spin' : ''
-                  }`}
-                />
-              </Button>
-            </div>
+            <Button
+              className='flex items-center bg-slate-800 hover:bg-slate-700 text-white rounded px-4 py-2 h-9'
+              onClick={handleReanalyze}
+              disabled={isReanalyzing}
+            >
+              {isReanalyzing ? 'Processing...' : 'Reanalyze'}
+              <RefreshCw
+                className={`h-3 w-3 ml-2 ${
+                  isReanalyzing ? 'animate-spin' : ''
+                }`}
+              />
+            </Button>
           ) : (
             analysisItem.retrieved_url && (
               <a
