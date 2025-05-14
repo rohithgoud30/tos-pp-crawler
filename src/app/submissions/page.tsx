@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
 import {
   Search,
   ArrowUpDown,
-  ExternalLink,
   Globe,
   Clock,
   FileText,
@@ -16,6 +14,7 @@ import {
   Plus,
   RefreshCw,
   Check,
+  Info,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,6 +51,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/use-toast'
 import {
   type SubmissionCreateParams,
   createSubmission,
@@ -61,6 +61,7 @@ import {
   retrySubmission,
   adminSearchAllSubmissions,
   type AdminSearchSubmissionsParams,
+  searchSubmissions,
 } from '@/lib/api'
 import {
   useSubmissionsList,
@@ -79,6 +80,7 @@ interface SubmissionItem {
   updated_at: string
   document_id?: string
   user_email: string
+  error_message?: string | null
 }
 
 interface PaginatedSubmissionResponse {
@@ -90,7 +92,87 @@ interface PaginatedSubmissionResponse {
   error_message?: string
 }
 
+// Helper function to normalize URLs and extract domains
+const normalizeUrl = (
+  url: string
+): { normalizedUrl: string; domain: string } => {
+  let normalizedUrl = url.toLowerCase().trim()
+  if (!normalizedUrl.startsWith('http')) {
+    normalizedUrl = 'https://' + normalizedUrl
+  }
+
+  try {
+    // Try to extract domain - will throw if URL is invalid
+    const urlObj = new URL(normalizedUrl)
+    const domain = urlObj.hostname.replace('www.', '')
+    return { normalizedUrl, domain }
+  } catch (error) {
+    // Log the error for debugging
+    console.warn('URL parsing failed:', error)
+
+    // If URL parsing fails, just return the original with a basic domain extraction
+    const domain = normalizedUrl
+      .replace('https://', '')
+      .replace('http://', '')
+      .replace('www.', '')
+      .split('/')[0]
+    return { normalizedUrl, domain }
+  }
+}
+
+// Check for existing documents with similar domain
+const checkExistingDocument = async (
+  url: string,
+  documentType: 'tos' | 'pp',
+  userEmail: string
+): Promise<{ exists: boolean; documentId?: string }> => {
+  if (!url || !documentType || !userEmail) {
+    return { exists: false }
+  }
+
+  try {
+    const { domain } = normalizeUrl(url)
+
+    // Search for existing documents with similar domain using the search API
+    const searchParams: SubmissionSearchParams = {
+      query: domain,
+      user_email: userEmail,
+      document_type: documentType,
+      status: 'success',
+      page: 1,
+      size: 5,
+    }
+
+    const results = await searchSubmissions(searchParams)
+
+    if (results.items && results.items.length > 0) {
+      // Filter for exact domain matches to avoid false positives
+      const exactMatches = results.items.filter((item) => {
+        // Check if the item has a URL and normalize it
+        if (item.url) {
+          const itemDomain = normalizeUrl(item.url).domain
+          return itemDomain === domain || item.url.includes(domain)
+        }
+        return false
+      })
+
+      if (exactMatches.length > 0 && exactMatches[0].document_id) {
+        return {
+          exists: true,
+          documentId: exactMatches[0].document_id,
+        }
+      }
+    }
+
+    return { exists: false }
+  } catch (error) {
+    console.error('Error checking for existing document:', error)
+    return { exists: false }
+  }
+}
+
 export default function SubmissionsPage() {
+  const { toast } = useToast()
   const urlParams = useSearchParams()
   const router = useRouter()
   const { user, isLoaded, isSignedIn } = useUser()
@@ -129,6 +211,11 @@ export default function SubmissionsPage() {
     useState<PaginatedSubmissionResponse | null>(null)
   const [isAdminSearching, setIsAdminSearching] = useState(false)
   const [adminSearchError, setAdminSearchError] = useState<string | null>(null)
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false)
+  const [duplicateFound, setDuplicateFound] = useState<{
+    exists: boolean
+    documentId?: string
+  }>({ exists: false })
 
   // Redirect to login if not signed in
   useEffect(() => {
@@ -396,8 +483,11 @@ export default function SubmissionsPage() {
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Reset states
     setIsSubmitting(true)
     setSubmitError(null)
+    setDuplicateFound({ exists: false })
 
     try {
       // Validate required fields
@@ -408,8 +498,63 @@ export default function SubmissionsPage() {
         throw new Error('User is not authenticated. Please log in.')
       }
 
-      await createSubmission(submissionForm)
-      // Reset form except for email
+      // Check for duplicate documents before submitting
+      setIsCheckingDuplicate(true)
+      const checkResult = await checkExistingDocument(
+        submissionForm.url,
+        submissionForm.document_type,
+        submissionForm.user_email
+      )
+      setIsCheckingDuplicate(false)
+
+      if (checkResult.exists && checkResult.documentId) {
+        setDuplicateFound(checkResult)
+
+        // Show notification about duplicate
+        toast({
+          title: 'Potential Duplicate Found',
+          description: 'This URL appears to already exist in the database.',
+          variant: 'default',
+        })
+
+        // Ask user if they want to proceed
+        const shouldProceed = window.confirm(
+          'This URL appears to already exist in our database. Would you like to continue with the submission anyway?'
+        )
+
+        if (!shouldProceed) {
+          // User chose not to proceed - redirect to existing document
+          router.push(`/analysis/${checkResult.documentId}`)
+          setIsSubmitting(false)
+          setCreateDialogOpen(false)
+          return
+        }
+        // If user chooses to proceed, continue with normal submission
+      }
+
+      const response = await createSubmission(submissionForm)
+
+      // Handle duplicate from API response
+      if (
+        response.status === 'success' &&
+        response.document_id &&
+        response.error_message?.includes('Document already exists')
+      ) {
+        // Close the dialog if it's open
+        setCreateDialogOpen(false)
+
+        // Show notification that document already exists
+        toast({
+          title: 'Document Already Exists',
+          description: 'Redirecting to the existing document analysis.',
+        })
+
+        // Redirect to the existing document analysis page
+        router.push(`/analysis/${response.document_id}`)
+        return
+      }
+
+      // Regular case - reset form except for email
       setSubmissionForm((prev) => ({
         url: '',
         document_type: 'tos',
@@ -435,61 +580,6 @@ export default function SubmissionsPage() {
       )
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  // Handle retry submission
-  const handleRetrySubmission = async (
-    submissionId: string,
-    document_url?: string
-  ) => {
-    if (!submissionForm.user_email) {
-      setRetryError('User is not authenticated. Please log in.')
-      return
-    }
-
-    setRetryingId(submissionId)
-    setRetryStatus('retrying')
-    setRetryError(null)
-    setSuccessfulRetryId(null)
-
-    try {
-      const retryParams: SubmissionRetryParams = {
-        document_url: document_url || '',
-        user_email: submissionForm.user_email,
-      }
-
-      const result = await retrySubmission(submissionId, retryParams)
-
-      // Set success status
-      setRetryStatus('success')
-
-      // Refresh the submission list
-      mutateList()
-      if (activeSearchQuery) {
-        mutateSearch()
-      }
-
-      // If successful and has document_id, store it for the View button
-      if (result.status === 'success' && result.document_id) {
-        setSuccessfulRetryId(result.document_id)
-        // Do not redirect - let user choose when to navigate
-      }
-    } catch (error) {
-      console.error('Retry error:', error)
-      setRetryStatus('error')
-      setRetryError(
-        error instanceof Error ? error.message : 'Failed to retry submission'
-      )
-    } finally {
-      // For errors, reset retry status after a delay
-      if (retryStatus === 'error') {
-        setTimeout(() => {
-          setRetryingId(null)
-          setRetryStatus('idle')
-        }, 3000)
-      }
-      // Success state persists until user takes action
     }
   }
 
@@ -542,7 +632,17 @@ export default function SubmissionsPage() {
   }
 
   // Get status badge color
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, error_message?: string | null) => {
+    // If it's a duplicate document (success with document_id and error_message about duplication)
+    if (
+      status === 'success' &&
+      error_message &&
+      error_message.includes('Document already exists')
+    ) {
+      return <Badge className='bg-amber-500'>Duplicate</Badge>
+    }
+
+    // Regular status cases
     switch (status) {
       case 'success':
         return <Badge className='bg-green-500'>Success</Badge>
@@ -567,6 +667,120 @@ export default function SubmissionsPage() {
     if (isAdmin) {
       // Wait for state to update, then perform search
       setTimeout(() => handleAdminSearch(), 0)
+    }
+  }
+
+  // Handle retry submission
+  const handleRetrySubmission = async (
+    submissionId: string,
+    document_url?: string
+  ) => {
+    if (!submissionForm.user_email) {
+      setRetryError('User is not authenticated. Please log in.')
+      return
+    }
+
+    setRetryingId(submissionId)
+    setRetryStatus('retrying')
+    setRetryError(null)
+    setSuccessfulRetryId(null)
+
+    try {
+      // Get the submission from the displayed results
+      const submission = displayedResults.find((s) => s.id === submissionId)
+
+      if (submission) {
+        // First check for duplicates
+        setIsCheckingDuplicate(true)
+        const checkResult = await checkExistingDocument(
+          submission.url,
+          submission.document_type,
+          submissionForm.user_email
+        )
+        setIsCheckingDuplicate(false)
+
+        if (checkResult.exists && checkResult.documentId) {
+          // Show notification about duplicate
+          toast({
+            title: 'Duplicate Document Found',
+            description:
+              'This URL already exists in our database. Redirecting to the existing document.',
+          })
+
+          // Close dialog if open
+          setCreateDialogOpen(false)
+
+          // Set retry status to success
+          setRetryStatus('success')
+
+          // Store document ID for use in View button
+          setSuccessfulRetryId(checkResult.documentId)
+
+          // Redirect to the existing document analysis page
+          router.push(`/analysis/${checkResult.documentId}`)
+          return
+        }
+      }
+
+      const retryParams: SubmissionRetryParams = {
+        document_url: document_url || '',
+        user_email: submissionForm.user_email,
+      }
+
+      const result = await retrySubmission(submissionId, retryParams)
+
+      // Check if this is a duplicate document case
+      if (
+        result.status === 'success' &&
+        result.document_id &&
+        result.error_message?.includes('Document already exists')
+      ) {
+        // Show notification that document already exists
+        toast({
+          title: 'Document Already Exists',
+          description: 'Redirecting to the existing document analysis.',
+        })
+
+        // Close dialog if open
+        setCreateDialogOpen(false)
+
+        // Set retry status to success
+        setRetryStatus('success')
+
+        // Redirect to the existing document analysis page
+        router.push(`/analysis/${result.document_id}`)
+        return
+      }
+
+      // Set success status
+      setRetryStatus('success')
+
+      // Refresh the submission list
+      mutateList()
+      if (activeSearchQuery) {
+        mutateSearch()
+      }
+
+      // If successful and has document_id, store it for the View button
+      if (result.status === 'success' && result.document_id) {
+        setSuccessfulRetryId(result.document_id)
+        // Redirect to analysis page
+        router.push(`/analysis/${result.document_id}`)
+      }
+    } catch (error) {
+      console.error('Retry error:', error)
+      setRetryStatus('error')
+      setRetryError(
+        error instanceof Error ? error.message : 'Failed to retry submission'
+      )
+    } finally {
+      // For errors, reset retry status after a delay
+      if (retryStatus === 'error') {
+        setTimeout(() => {
+          setRetryingId(null)
+          setRetryStatus('idle')
+        }, 3000)
+      }
     }
   }
 
@@ -819,7 +1033,12 @@ export default function SubmissionsPage() {
                             : 'Privacy'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{getStatusBadge(submission.status)}</TableCell>
+                      <TableCell>
+                        {getStatusBadge(
+                          submission.status,
+                          submission.error_message
+                        )}
+                      </TableCell>
                       <TableCell>
                         <TooltipProvider>
                           <Tooltip>
@@ -835,129 +1054,108 @@ export default function SubmissionsPage() {
                       </TableCell>
                       <TableCell className='text-right'>
                         <div className='flex justify-end space-x-2'>
-                          {submission.status === 'success' &&
-                            submission.document_id && (
-                              <Button variant='ghost' size='sm' asChild>
-                                <Link
-                                  href={`/analysis/${submission.document_id}`}
-                                >
-                                  <FileText className='mr-1 h-4 w-4' />
-                                  View
-                                </Link>
-                              </Button>
-                            )}
-                          {submission.status === 'failed' &&
-                            (retryingId === submission.id &&
-                            retryStatus === 'success' &&
-                            successfulRetryId ? (
-                              <div className='flex flex-col w-full'>
-                                <div className='p-3 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-md mb-3 flex items-center'>
-                                  <Check className='h-5 w-5 mr-2' />
-                                  Analysis successful! Document is ready.
-                                </div>
-                                <div className='flex space-x-3'>
-                                  <Button
-                                    type='button'
-                                    variant='outline'
-                                    onClick={() => {
-                                      setCreateDialogOpen(false)
-                                      // Refresh the list after closing dialog
-                                      mutateList()
-                                    }}
-                                  >
-                                    Close
-                                  </Button>
-                                  <Button
-                                    type='button'
-                                    variant='default'
-                                    className='bg-green-600 hover:bg-green-700'
-                                    asChild
-                                  >
-                                    <Link
-                                      href={`/analysis/${successfulRetryId}`}
-                                    >
-                                      <FileText className='mr-2 h-4 w-4' />
-                                      View Analysis
-                                    </Link>
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <Button
-                                variant='outline'
-                                size='sm'
-                                onClick={() => {
-                                  // Direct retry if we have submission id
-                                  if (submission.document_url) {
-                                    // If we already have document_url, retry directly
-                                    handleRetrySubmission(
-                                      submission.id,
-                                      submission.document_url
-                                    )
-                                  } else {
-                                    // Otherwise open dialog for user to enter document URL
-                                    setSubmissionForm((prev) => ({
-                                      ...prev,
-                                      url: submission.url,
-                                      document_type: submission.document_type,
-                                      document_url: '',
-                                    }))
-                                    setCreateDialogOpen(true)
-                                  }
-                                }}
-                                disabled={
-                                  retryingId === submission.id &&
-                                  retryStatus === 'retrying'
-                                }
-                                className={
-                                  retryingId === submission.id
-                                    ? retryStatus === 'success'
-                                      ? 'bg-green-50 text-green-600 border-green-200'
-                                      : retryStatus === 'error'
-                                      ? 'bg-red-50 text-red-600 border-red-200'
-                                      : ''
-                                    : ''
-                                }
-                              >
-                                {retryingId === submission.id ? (
-                                  retryStatus === 'retrying' ? (
-                                    <>
-                                      <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
-                                      Retrying...
-                                    </>
-                                  ) : retryStatus === 'success' ? (
-                                    <>
-                                      <Check className='mr-1 h-4 w-4' />
-                                      Success
-                                    </>
-                                  ) : retryStatus === 'error' ? (
-                                    <>
-                                      <AlertCircle className='mr-1 h-4 w-4' />
-                                      Failed
-                                    </>
-                                  ) : (
-                                    <>
-                                      <RefreshCw className='mr-1 h-4 w-4' />
-                                      Retry
-                                    </>
+                          {/* Single action button with different states */}
+                          {/* Case 1: Success with document_id - Show View button */}
+                          {submission.status === 'success' ? (
+                            <Button
+                              variant='default'
+                              size='sm'
+                              onClick={() => {
+                                router.push(
+                                  `/analysis/${submission.document_id}`
+                                )
+                              }}
+                            >
+                              <FileText className='mr-1 h-4 w-4' />
+                              View
+                            </Button>
+                          ) : /* Case 2: Failed status - Show Retry button */
+                          submission.status === 'failed' ? (
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={() => {
+                                // Direct retry if we have document_url
+                                if (submission.document_url) {
+                                  handleRetrySubmission(
+                                    submission.id,
+                                    submission.document_url
                                   )
+                                } else {
+                                  // Otherwise open dialog for user to enter document URL
+                                  setSubmissionForm((prev) => ({
+                                    ...prev,
+                                    url: submission.url,
+                                    document_type: submission.document_type,
+                                    document_url: '',
+                                  }))
+                                  setCreateDialogOpen(true)
+                                }
+                              }}
+                              disabled={
+                                retryingId === submission.id &&
+                                retryStatus === 'retrying'
+                              }
+                              className={
+                                retryingId === submission.id
+                                  ? retryStatus === 'success'
+                                    ? 'bg-green-50 text-green-600 border-green-200'
+                                    : retryStatus === 'error'
+                                    ? 'bg-red-50 text-red-600 border-red-200'
+                                    : ''
+                                  : ''
+                              }
+                            >
+                              {retryingId === submission.id ? (
+                                retryStatus === 'retrying' ? (
+                                  <>
+                                    <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
+                                    Retrying...
+                                  </>
+                                ) : retryStatus === 'success' ? (
+                                  <>
+                                    <Check className='mr-1 h-4 w-4' />
+                                    Success
+                                  </>
+                                ) : retryStatus === 'error' ? (
+                                  <>
+                                    <AlertCircle className='mr-1 h-4 w-4' />
+                                    Failed
+                                  </>
                                 ) : (
                                   <>
                                     <RefreshCw className='mr-1 h-4 w-4' />
                                     Retry
                                   </>
-                                )}
-                              </Button>
-                            ))}
-                          <Button variant='ghost' size='sm' asChild>
-                            <a
-                              href={submission.url}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                            >
-                              <ExternalLink className='h-4 w-4' />
-                            </a>
-                          </Button>
+                                )
+                              ) : (
+                                <>
+                                  <RefreshCw className='mr-1 h-4 w-4' />
+                                  Retry
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            /* Case 3: Other statuses - Show disabled button */
+                            <Button variant='outline' size='sm' disabled={true}>
+                              {submission.status === 'processing' ? (
+                                <>
+                                  <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
+                                  Processing...
+                                </>
+                              ) : submission.status === 'analyzing' ? (
+                                <>
+                                  <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
+                                  Analyzing...
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className='mr-1 h-4 w-4' />
+                                  Pending
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1162,6 +1360,30 @@ export default function SubmissionsPage() {
               </Select>
             </div>
 
+            {/* Display warning if duplicate is found */}
+            {duplicateFound.exists && duplicateFound.documentId && (
+              <div className='p-3 rounded-md bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex items-start'>
+                <Info className='h-5 w-5 mr-2 flex-shrink-0 mt-0.5' />
+                <div>
+                  <p className='font-medium'>Potential Duplicate Found</p>
+                  <p className='text-sm mt-1'>
+                    This URL appears to already exist in our database.
+                  </p>
+                  <Button
+                    type='button'
+                    variant='link'
+                    className='text-sm p-0 h-auto mt-1 text-amber-800 dark:text-amber-300 underline'
+                    onClick={() => {
+                      router.push(`/analysis/${duplicateFound.documentId}`)
+                      setCreateDialogOpen(false)
+                    }}
+                  >
+                    View existing document
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Only show document_url field in retry dialog for failed submissions */}
             {submissionForm.url &&
               displayedResults.some(
@@ -1230,12 +1452,12 @@ export default function SubmissionsPage() {
                         type='button'
                         variant='default'
                         className='bg-green-600 hover:bg-green-700'
-                        asChild
+                        onClick={() =>
+                          router.push(`/analysis/${successfulRetryId}`)
+                        }
                       >
-                        <Link href={`/analysis/${successfulRetryId}`}>
-                          <FileText className='mr-2 h-4 w-4' />
-                          View Analysis
-                        </Link>
+                        <FileText className='mr-2 h-4 w-4' />
+                        View Analysis
                       </Button>
                     </div>
                   </div>
@@ -1254,22 +1476,17 @@ export default function SubmissionsPage() {
                         )
                       }
                     }}
-                    disabled={isSubmitting || retryStatus === 'retrying'}
+                    disabled={isSubmitting || isCheckingDuplicate}
                     className={
-                      retryStatus === 'error'
+                      isSubmitting
                         ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
                         : ''
                     }
                   >
-                    {retryStatus === 'retrying' ? (
+                    {isSubmitting || isCheckingDuplicate ? (
                       <>
                         <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                        Retrying...
-                      </>
-                    ) : retryStatus === 'error' ? (
-                      <>
-                        <AlertCircle className='mr-2 h-4 w-4' />
-                        Retry Failed
+                        {isCheckingDuplicate ? 'Checking...' : 'Submitting...'}
                       </>
                     ) : (
                       'Retry Analysis'
@@ -1277,11 +1494,14 @@ export default function SubmissionsPage() {
                   </Button>
                 )
               ) : (
-                <Button type='submit' disabled={isSubmitting}>
-                  {isSubmitting ? (
+                <Button
+                  type='submit'
+                  disabled={isSubmitting || isCheckingDuplicate}
+                >
+                  {isSubmitting || isCheckingDuplicate ? (
                     <>
                       <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                      Submitting...
+                      {isCheckingDuplicate ? 'Checking...' : 'Submitting...'}
                     </>
                   ) : (
                     'Submit URL for Analysis'
