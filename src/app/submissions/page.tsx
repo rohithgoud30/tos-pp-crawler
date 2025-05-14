@@ -162,6 +162,17 @@ export default function SubmissionsPage() {
     }
   }, [isAdmin])
 
+  // Debug admin role detection
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      console.log('User auth info:', {
+        isSignedIn,
+        publicMetadata: user?.publicMetadata,
+        isAdmin,
+      })
+    }
+  }, [isLoaded, isSignedIn, user, isAdmin])
+
   // Build submission list parameters with safe conversion for hooks
   const submissionListParams =
     isSignedIn && !adminMode && submissionForm.user_email
@@ -230,8 +241,24 @@ export default function SubmissionsPage() {
   // Handle admin search
   const handleAdminSearch = async () => {
     if (!isAdmin || !adminMode) {
+      console.log(
+        'Admin search aborted: isAdmin =',
+        isAdmin,
+        'adminMode =',
+        adminMode
+      )
       return
     }
+
+    console.log('Starting admin search with current state:', {
+      currentPage,
+      resultsPerPage,
+      sortOrder,
+      searchQuery: searchQuery.trim(),
+      adminUserEmail: adminUserEmail.trim(),
+      documentTypeFilter,
+      statusFilter,
+    })
 
     setIsAdminSearching(true)
     setAdminSearchError(null)
@@ -250,7 +277,9 @@ export default function SubmissionsPage() {
       if (documentTypeFilter) params.document_type = documentTypeFilter
       if (statusFilter) params.status = statusFilter
 
+      console.log('Calling adminSearchAllSubmissions with params:', params)
       const results = await adminSearchAllSubmissions(params)
+      console.log('Admin search completed successfully:', results)
       setAdminSearchResults(results as unknown as PaginatedSubmissionResponse)
 
       // Update active search query to indicate search was performed

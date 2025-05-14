@@ -340,5 +340,17 @@ export async function adminSearchAllSubmissions(
   const queryString = queryParams.toString()
   const endpoint = `/api/v1/admin/search-all-submissions?${queryString}`
 
-  return apiRequest<PaginatedResponse<SubmissionItem>>(endpoint)
+  console.log('Admin search endpoint:', endpoint)
+  console.log('Admin search params:', params)
+
+  try {
+    const results = await apiRequest<PaginatedResponse<SubmissionItem>>(
+      endpoint
+    )
+    console.log('Admin search results:', results)
+    return results
+  } catch (error) {
+    console.error('Admin search API error:', error)
+    throw error
+  }
 }
