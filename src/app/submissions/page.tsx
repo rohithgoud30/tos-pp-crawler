@@ -70,19 +70,6 @@ import {
 } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
 
-// Extend the base interfaces to include admin fields
-interface AdminSubmissionListParams
-  extends Omit<SubmissionListParams, 'user_email'> {
-  user_email?: string
-  role?: string
-}
-
-interface AdminSubmissionSearchParams
-  extends Omit<SubmissionSearchParams, 'user_email'> {
-  user_email?: string
-  role?: string
-}
-
 // Define enhanced submission response types to match backend
 interface SubmissionItem {
   id: string
@@ -177,61 +164,38 @@ export default function SubmissionsPage() {
 
   // Build submission list parameters with safe conversion for hooks
   const submissionListParams =
-    isSignedIn && (adminMode && isAdmin ? true : submissionForm.user_email)
+    isSignedIn && !adminMode && submissionForm.user_email
       ? ({
-          user_email:
-            adminMode && isAdmin && adminUserEmail
-              ? adminUserEmail
-              : submissionForm.user_email,
+          user_email: submissionForm.user_email,
           page: currentPage,
           size: resultsPerPage,
           sort_order: sortOrder,
           search_url: activeSearchQuery || undefined,
-          role: adminMode && isAdmin ? 'admin' : undefined,
-        } as AdminSubmissionListParams)
+        } as SubmissionListParams)
       : null
 
-  // Convert admin params to regular params for the hooks
-  const hookListParams = submissionListParams
-    ? ({
-        ...submissionListParams,
-        // Ensure user_email is always a string as required by the hook
-        user_email:
-          submissionListParams.user_email ||
-          (adminMode && isAdmin ? '' : submissionForm.user_email),
-      } as SubmissionListParams)
-    : null
+  // Only use hooks for non-admin mode
+  const hookListParams = !adminMode ? submissionListParams : null
 
   // Build submission search parameters
   const submissionSearchParams =
     isSignedIn &&
     activeSearchQuery &&
-    (adminMode && isAdmin ? true : submissionForm.user_email)
+    !adminMode && // Only build regular search params when not in admin mode
+    submissionForm.user_email
       ? ({
           query: activeSearchQuery,
-          user_email:
-            adminMode && isAdmin && adminUserEmail
-              ? adminUserEmail
-              : submissionForm.user_email,
+          user_email: submissionForm.user_email,
           page: currentPage,
           size: resultsPerPage,
           sort_order: sortOrder,
           document_type: documentTypeFilter,
           status: statusFilter,
-          role: adminMode && isAdmin ? 'admin' : undefined,
-        } as AdminSubmissionSearchParams)
+        } as SubmissionSearchParams)
       : null
 
-  // Convert admin search params to regular params for the hooks
-  const hookSearchParams = submissionSearchParams
-    ? ({
-        ...submissionSearchParams,
-        // Ensure user_email is always a string as required by the hook
-        user_email:
-          submissionSearchParams.user_email ||
-          (adminMode ? '' : submissionForm.user_email),
-      } as SubmissionSearchParams)
-    : null
+  // Only use hooks for non-admin searches
+  const hookSearchParams = !adminMode ? submissionSearchParams : null
 
   // Fetch submissions data
   const {
@@ -240,7 +204,7 @@ export default function SubmissionsPage() {
     error: listFetchError,
     mutate: mutateList,
   } = useSubmissionsList(hookListParams, {
-    revalidateOnMount: true,
+    revalidateOnMount: !adminMode, // Only revalidate if not in admin mode
   }) as {
     submissions: PaginatedSubmissionResponse | null
     isLoading: boolean
@@ -255,7 +219,7 @@ export default function SubmissionsPage() {
     error: searchFetchError,
     mutate: mutateSearch,
   } = useSubmissionSearch(hookSearchParams, {
-    revalidateOnMount: activeSearchQuery ? true : false,
+    revalidateOnMount: activeSearchQuery && !adminMode ? true : false, // Only revalidate if not in admin mode
   }) as {
     results: PaginatedSubmissionResponse | null
     isLoading: boolean
