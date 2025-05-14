@@ -797,7 +797,7 @@ export default function ResultsPage() {
                     </div>
                     <CardFooter className='p-4 pt-3 mt-auto'>
                       <Button
-                        className='w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors'
+                        className='w-full gap-2 hover:bg-primary hover:text-primary-foreground dark:hover:bg-white dark:hover:text-black transition-colors'
                         variant='outline'
                         size='sm'
                         asChild
