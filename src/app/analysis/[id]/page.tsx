@@ -134,9 +134,8 @@ export default function AnalysisPage() {
         document_id: documentId,
       }
 
-      // Only add the URL to the payload if it's been edited and is different from the original
+      // Use the edited URL if it exists and is different from the original URL
       if (
-        isEditing &&
         editedUrl.trim() !== '' &&
         editedUrl.trim() !== analysisItem.retrieved_url
       ) {
@@ -470,7 +469,11 @@ export default function AnalysisPage() {
                     <Button
                       variant='outline'
                       size='sm'
-                      onClick={() => setIsEditing(false)}
+                      onClick={() => {
+                        // Just save the URL without triggering reanalysis
+                        setIsEditing(false)
+                        // Don't trigger reanalysis automatically
+                      }}
                       className='text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
                     >
                       <Check className='h-4 w-4 mr-1' />
