@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -51,12 +52,30 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Label } from '@/components/ui/label'
-import { type SubmissionCreateParams, createSubmission } from '@/lib/api'
+import {
+  type SubmissionCreateParams,
+  createSubmission,
+  type SubmissionListParams,
+  type SubmissionSearchParams,
+} from '@/lib/api'
 import {
   useSubmissionsList,
   useSubmissionSearch,
 } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
+
+// Extend the base interfaces to include admin fields
+interface AdminSubmissionListParams
+  extends Omit<SubmissionListParams, 'user_email'> {
+  user_email?: string
+  role?: string
+}
+
+interface AdminSubmissionSearchParams
+  extends Omit<SubmissionSearchParams, 'user_email'> {
+  user_email?: string
+  role?: string
+}
 
 // Define enhanced submission response types to match backend
 interface SubmissionItem {
@@ -87,6 +106,8 @@ export default function SubmissionsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeSearchQuery, setActiveSearchQuery] = useState('')
+  const [adminMode, setAdminMode] = useState(false)
+  const [adminUserEmail, setAdminUserEmail] = useState('')
   const [documentTypeFilter, setDocumentTypeFilter] = useState<
     'tos' | 'pp' | undefined
   >(undefined)
@@ -94,7 +115,7 @@ export default function SubmissionsPage() {
     undefined
   )
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [resultsPerPage, setResultsPerPage] = useState(6)
+  const [resultsPerPage, setResultsPerPage] = useState(adminMode ? 10 : 6)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [submissionForm, setSubmissionForm] = useState<SubmissionCreateParams>({
     url: '',
@@ -123,31 +144,68 @@ export default function SubmissionsPage() {
     }
   }, [isSignedIn, user])
 
-  // Build submission list parameters
+  // Update resultsPerPage when adminMode changes
+  useEffect(() => {
+    setResultsPerPage(adminMode ? 10 : 6)
+  }, [adminMode])
+
+  // Build submission list parameters with safe conversion for hooks
   const submissionListParams =
-    isSignedIn && submissionForm.user_email
-      ? {
-          user_email: submissionForm.user_email,
+    isSignedIn && (adminMode ? true : submissionForm.user_email)
+      ? ({
+          user_email:
+            adminMode && adminUserEmail
+              ? adminUserEmail
+              : submissionForm.user_email,
           page: currentPage,
           size: resultsPerPage,
           sort_order: sortOrder,
           search_url: activeSearchQuery || undefined,
-        }
+          role: adminMode ? 'admin' : undefined,
+        } as AdminSubmissionListParams)
       : null
+
+  // Convert admin params to regular params for the hooks
+  const hookListParams = submissionListParams
+    ? ({
+        ...submissionListParams,
+        // Ensure user_email is always a string as required by the hook
+        user_email:
+          submissionListParams.user_email ||
+          (adminMode ? '' : submissionForm.user_email),
+      } as SubmissionListParams)
+    : null
 
   // Build submission search parameters
   const submissionSearchParams =
-    isSignedIn && activeSearchQuery && submissionForm.user_email
-      ? {
+    isSignedIn &&
+    activeSearchQuery &&
+    (adminMode ? true : submissionForm.user_email)
+      ? ({
           query: activeSearchQuery,
-          user_email: submissionForm.user_email,
+          user_email:
+            adminMode && adminUserEmail
+              ? adminUserEmail
+              : submissionForm.user_email,
           page: currentPage,
           size: resultsPerPage,
           sort_order: sortOrder,
           document_type: documentTypeFilter,
           status: statusFilter,
-        }
+          role: adminMode ? 'admin' : undefined,
+        } as AdminSubmissionSearchParams)
       : null
+
+  // Convert admin search params to regular params for the hooks
+  const hookSearchParams = submissionSearchParams
+    ? ({
+        ...submissionSearchParams,
+        // Ensure user_email is always a string as required by the hook
+        user_email:
+          submissionSearchParams.user_email ||
+          (adminMode ? '' : submissionForm.user_email),
+      } as SubmissionSearchParams)
+    : null
 
   // Fetch submissions data
   const {
@@ -155,7 +213,7 @@ export default function SubmissionsPage() {
     isLoading: isListLoading,
     error: listFetchError,
     mutate: mutateList,
-  } = useSubmissionsList(submissionListParams, {
+  } = useSubmissionsList(hookListParams, {
     revalidateOnMount: true,
   }) as {
     submissions: PaginatedSubmissionResponse | null
@@ -170,7 +228,7 @@ export default function SubmissionsPage() {
     isLoading: isSearchLoading,
     error: searchFetchError,
     mutate: mutateSearch,
-  } = useSubmissionSearch(submissionSearchParams, {
+  } = useSubmissionSearch(hookSearchParams, {
     revalidateOnMount: activeSearchQuery ? true : false,
   }) as {
     results: PaginatedSubmissionResponse | null
@@ -414,6 +472,41 @@ export default function SubmissionsPage() {
             </form>
           </div>
 
+          {/* Admin mode toggle and user email */}
+          <div className='mb-4'>
+            <div className='text-sm text-amber-600 dark:text-amber-400 mb-2 p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md'>
+              <strong>Note:</strong> Admin search functionality requires backend
+              support. Make sure your backend API has been updated to support
+              the admin role parameter.
+            </div>
+            <div className='flex items-center gap-2 mb-2'>
+              <Checkbox
+                id='adminMode'
+                checked={adminMode}
+                onCheckedChange={(checked: boolean) => setAdminMode(checked)}
+              />
+              <Label htmlFor='adminMode' className='font-medium'>
+                Admin Search Mode
+              </Label>
+            </div>
+
+            {adminMode && (
+              <div className='mt-2'>
+                <Label htmlFor='adminUserEmail' className='text-sm mb-1 block'>
+                  Filter by User Email (optional)
+                </Label>
+                <Input
+                  id='adminUserEmail'
+                  type='email'
+                  placeholder='Enter user email to filter...'
+                  value={adminUserEmail}
+                  onChange={(e) => setAdminUserEmail(e.target.value)}
+                  className='w-full'
+                />
+              </div>
+            )}
+          </div>
+
           {/* Filters row */}
           <div className='grid grid-cols-1 md:grid-cols-4 gap-3'>
             {/* Document type filter */}
@@ -473,10 +566,21 @@ export default function SubmissionsPage() {
                 <SelectValue placeholder='Results per page' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='6'>6 / page</SelectItem>
-                <SelectItem value='9'>9 / page</SelectItem>
-                <SelectItem value='12'>12 / page</SelectItem>
-                <SelectItem value='15'>15 / page</SelectItem>
+                {adminMode ? (
+                  <>
+                    <SelectItem value='10'>10 / page</SelectItem>
+                    <SelectItem value='20'>20 / page</SelectItem>
+                    <SelectItem value='50'>50 / page</SelectItem>
+                    <SelectItem value='100'>100 / page</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value='6'>6 / page</SelectItem>
+                    <SelectItem value='9'>9 / page</SelectItem>
+                    <SelectItem value='12'>12 / page</SelectItem>
+                    <SelectItem value='15'>15 / page</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
