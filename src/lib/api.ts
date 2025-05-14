@@ -18,6 +18,48 @@ export interface DocumentListParams {
   sort_order?: 'asc' | 'desc'
 }
 
+// Types for submissions
+export interface SubmissionCreateParams {
+  url: string
+  document_type: 'tos' | 'pp'
+  document_url?: string
+  user_email: string
+}
+
+export interface SubmissionListParams {
+  user_email: string
+  page?: number
+  size?: number
+  sort_order?: 'asc' | 'desc'
+  search_url?: string
+}
+
+export interface SubmissionSearchParams {
+  query: string
+  user_email: string
+  page?: number
+  size?: number
+  sort_order?: 'asc' | 'desc'
+  document_type?: 'tos' | 'pp'
+  status?: string
+}
+
+export interface SubmissionRetryParams {
+  document_url: string
+  user_email: string
+}
+
+export interface SubmissionItem {
+  id: string
+  url: string
+  document_type: 'tos' | 'pp'
+  status: 'initialized' | 'processing' | 'analyzing' | 'success' | 'failed'
+  document_id: string | null
+  error_message: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface DocumentItem {
   id: string
   url: string
@@ -192,4 +234,72 @@ export async function getDocumentById(
   })
 
   return data
+}
+
+// Submission API functions
+export async function createSubmission(
+  params: SubmissionCreateParams
+): Promise<SubmissionItem> {
+  return apiRequest<SubmissionItem>('/api/v1/submissions', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+}
+
+export async function getSubmissions(
+  params: SubmissionListParams
+): Promise<PaginatedResponse<SubmissionItem>> {
+  const queryParams = new URLSearchParams()
+
+  queryParams.append('user_email', params.user_email)
+  if (params.page) queryParams.append('page', params.page.toString())
+  if (params.size) queryParams.append('size', params.size.toString())
+  if (params.sort_order) queryParams.append('sort_order', params.sort_order)
+  if (params.search_url) queryParams.append('search_url', params.search_url)
+
+  const queryString = queryParams.toString()
+  const endpoint = `/api/v1/submissions?${queryString}`
+
+  return apiRequest<PaginatedResponse<SubmissionItem>>(endpoint)
+}
+
+export async function getSubmissionById(
+  id: string,
+  userEmail: string
+): Promise<SubmissionItem> {
+  const queryParams = new URLSearchParams()
+  queryParams.append('user_email', userEmail)
+
+  const endpoint = `/api/v1/submissions/${id}?${queryParams.toString()}`
+  return apiRequest<SubmissionItem>(endpoint)
+}
+
+export async function retrySubmission(
+  id: string,
+  params: SubmissionRetryParams
+): Promise<SubmissionItem> {
+  return apiRequest<SubmissionItem>(`/api/v1/submissions/${id}/retry`, {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+}
+
+export async function searchSubmissions(
+  params: SubmissionSearchParams
+): Promise<PaginatedResponse<SubmissionItem>> {
+  const queryParams = new URLSearchParams()
+
+  queryParams.append('query', params.query)
+  queryParams.append('user_email', params.user_email)
+  if (params.page) queryParams.append('page', params.page.toString())
+  if (params.size) queryParams.append('size', params.size.toString())
+  if (params.sort_order) queryParams.append('sort_order', params.sort_order)
+  if (params.document_type)
+    queryParams.append('document_type', params.document_type)
+  if (params.status) queryParams.append('status', params.status)
+
+  const queryString = queryParams.toString()
+  const endpoint = `/api/v1/search-submissions?${queryString}`
+
+  return apiRequest<PaginatedResponse<SubmissionItem>>(endpoint)
 }
