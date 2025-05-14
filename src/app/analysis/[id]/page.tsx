@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart3, ExternalLink, Tag } from 'lucide-react'
+import { BarChart3, ExternalLink, Tag, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,7 @@ import { useParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { type WordFrequency, type TextMiningMetrics } from '@/lib/api'
 import { useDocumentDetail } from '@/hooks/use-cached-data'
+import { useUser } from '@clerk/nextjs'
 
 // This Map stores document IDs that have already been fetched in the current session
 // It persists between component remounts in StrictMode but is cleared on actual page navigation
@@ -21,6 +22,8 @@ export default function AnalysisPage() {
   const [error, setError] = useState<string | null>(null)
   const tosRef = useRef<HTMLDivElement>(null)
   const ppRef = useRef<HTMLDivElement>(null)
+  const { user, isSignedIn } = useUser()
+  const isAdmin = isSignedIn && user?.publicMetadata?.role === 'admin'
 
   // Add refs for sections to lazy load
   const wordFrequencyRef = useRef<HTMLDivElement>(null)
@@ -336,6 +339,23 @@ export default function AnalysisPage() {
               {new Date(analysisItem.updated_at).toLocaleDateString()}
             </p>
           </div>
+
+          {/* Admin-specific: Show document URLs */}
+          {isAdmin && analysisItem.retrieved_url && (
+            <div className='mt-2 text-sm text-gray-600 dark:text-gray-400 border p-2 border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-900'>
+              <p>
+                {analysisItem.document_type === 'tos' ? 'ToS' : 'PP'} URL:{' '}
+                <a
+                  href={analysisItem.retrieved_url}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                >
+                  {analysisItem.retrieved_url}
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Content area with max-width to match search results cards */}
@@ -345,18 +365,30 @@ export default function AnalysisPage() {
             renderAnalysisContent('privacy')}
         </div>
 
-        {/* View Original Source Button */}
+        {/* View Original Source Button or Reanalyze Button for admins */}
         <div className='flex justify-center mt-4 mb-4'>
-          {analysisItem.retrieved_url && (
-            <a
-              href={analysisItem.retrieved_url}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='flex items-center bg-slate-800 hover:bg-slate-700 text-white rounded px-4 py-2 text-sm'
+          {analysisItem.retrieved_url && isAdmin ? (
+            <Button
+              className='flex items-center bg-amber-600 hover:bg-amber-700 text-white'
+              onClick={() =>
+                alert('Reanalyze functionality will be implemented later')
+              }
             >
-              View Original Source
-              <ExternalLink className='h-3 w-3 ml-2' />
-            </a>
+              Reanalyze
+              <RefreshCw className='h-3 w-3 ml-2' />
+            </Button>
+          ) : (
+            analysisItem.retrieved_url && (
+              <a
+                href={analysisItem.retrieved_url}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='flex items-center bg-slate-800 hover:bg-slate-700 text-white rounded px-4 py-2 text-sm'
+              >
+                View Original Source
+                <ExternalLink className='h-3 w-3 ml-2' />
+              </a>
+            )
           )}
         </div>
       </main>

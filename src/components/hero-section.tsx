@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { DocumentStatsDisplay } from '@/components/document-stats-display'
+import { useUser } from '@clerk/nextjs'
 
 // Example services that can be searched
 const searchExamples = [
@@ -26,6 +27,10 @@ const searchExamples = [
   'YouTube',
 ]
 
+// Hero message constants
+const DEFAULT_HERO_MESSAGE = "🧠 Understand What You're Agreeing To"
+const ADMIN_HERO_MESSAGE = '👋 Welcome Back, Admin!'
+
 export default function HeroSection() {
   const [searchQuery, setSearchQuery] = useState('')
   const [tosSelected, setTosSelected] = useState(true)
@@ -34,6 +39,14 @@ export default function HeroSection() {
     'Try searching for a service name'
   )
   const [error, setError] = useState('')
+  const { user, isSignedIn } = useUser()
+  const isAdmin = isSignedIn && user?.publicMetadata?.role === 'admin'
+
+  // Determine which hero message to show based on admin status
+  const heroMessage =
+    isSignedIn && user?.publicMetadata?.role === 'admin'
+      ? ADMIN_HERO_MESSAGE
+      : DEFAULT_HERO_MESSAGE
 
   // Set random example placeholder after initial render to avoid hydration mismatch
   useEffect(() => {
@@ -85,16 +98,26 @@ export default function HeroSection() {
   }
 
   return (
-    <section className='w-full py-20 md:py-28 lg:py-36 flex items-center justify-center'>
+    <section
+      className={`w-full ${
+        isAdmin ? 'py-12 md:py-16 lg:py-20' : 'py-20 md:py-28 lg:py-36'
+      } flex items-center justify-center`}
+    >
       <div className='container px-4 md:px-6 max-w-2xl'>
         <div className='flex flex-col items-center space-y-4 text-center'>
           <div className='space-y-4'>
             <h1 className='text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl'>
-              {`🧠 Understand What You're Agreeing To`}
+              {heroMessage}
             </h1>
-            <p className='mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed'>
-              {`CRWLR analyze's Terms of Service and Privacy Policies so you don't have to read the fine print.`}
-            </p>
+
+            {/* Only show explanatory text for non-admin users */}
+            {!isAdmin && (
+              <p className='mx-auto max-w-[700px] text-gray-500 md:text-xl/relaxed'>
+                {`CRWLR analyze's Terms of Service and Privacy Policies so you don't have to read the fine print.`}
+              </p>
+            )}
+
+            {/* Always show document statistics */}
             <div className='flex justify-center pt-2'>
               <DocumentStatsDisplay />
             </div>
@@ -140,7 +163,9 @@ export default function HeroSection() {
               <div className='relative flex items-center'>
                 <Input
                   type='text'
-                  placeholder={placeholder}
+                  placeholder={
+                    isAdmin ? 'Search for any service to analyze' : placeholder
+                  }
                   className={`pr-12 h-14 text-base ${
                     error
                       ? 'border-red-500 focus-visible:ring-red-500'
@@ -176,15 +201,22 @@ export default function HeroSection() {
               )}
             </div>
 
-            <div className='text-sm text-gray-500'>
-              <p>
-                Search for any website or service to view analyzed version of
-                their legal documents.
-              </p>
-              <p className='mt-1'>
-                Examples: Facebook, Twitter, Netflix, Spotify, or any URL
-              </p>
-            </div>
+            {/* Only show examples for non-admin users */}
+            {!isAdmin ? (
+              <div className='text-sm text-gray-500'>
+                <p>
+                  Search for any website or service to view analyzed version of
+                  their legal documents.
+                </p>
+                <p className='mt-1'>
+                  Examples: Facebook, Twitter, Netflix, Spotify, or any URL
+                </p>
+              </div>
+            ) : (
+              <div className='text-sm text-gray-500'>
+                <p>Search for services to review or analyze documents.</p>
+              </div>
+            )}
           </form>
         </div>
       </div>
