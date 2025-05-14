@@ -466,8 +466,11 @@ export default function AnalysisPage() {
                       variant='outline'
                       size='sm'
                       onClick={() => {
+                        // Reset to original URL
                         setIsEditing(false)
-                        setEditedUrl('')
+                        setEditedUrl(
+                          displayedUrl || analysisItem.retrieved_url || ''
+                        )
                       }}
                       className='text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
                     >
