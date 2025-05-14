@@ -8,6 +8,7 @@ import {
   Edit,
   Check,
   X,
+  Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -15,13 +16,22 @@ import { Badge } from '@/components/ui/badge'
 import { WordFrequencyChart } from '@/components/word-frequency-chart'
 import { TextMetricsGrid } from '@/components/text-metrics-grid'
 import { Breadcrumb } from '@/components/breadcrumb'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { type WordFrequency, type TextMiningMetrics } from '@/lib/api'
 import { useDocumentDetail } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 
 // This Map stores document IDs that have already been fetched in the current session
 // It persists between component remounts in StrictMode but is cleared on actual page navigation
@@ -29,6 +39,7 @@ const viewedDocuments = new Map<string, boolean>()
 
 export default function AnalysisPage() {
   const params = useParams()
+  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const tosRef = useRef<HTMLDivElement>(null)
   const ppRef = useRef<HTMLDivElement>(null)
@@ -46,6 +57,11 @@ export default function AnalysisPage() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [editedCompanyName, setEditedCompanyName] = useState('')
   const [isUpdatingName, setIsUpdatingName] = useState(false)
+
+  // Add state for document deletion
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Add refs for sections to lazy load
   const wordFrequencyRef = useRef<HTMLDivElement>(null)
@@ -253,6 +269,63 @@ export default function AnalysisPage() {
     } finally {
       setIsUpdatingName(false)
       setIsEditingName(false)
+    }
+  }
+
+  // Add function to handle document deletion
+  const handleDeleteDocument = async () => {
+    if (!analysisItem || deleteConfirmation !== analysisItem.url) return
+
+    setIsDeleting(true)
+
+    try {
+      // Get API key from environment
+      const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL ||
+        'https://crwlr-server-662250507742.us-east4.run.app'
+
+      // Use the document delete endpoint
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/documents/${documentId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY,
+          },
+        }
+      )
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: 'Document deleted',
+          description: 'The document has been deleted successfully.',
+          variant: 'default',
+        })
+        // Navigate back to results page
+        router.push('/results')
+      } else {
+        toast({
+          title: 'Deletion failed',
+          description:
+            data.message || 'An error occurred deleting the document.',
+          variant: 'destructive',
+        })
+        setIsDeleteDialogOpen(false)
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete document. Please try again.',
+        variant: 'destructive',
+      })
+      console.error('Document deletion error:', err)
+      setIsDeleteDialogOpen(false)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -564,7 +637,7 @@ export default function AnalysisPage() {
                       setIsEditing(true)
                       setEditedUrl(displayedUrl || '')
                     }}
-                    className='ml-2 h-7 px-2 bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white'
+                    className='ml-2 h-7 px-2 bg-transparent text-white border-white/30 hover:bg-white/10 hover:text-white outline outline-1 outline-white/40 hover:outline-white/80'
                   >
                     <Edit className='h-3 w-3 mr-1' />
                     Edit
@@ -635,36 +708,125 @@ export default function AnalysisPage() {
             renderAnalysisContent('privacy')}
         </div>
 
-        {/* View Original Source Button or Reanalyze Button for admins */}
-        <div className='flex justify-center mt-4 mb-4'>
-          {analysisItem.retrieved_url && isAdmin ? (
+        {/* Action buttons for admins or view original source - consolidated in a single row */}
+        <div className='flex justify-center gap-4 mt-6 mb-8'>
+          {/* Reanalyze button (admins only) */}
+          {analysisItem.retrieved_url && isAdmin && (
             <Button
-              className='flex items-center bg-slate-800 hover:bg-slate-700 text-white rounded px-4 py-2 h-9'
+              className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white'
               onClick={handleReanalyze}
               disabled={isReanalyzing}
             >
+              {isReanalyzing ? (
+                <RefreshCw className='h-4 w-4 animate-spin' />
+              ) : (
+                <RefreshCw className='h-4 w-4' />
+              )}
               {isReanalyzing ? 'Processing...' : 'Reanalyze'}
-              <RefreshCw
-                className={`h-3 w-3 ml-2 ${
-                  isReanalyzing ? 'animate-spin' : ''
-                }`}
-              />
             </Button>
-          ) : (
-            analysisItem.retrieved_url && (
-              <a
-                href={analysisItem.retrieved_url}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='flex items-center bg-slate-800 hover:bg-slate-700 text-white rounded px-4 py-2 text-sm'
-              >
-                View Original Source
-                <ExternalLink className='h-3 w-3 ml-2' />
-              </a>
-            )
+          )}
+
+          {/* Delete button (admins only) */}
+          {isAdmin && (
+            <Button
+              variant='destructive'
+              className='flex items-center gap-2 h-10 px-4'
+              onClick={() => {
+                setIsDeleteDialogOpen(true)
+              }}
+            >
+              <Trash2 className='h-4 w-4' />
+              Delete
+            </Button>
+          )}
+
+          {/* View Original Source (non-admins) */}
+          {analysisItem.retrieved_url && !isAdmin && (
+            <a
+              href={analysisItem.retrieved_url}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='flex items-center gap-2 h-10 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded'
+            >
+              View Original Source
+              <ExternalLink className='h-4 w-4' />
+            </a>
           )}
         </div>
       </main>
+
+      {/* Delete confirmation dialog */}
+      {isDeleteDialogOpen && (
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className='sm:max-w-[500px] p-6'>
+            <DialogHeader className='mb-4'>
+              <DialogTitle className='text-xl text-red-600 flex items-center gap-2'>
+                <Trash2 className='h-5 w-5' />
+                Confirm Document Deletion
+              </DialogTitle>
+              <DialogDescription className='pt-2'>
+                This action{' '}
+                <span className='font-semibold'>cannot be undone</span>. This
+                will permanently delete this document from our servers.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className='space-y-6'>
+              {/* Warning section */}
+              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4'>
+                <p className='text-sm mb-2 text-red-700 dark:text-red-300'>
+                  To confirm deletion, please type the URL below exactly as
+                  shown:
+                </p>
+                <p className='font-mono text-base bg-white dark:bg-gray-800 py-1 px-2 rounded border border-gray-200 dark:border-gray-700 text-center break-all'>
+                  {analysisItem.url}
+                </p>
+              </div>
+
+              {/* Input field */}
+              <div className='space-y-2'>
+                <Label htmlFor='url' className='text-sm'>
+                  Confirmation URL
+                </Label>
+                <Input
+                  id='url'
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteConfirmation(e.target.value)}
+                  className='w-full focus:ring-red-500 focus:border-red-500'
+                  placeholder='Type the URL to confirm'
+                  autoComplete='off'
+                />
+              </div>
+            </div>
+
+            <DialogFooter className='mt-6 gap-2'>
+              <Button
+                variant='outline'
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant='destructive'
+                onClick={handleDeleteDocument}
+                disabled={
+                  !deleteConfirmation.trim() ||
+                  deleteConfirmation !== analysisItem.url ||
+                  isDeleting
+                }
+                className='gap-2'
+              >
+                {isDeleting ? (
+                  <RefreshCw className='h-4 w-4 animate-spin' />
+                ) : (
+                  <Trash2 className='h-4 w-4' />
+                )}
+                {isDeleting ? 'Deleting...' : 'Delete Document'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
