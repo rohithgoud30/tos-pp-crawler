@@ -143,10 +143,14 @@ export default function AnalysisPage() {
         payload.url = editedUrl.trim()
       }
 
+      // Get API key from environment
+      const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-API-Key': API_KEY,
         },
         body: JSON.stringify(payload),
       })
