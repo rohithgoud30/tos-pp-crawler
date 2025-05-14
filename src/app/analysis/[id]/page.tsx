@@ -42,6 +42,11 @@ export default function AnalysisPage() {
   const [displayedUrl, setDisplayedUrl] = useState('') // New state for displayed URL
   const [isReanalyzing, setIsReanalyzing] = useState(false)
 
+  // Add state for company name editing
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedCompanyName, setEditedCompanyName] = useState('')
+  const [isUpdatingName, setIsUpdatingName] = useState(false)
+
   // Add refs for sections to lazy load
   const wordFrequencyRef = useRef<HTMLDivElement>(null)
   const textMiningRef = useRef<HTMLDivElement>(null)
@@ -189,6 +194,65 @@ export default function AnalysisPage() {
     } finally {
       setIsReanalyzing(false)
       setIsEditing(false)
+    }
+  }
+
+  // Add function to handle company name update
+  const handleUpdateCompanyName = async () => {
+    if (!analysisItem || !editedCompanyName.trim()) return
+
+    setIsUpdatingName(true)
+
+    try {
+      // Get API key from environment
+      const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_BASE_URL ||
+        'https://crwlr-server-662250507742.us-east4.run.app'
+
+      // Use the company name update endpoint
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/documents/${documentId}/company-name`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY,
+          },
+          body: JSON.stringify({
+            company_name: editedCompanyName.trim(),
+          }),
+        }
+      )
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: 'Company name updated',
+          description: 'The company name has been updated successfully.',
+          variant: 'default',
+        })
+        // Refresh the page to show updated company name
+        window.location.reload()
+      } else {
+        toast({
+          title: 'Update failed',
+          description:
+            data.message || 'An error occurred updating the company name.',
+          variant: 'destructive',
+        })
+      }
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update company name. Please try again.',
+        variant: 'destructive',
+      })
+      console.error('Company name update error:', err)
+    } finally {
+      setIsUpdatingName(false)
+      setIsEditingName(false)
     }
   }
 
@@ -401,7 +465,61 @@ export default function AnalysisPage() {
             )}
             <h1 className='text-2xl font-bold text-black dark:text-white'>
               {analysisItem.company_name}
+              {isAdmin && !isEditingName && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => {
+                    setIsEditingName(true)
+                    setEditedCompanyName(analysisItem.company_name)
+                  }}
+                  className='ml-2 h-7 px-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300'
+                >
+                  <Edit className='h-3 w-3' />
+                </Button>
+              )}
             </h1>
+            {isAdmin && isEditingName && (
+              <div className='flex gap-2 items-center mt-2 mb-2'>
+                <Input
+                  type='text'
+                  value={editedCompanyName}
+                  onChange={(e) => setEditedCompanyName(e.target.value)}
+                  className='max-w-xs'
+                />
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => {
+                    setIsEditingName(false)
+                    setEditedCompanyName(analysisItem.company_name)
+                  }}
+                  className='text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600'
+                  disabled={isUpdatingName}
+                >
+                  <X className='h-4 w-4 mr-1' />
+                  Cancel
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleUpdateCompanyName}
+                  className='text-green-500 border-green-200 hover:bg-green-50 hover:text-green-600'
+                  disabled={
+                    isUpdatingName ||
+                    !editedCompanyName.trim() ||
+                    editedCompanyName.trim() === analysisItem.company_name
+                  }
+                >
+                  {isUpdatingName ? (
+                    <RefreshCw className='h-4 w-4 mr-1 animate-spin' />
+                  ) : (
+                    <Check className='h-4 w-4 mr-1' />
+                  )}
+                  {isUpdatingName ? 'Updating...' : 'Update'}
+                </Button>
+              </div>
+            )}
             <div className='flex gap-2'>
               {analysisItem.document_type === 'tos' && (
                 <Badge
