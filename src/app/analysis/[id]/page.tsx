@@ -129,10 +129,19 @@ export default function AnalysisPage() {
           ? '/api/reanalyze-tos'
           : '/api/reanalyze-pp'
 
-      const payload =
-        isEditing && editedUrl.trim() !== ''
-          ? { document_id: documentId, url: editedUrl.trim() }
-          : { document_id: documentId }
+      // Create the base payload with just the document ID
+      const payload: { document_id: string; url?: string } = {
+        document_id: documentId,
+      }
+
+      // Only add the URL to the payload if it's been edited and is different from the original
+      if (
+        isEditing &&
+        editedUrl.trim() !== '' &&
+        editedUrl.trim() !== analysisItem.retrieved_url
+      ) {
+        payload.url = editedUrl.trim()
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
