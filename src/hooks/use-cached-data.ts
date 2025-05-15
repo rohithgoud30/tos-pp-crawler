@@ -10,11 +10,8 @@ import {
   DocumentListParams,
   DocumentDetail,
   DocumentSearchParams,
-  getSubmissions,
   searchSubmissions,
-  SubmissionListParams,
   SubmissionSearchParams,
-  SubmissionItem,
 } from '@/lib/api'
 
 // Define the keys for different types of requests
@@ -218,40 +215,13 @@ export function clearAllCaches() {
   mutate(() => true) // Match all keys
 }
 
-// For submissions list
-export function useSubmissionsList(
-  params: SubmissionListParams | null,
-  options: SWRConfiguration = {}
-) {
-  const { data, error, isLoading, isValidating, mutate } = useSWR(
-    params ? ['/api/submissions', params] : null,
-    async () => {
-      if (!params) return null
-      return getSubmissions(params)
-    },
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 10000, // 10 seconds
-      ...options,
-    }
-  )
-
-  return {
-    submissions: data,
-    error,
-    isLoading,
-    isValidating,
-    mutate,
-  }
-}
-
 // For submission search
 export function useSubmissionSearch(
   params: SubmissionSearchParams | null,
   options: SWRConfiguration = {}
 ) {
   const { data, error, isLoading, isValidating, mutate } = useSWR(
-    params ? ['/api/submissions/search', params] : null,
+    params ? ['/api/v1/search-submissions', params] : null,
     async () => {
       if (!params) return null
       return searchSubmissions(params)

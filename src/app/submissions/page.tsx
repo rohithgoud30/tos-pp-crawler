@@ -53,7 +53,6 @@ import { useToast } from '@/components/ui/use-toast'
 import {
   type SubmissionCreateParams,
   createSubmission,
-  type SubmissionListParams,
   type SubmissionSearchParams,
   type SubmissionRetryParams,
   retrySubmission,
@@ -61,10 +60,7 @@ import {
   type AdminSearchSubmissionsParams,
   searchSubmissions,
 } from '@/lib/api'
-import {
-  useSubmissionsList,
-  useSubmissionSearch,
-} from '@/hooks/use-cached-data'
+import { useSubmissionSearch } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
 
 // Define enhanced submission response types to match backend
@@ -252,18 +248,6 @@ export default function SubmissionsPage() {
   }, [isLoaded, isSignedIn, user, isAdmin])
 
   // For regular users, create params that include currentPage
-  const hookListParams =
-    !isAdmin && submissionForm.user_email
-      ? ({
-          user_email: submissionForm.user_email,
-          size: resultsPerPage,
-          page: currentPage, // Include current page in params
-          sort_order: sortOrder,
-          search_url: activeSearchQuery || undefined,
-        } as SubmissionListParams)
-      : null
-
-  // For search params, include currentPage and filters
   const hookSearchParams =
     !isAdmin && submissionForm.user_email
       ? ({
@@ -277,32 +261,14 @@ export default function SubmissionsPage() {
         } as SubmissionSearchParams)
       : null
 
-  // Fetch submissions data
-  const {
-    submissions: listResults,
-    isLoading: isListLoading,
-    error: listFetchError,
-    mutate: mutateList,
-  } = useSubmissionsList(hookListParams, {
-    revalidateOnMount: !isAdmin, // Only revalidate if not in admin mode
-    revalidateIfStale: true,
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-  }) as {
-    submissions: PaginatedSubmissionResponse | null
-    isLoading: boolean
-    error: Error | null
-    mutate: () => void
-  }
-
-  // Fetch search results
+  // Fetch submissions (use search endpoint for both listing and search)
   const {
     results: searchResults,
     isLoading: isSearchLoading,
     error: searchFetchError,
     mutate: mutateSearch,
   } = useSubmissionSearch(hookSearchParams, {
-    revalidateOnMount: !isAdmin, // Only revalidate if not in admin mode
+    revalidateOnMount: !isAdmin,
     revalidateIfStale: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -313,28 +279,13 @@ export default function SubmissionsPage() {
     mutate: () => void
   }
 
-  // Handle admin search
+  // Handle admin search using unified search-submissions endpoint
   const handleAdminSearch = async (page?: number) => {
-    if (!isAdmin) {
-      console.log('Admin search aborted: isAdmin =', isAdmin)
-      return
-    }
-
-    console.log('Starting admin search with current state:', {
-      currentPage,
-      resultsPerPage,
-      sortOrder,
-      searchQuery: searchQuery.trim(),
-      adminUserEmail: adminUserEmail.trim(),
-      documentTypeFilter,
-      statusFilter,
-    })
-
+    if (!isAdmin) return
     setIsAdminSearching(true)
     setAdminSearchError(null)
-
     try {
-      // Ensure we're using the current page state, not the server-returned page
+      // Build search parameters for admin search
       const params: AdminSearchSubmissionsParams = {
         role: 'admin',
         page: page || currentPage,
@@ -352,7 +303,6 @@ export default function SubmissionsPage() {
       const results = await adminSearchAllSubmissions(params)
       console.log('Admin search completed successfully:', results)
       setAdminSearchResults(results as unknown as PaginatedSubmissionResponse)
-
       // Update active search query to indicate search was performed
       setActiveSearchQuery(searchQuery)
     } catch (error) {
@@ -386,16 +336,12 @@ export default function SubmissionsPage() {
   const resultsPagination =
     isAdmin && adminSearchResults
       ? adminSearchResults
-      : !isAdmin && searchResults
+      : !isAdmin
       ? searchResults
-      : listResults
+      : null
 
   const displayedResults = resultsPagination?.items || []
-  const isLoading = isAdmin
-    ? isAdminSearching
-    : searchResults
-    ? isSearchLoading
-    : isListLoading
+  const isLoading = isAdmin ? isAdminSearching : isSearchLoading
   const isEmpty =
     !isLoading && (!resultsPagination || displayedResults.length === 0)
 
@@ -412,8 +358,6 @@ export default function SubmissionsPage() {
       setFetchError(adminSearchError)
     } else if (searchFetchError) {
       setFetchError('Search failed. Please try again.')
-    } else if (listFetchError) {
-      setFetchError('Failed to load submissions. Please try again.')
     } else if (
       resultsPagination?.error_status &&
       resultsPagination.error_message
@@ -427,7 +371,7 @@ export default function SubmissionsPage() {
     } else {
       setFetchError(null)
     }
-  }, [adminSearchError, searchFetchError, listFetchError, resultsPagination])
+  }, [adminSearchError, searchFetchError, resultsPagination])
 
   // Load URL parameters
   useEffect(() => {
@@ -567,11 +511,8 @@ export default function SubmissionsPage() {
         user_email: prev.user_email,
       }))
 
-      // Refresh the submission list
-      mutateList()
-      if (activeSearchQuery) {
-        mutateSearch()
-      }
+      // Refresh the submissions list
+      mutateSearch()
 
       // Close the dialog if it's open
       setCreateDialogOpen(false)
@@ -692,8 +633,6 @@ export default function SubmissionsPage() {
         return <Badge variant='destructive'>Failed</Badge>
       case 'processing':
         return <Badge className='bg-blue-500'>Processing</Badge>
-      case 'analyzing':
-        return <Badge className='bg-purple-500'>Analyzing</Badge>
       case 'initialized':
         return <Badge variant='outline'>Initialized</Badge>
       default:
@@ -786,11 +725,8 @@ export default function SubmissionsPage() {
       // Set success status
       setRetryStatus('success')
 
-      // Refresh the submission list
-      mutateList()
-      if (activeSearchQuery) {
-        mutateSearch()
-      }
+      // Refresh the submissions list
+      mutateSearch()
 
       // If successful and has document_id, store it for the View button
       if (result.status === 'success' && result.document_id) {
@@ -923,7 +859,6 @@ export default function SubmissionsPage() {
                 <SelectItem value='all'>All Statuses</SelectItem>
                 <SelectItem value='initialized'>Initialized</SelectItem>
                 <SelectItem value='processing'>Processing</SelectItem>
-                <SelectItem value='analyzing'>Analyzing</SelectItem>
                 <SelectItem value='success'>Success</SelectItem>
                 <SelectItem value='failed'>Failed</SelectItem>
               </SelectContent>
@@ -987,10 +922,7 @@ export default function SubmissionsPage() {
                 className='mt-2'
                 onClick={() => {
                   // Refresh data
-                  mutateList()
-                  if (activeSearchQuery) {
-                    mutateSearch()
-                  }
+                  mutateSearch()
                 }}
               >
                 <RefreshCw className='mr-2 h-4 w-4' />
@@ -1288,10 +1220,7 @@ export default function SubmissionsPage() {
                           variant='outline'
                           onClick={() => {
                             // Refresh data
-                            mutateList()
-                            if (activeSearchQuery) {
-                              mutateSearch()
-                            }
+                            mutateSearch()
                           }}
                         >
                           <RefreshCw className='mr-2 h-4 w-4' />
@@ -1598,7 +1527,7 @@ export default function SubmissionsPage() {
                         onClick={() => {
                           setCreateDialogOpen(false)
                           // Refresh the list after closing dialog
-                          mutateList()
+                          mutateSearch()
                         }}
                       >
                         Close
