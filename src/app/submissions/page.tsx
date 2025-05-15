@@ -9,8 +9,6 @@ import {
   Clock,
   FileText,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   RefreshCw,
   Check,
@@ -68,7 +66,6 @@ import {
   useSubmissionSearch,
 } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
-import { cn } from '@/lib/utils'
 
 // Define enhanced submission response types to match backend
 interface SubmissionItem {
@@ -472,6 +469,13 @@ export default function SubmissionsPage() {
     }
   }, [urlParams])
 
+  // Auto-trigger admin search when in admin mode
+  useEffect(() => {
+    if (isAdmin) {
+      handleAdminSearch()
+    }
+  }, [isAdmin])
+
   // Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -651,27 +655,6 @@ export default function SubmissionsPage() {
     }
   }
 
-  // Handle pagination for admin search
-  const handlePageChange = (newPage: number) => {
-    // Update page state immediately
-    setCurrentPage(newPage)
-
-    // For admins, perform a new search
-    if (isAdmin) {
-      handleAdminSearch(newPage)
-    }
-    // For regular users, we need to ensure proper data revalidation
-    else {
-      // Force refresh data based on current mode
-      if (activeSearchQuery) {
-        // Just trigger a revalidation instead of passing arguments
-        mutateSearch()
-      } else {
-        mutateList()
-      }
-    }
-  }
-
   // Handle retry submission
   const handleRetrySubmission = async (
     submissionId: string,
@@ -794,18 +777,11 @@ export default function SubmissionsPage() {
     }
   }, [resultsPagination?.page, currentPage, activeSearchQuery])
 
-  // Use currentPage directly for display
-  const displayCurrentPage = currentPage
-
   // Reset page when search parameters change
   useEffect(() => {
     // Reset to page 1 when search parameters change
     setCurrentPage(1)
   }, [activeSearchQuery, documentTypeFilter, statusFilter, resultsPerPage])
-
-  // Calculate total pages
-  const totalPages =
-    Math.ceil((resultsPagination?.total || 0) / resultsPerPage) || 1
 
   // If not loaded yet, show loading state
   if (!isLoaded) {
@@ -1299,81 +1275,6 @@ export default function SubmissionsPage() {
             </TableBody>
           </Table>
         </div>
-
-        {/* Pagination controls */}
-        {resultsPagination &&
-          resultsPagination.total > 0 &&
-          !resultsPagination.error_status && (
-            <>
-              {/* Results count */}
-              <div className='flex justify-center mt-4'>
-                <p className='text-sm text-muted-foreground'>
-                  Showing{' '}
-                  <span className='font-medium'>{displayedResults.length}</span>{' '}
-                  of{' '}
-                  <span className='font-medium'>{resultsPagination.total}</span>{' '}
-                  results
-                </p>
-              </div>
-
-              {/* Numbered pagination */}
-              <div className='flex justify-center mt-4 mb-2'>
-                <div className='flex flex-wrap justify-center gap-3 items-center'>
-                  <Button
-                    variant='outline'
-                    onClick={() => handlePageChange(displayCurrentPage - 1)}
-                    disabled={displayCurrentPage === 1}
-                    className='mb-2 sm:mb-0 h-10 w-auto px-4 border-input flex items-center justify-center'
-                  >
-                    <ChevronLeft className='h-4 w-4 mr-1' />
-                    Previous
-                  </Button>
-
-                  <div className='flex flex-wrap justify-center gap-2'>
-                    {Array.from({ length: totalPages }).map((_, index) => {
-                      const pageNumber = index + 1
-
-                      return (
-                        <Button
-                          key={index}
-                          onClick={() =>
-                            pageNumber !== displayCurrentPage &&
-                            handlePageChange(pageNumber)
-                          }
-                          variant={
-                            pageNumber === displayCurrentPage
-                              ? 'default'
-                              : 'outline'
-                          }
-                          className={cn(
-                            'h-9 w-9',
-                            pageNumber === displayCurrentPage
-                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                              : ''
-                          )}
-                        >
-                          {pageNumber}
-                        </Button>
-                      )
-                    })}
-                  </div>
-
-                  <Button
-                    variant='outline'
-                    onClick={() => handlePageChange(displayCurrentPage + 1)}
-                    disabled={
-                      displayCurrentPage >=
-                      Math.ceil(resultsPagination.total / resultsPerPage)
-                    }
-                    className='mb-2 sm:mb-0 h-10 w-auto px-4 border-input flex items-center justify-center'
-                  >
-                    Next
-                    <ChevronRight className='h-4 w-4 ml-1' />
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
       </div>
     )
   }
