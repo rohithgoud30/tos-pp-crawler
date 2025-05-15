@@ -298,7 +298,7 @@ export default function SubmissionsPage() {
       if (adminUserEmail.trim()) params.user_email = adminUserEmail.trim()
       if (documentTypeFilter) params.document_type = documentTypeFilter
       // Always set status parameter even if undefined to ensure filtering works consistently
-      params.status = statusFilter
+      params.status = statusFilter?.toLowerCase()
 
       console.log('Calling adminSearchAllSubmissions with params:', params)
       const results = await adminSearchAllSubmissions(params)
@@ -393,7 +393,7 @@ export default function SubmissionsPage() {
     }
 
     if (statusParam) {
-      setStatusFilter(statusParam)
+      setStatusFilter(statusParam.toLowerCase())
     }
 
     if (perPageParam) {
@@ -544,7 +544,7 @@ export default function SubmissionsPage() {
 
   // Handle status filter change
   const handleStatusChange = (value: string) => {
-    setStatusFilter(value === 'all' ? undefined : value)
+    setStatusFilter(value === 'all' ? undefined : value.toLowerCase())
     // Always reset page to 1 when changing filters
     setCurrentPage(1)
     // For admin mode, trigger admin search
@@ -617,9 +617,12 @@ export default function SubmissionsPage() {
 
   // Get status badge color
   const getStatusBadge = (status: string, error_message?: string | null) => {
+    // Normalize status to lowercase for comparison
+    const normalizedStatus = status.toLowerCase()
+
     // If it's a duplicate document (success with document_id and error_message about duplication)
     if (
-      status === 'success' &&
+      normalizedStatus === 'success' &&
       error_message &&
       error_message.includes('Document already exists')
     ) {
@@ -627,7 +630,7 @@ export default function SubmissionsPage() {
     }
 
     // Regular status cases
-    switch (status) {
+    switch (normalizedStatus) {
       case 'success':
         return <Badge className='bg-green-500'>Success</Badge>
       case 'failed':
@@ -1046,7 +1049,7 @@ export default function SubmissionsPage() {
                         <div className='flex justify-end space-x-2'>
                           {/* Single action button with different states */}
                           {/* Case 1: Success with document_id - Show View button */}
-                          {submission.status === 'success' ? (
+                          {submission.status.toLowerCase() === 'success' ? (
                             <Button
                               variant='default'
                               size='sm'
@@ -1060,7 +1063,7 @@ export default function SubmissionsPage() {
                               View
                             </Button>
                           ) : /* Case 2: Failed status - Show Retry button */
-                          submission.status === 'failed' ? (
+                          submission.status.toLowerCase() === 'failed' ? (
                             <Button
                               variant='outline'
                               size='sm'
@@ -1128,15 +1131,11 @@ export default function SubmissionsPage() {
                           ) : (
                             /* Case 3: Other statuses - Show disabled button */
                             <Button variant='outline' size='sm' disabled={true}>
-                              {submission.status === 'processing' ? (
+                              {submission.status.toLowerCase() ===
+                              'processing' ? (
                                 <>
                                   <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
                                   Processing...
-                                </>
-                              ) : submission.status === 'analyzing' ? (
-                                <>
-                                  <RefreshCw className='mr-1 h-4 w-4 animate-spin' />
-                                  Analyzing...
                                 </>
                               ) : (
                                 <>
