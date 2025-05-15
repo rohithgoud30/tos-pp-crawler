@@ -86,6 +86,7 @@ interface PaginatedSubmissionResponse {
   total: number
   page: number
   size: number
+  pages: number
   error_status?: boolean
   error_message?: string
 }
@@ -262,14 +263,14 @@ export default function SubmissionsPage() {
         } as SubmissionListParams)
       : null
 
-  // For search params, include currentPage
+  // For search params, include currentPage and filters
   const hookSearchParams =
-    !isAdmin && activeSearchQuery && submissionForm.user_email
+    !isAdmin && submissionForm.user_email
       ? ({
-          query: activeSearchQuery,
+          query: activeSearchQuery, // Use active search query (empty string returns all)
           user_email: submissionForm.user_email,
           size: resultsPerPage,
-          page: currentPage, // Include current page in params
+          page: currentPage,
           sort_order: sortOrder,
           document_type: documentTypeFilter,
           status: statusFilter,
@@ -301,7 +302,7 @@ export default function SubmissionsPage() {
     error: searchFetchError,
     mutate: mutateSearch,
   } = useSubmissionSearch(hookSearchParams, {
-    revalidateOnMount: activeSearchQuery && !isAdmin ? true : false, // Only revalidate if not in admin mode
+    revalidateOnMount: !isAdmin, // Only revalidate if not in admin mode
     revalidateIfStale: true,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
@@ -381,18 +382,18 @@ export default function SubmissionsPage() {
     }
   }
 
-  // Determine which results to display
+  // Determine which results to display (use search for non-admin always)
   const resultsPagination =
     isAdmin && adminSearchResults
       ? adminSearchResults
-      : activeSearchQuery
+      : !isAdmin && searchResults
       ? searchResults
       : listResults
 
   const displayedResults = resultsPagination?.items || []
   const isLoading = isAdmin
     ? isAdminSearching
-    : activeSearchQuery
+    : searchResults
     ? isSearchLoading
     : isListLoading
   const isEmpty =
@@ -592,6 +593,11 @@ export default function SubmissionsPage() {
     setDocumentTypeFilter(value === 'all' ? undefined : (value as 'tos' | 'pp'))
     // Always reset page to 1 when changing filters
     setCurrentPage(1)
+    // For admin mode, trigger admin search
+    if (isAdmin) {
+      setTimeout(() => handleAdminSearch(1), 0)
+    }
+    // Non-admin will auto-trigger via useEffect
   }
 
   // Handle status filter change
@@ -599,13 +605,23 @@ export default function SubmissionsPage() {
     setStatusFilter(value === 'all' ? undefined : value)
     // Always reset page to 1 when changing filters
     setCurrentPage(1)
+    // For admin mode, trigger admin search
+    if (isAdmin) {
+      setTimeout(() => handleAdminSearch(1), 0)
+    }
+    // Non-admin will auto-trigger via useEffect
   }
 
   // Handle sort order change
   const handleSortOrderChange = () => {
-    setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'))
+    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
     // Always reset page to 1 when changing filters
     setCurrentPage(1)
+    // For admin mode, trigger admin search
+    if (isAdmin) {
+      setTimeout(() => handleAdminSearch(1), 0)
+    }
+    // Non-admin will auto-trigger via useEffect
   }
 
   // Handle results per page change
@@ -613,6 +629,36 @@ export default function SubmissionsPage() {
     setResultsPerPage(parseInt(value, 10))
     // Always reset page to 1 when changing filters
     setCurrentPage(1)
+    // For admin mode, trigger admin search
+    if (isAdmin) {
+      setTimeout(() => handleAdminSearch(1), 0)
+    }
+    // Non-admin will auto-trigger via useEffect
+  }
+
+  // Auto-trigger search on filter changes for non-admin users
+  useEffect(() => {
+    if (!isAdmin && submissionForm.user_email) {
+      // Always reset to page 1 when filter parameters change
+      setCurrentPage(1)
+      // Always refresh search results (empty query will fetch all)
+      mutateSearch()
+    }
+  }, [
+    documentTypeFilter,
+    statusFilter,
+    sortOrder,
+    resultsPerPage,
+    submissionForm.user_email,
+    mutateSearch,
+  ])
+
+  // Go to specific page and trigger admin search if in admin mode
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+    if (isAdmin) {
+      handleAdminSearch(page)
+    }
   }
 
   // Helper to format dates
@@ -1275,6 +1321,116 @@ export default function SubmissionsPage() {
             </TableBody>
           </Table>
         </div>
+        {resultsPagination && resultsPagination.pages > 1 && (
+          <div className='flex flex-wrap justify-center gap-2 items-center mt-6 px-4'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => goToPage(Math.max(1, resultsPagination.page - 1))}
+              disabled={resultsPagination.page <= 1}
+              className='px-2 h-9 min-w-9'
+            >
+              &lt;
+            </Button>
+
+            {/* Generate page numbers with ellipsis for large ranges */}
+            {Array.from({ length: resultsPagination.pages }).map((_, i) => {
+              const pageNum = i + 1
+              // Handle mobile view by showing fewer pages on small screens
+              const isVisible =
+                pageNum === 1 ||
+                pageNum === resultsPagination.pages ||
+                (pageNum >= resultsPagination.page - 1 &&
+                  pageNum <= resultsPagination.page + 1)
+
+              // Show ellipsis instead of consecutive numbers
+              const showPrevEllipsis =
+                pageNum === resultsPagination.page - 1 && pageNum > 2
+              const showNextEllipsis =
+                pageNum === resultsPagination.page + 1 &&
+                pageNum < resultsPagination.pages - 1
+
+              if (!isVisible && !showPrevEllipsis && !showNextEllipsis)
+                return null
+
+              if (showPrevEllipsis) {
+                return (
+                  <div
+                    key={`ellipsis-prev-${pageNum}`}
+                    className='flex space-x-1 items-center'
+                  >
+                    <span className='mx-1 text-muted-foreground'>•••</span>
+                    <Button
+                      key={pageNum}
+                      variant={
+                        pageNum === resultsPagination.page
+                          ? 'default'
+                          : 'outline'
+                      }
+                      size='sm'
+                      className='w-9 h-9 p-0 font-medium'
+                      onClick={() => goToPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  </div>
+                )
+              }
+
+              if (showNextEllipsis) {
+                return (
+                  <div
+                    key={`ellipsis-next-${pageNum}`}
+                    className='flex space-x-1 items-center'
+                  >
+                    <Button
+                      key={pageNum}
+                      variant={
+                        pageNum === resultsPagination.page
+                          ? 'default'
+                          : 'outline'
+                      }
+                      size='sm'
+                      className='w-9 h-9 p-0 font-medium'
+                      onClick={() => goToPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                    <span className='mx-1 text-muted-foreground'>•••</span>
+                  </div>
+                )
+              }
+
+              return (
+                <Button
+                  key={pageNum}
+                  variant={
+                    pageNum === resultsPagination.page ? 'default' : 'outline'
+                  }
+                  size='sm'
+                  className='w-9 h-9 p-0 font-medium'
+                  onClick={() => goToPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              )
+            })}
+
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() =>
+                goToPage(
+                  Math.min(resultsPagination.pages, resultsPagination.page + 1)
+                )
+              }
+              disabled={resultsPagination.page >= resultsPagination.pages}
+              className='px-2 h-9 min-w-9'
+            >
+              &gt;
+            </Button>
+          </div>
+        )}
       </div>
     )
   }
