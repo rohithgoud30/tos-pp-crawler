@@ -294,10 +294,11 @@ export default function SubmissionsPage() {
       }
 
       // Only add parameters that have values
-      if (searchQuery.trim()) params.query = searchQuery.trim()
+      params.query = searchQuery.trim() || '' // Always set query (empty string if blank)
       if (adminUserEmail.trim()) params.user_email = adminUserEmail.trim()
       if (documentTypeFilter) params.document_type = documentTypeFilter
-      if (statusFilter) params.status = statusFilter
+      // Always set status parameter even if undefined to ensure filtering works consistently
+      params.status = statusFilter
 
       console.log('Calling adminSearchAllSubmissions with params:', params)
       const results = await adminSearchAllSubmissions(params)
