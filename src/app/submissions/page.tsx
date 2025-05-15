@@ -295,6 +295,9 @@ export default function SubmissionsPage() {
     mutate: mutateList,
   } = useSubmissionsList(hookListParams, {
     revalidateOnMount: !isAdmin, // Only revalidate if not in admin mode
+    revalidateIfStale: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   }) as {
     submissions: PaginatedSubmissionResponse | null
     isLoading: boolean
@@ -310,12 +313,35 @@ export default function SubmissionsPage() {
     mutate: mutateSearch,
   } = useSubmissionSearch(hookSearchParams, {
     revalidateOnMount: activeSearchQuery && !isAdmin ? true : false, // Only revalidate if not in admin mode
+    revalidateIfStale: true,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   }) as {
     results: PaginatedSubmissionResponse | null
     isLoading: boolean
     error: Error | null
     mutate: () => void
   }
+
+  // Ensure data refresh when page changes
+  useEffect(() => {
+    if (!isAdmin) {
+      if (activeSearchQuery && hookSearchParams) {
+        mutateSearch()
+      } else if (hookListParams) {
+        mutateList()
+      }
+    }
+  }, [
+    currentPage,
+    resultsPerPage,
+    isAdmin,
+    activeSearchQuery,
+    hookSearchParams,
+    hookListParams,
+    mutateSearch,
+    mutateList,
+  ])
 
   // Handle admin search
   const handleAdminSearch = async () => {
@@ -338,6 +364,7 @@ export default function SubmissionsPage() {
     setAdminSearchError(null)
 
     try {
+      // Ensure we're using the current page state, not the server-returned page
       const params: AdminSearchSubmissionsParams = {
         role: 'admin',
         page: currentPage,
@@ -373,15 +400,16 @@ export default function SubmissionsPage() {
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault()
 
+    // Always reset to page 1 first when searching
+    setCurrentPage(1)
+
     if (isAdmin) {
-      // Use admin search instead
-      handleAdminSearch()
+      // Use admin search instead - with delay to ensure page state is updated
+      setTimeout(() => handleAdminSearch(), 0)
     } else {
       // Regular search behavior
       setActiveSearchQuery(searchQuery)
     }
-
-    setCurrentPage(1)
   }
 
   // Determine which results to display
@@ -586,37 +614,29 @@ export default function SubmissionsPage() {
   // Handle document type filter change
   const handleDocumentTypeChange = (value: string) => {
     setDocumentTypeFilter(value === 'all' ? undefined : (value as 'tos' | 'pp'))
-    // Only reset page, don't trigger search
-    if (!isAdmin) {
-      setCurrentPage(1)
-    }
+    // Always reset page to 1 when changing filters
+    setCurrentPage(1)
   }
 
   // Handle status filter change
   const handleStatusChange = (value: string) => {
     setStatusFilter(value === 'all' ? undefined : value)
-    // Only reset page, don't trigger search
-    if (!isAdmin) {
-      setCurrentPage(1)
-    }
+    // Always reset page to 1 when changing filters
+    setCurrentPage(1)
   }
 
   // Handle sort order change
   const handleSortOrderChange = () => {
     setSortOrder((prevOrder) => (prevOrder === 'asc' ? 'desc' : 'asc'))
-    // Only reset page, don't trigger search
-    if (!isAdmin) {
-      setCurrentPage(1)
-    }
+    // Always reset page to 1 when changing filters
+    setCurrentPage(1)
   }
 
   // Handle results per page change
   const handleResultsPerPageChange = (value: string) => {
     setResultsPerPage(parseInt(value, 10))
-    // Only reset page, don't trigger search
-    if (!isAdmin) {
-      setCurrentPage(1)
-    }
+    // Always reset page to 1 when changing filters
+    setCurrentPage(1)
   }
 
   // Helper to format dates
@@ -667,6 +687,18 @@ export default function SubmissionsPage() {
     if (isAdmin) {
       // Wait for state to update, then perform search
       setTimeout(() => handleAdminSearch(), 0)
+    }
+    // For regular users, we need to ensure proper data revalidation
+    else {
+      // Wait for state update to complete
+      setTimeout(() => {
+        // Force refresh data based on current mode
+        if (activeSearchQuery) {
+          mutateSearch()
+        } else {
+          mutateList()
+        }
+      }, 0)
     }
   }
 
@@ -783,6 +815,16 @@ export default function SubmissionsPage() {
       }
     }
   }
+
+  // Update the currentPage state whenever the server page data changes
+  useEffect(() => {
+    if (resultsPagination?.page) {
+      setCurrentPage(resultsPagination.page)
+    }
+  }, [resultsPagination?.page])
+
+  // Ensure consistent usage of currentPage for display
+  const displayCurrentPage = currentPage
 
   // If not loaded yet, show loading state
   if (!isLoaded) {
@@ -1281,8 +1323,9 @@ export default function SubmissionsPage() {
         {resultsPagination &&
           resultsPagination.total > 0 &&
           !resultsPagination.error_status && (
-            <div className='flex items-center justify-between mt-4'>
-              <div className='flex items-center space-x-2'>
+            <>
+              {/* Results count */}
+              <div className='flex justify-center mt-4'>
                 <p className='text-sm text-muted-foreground'>
                   Showing{' '}
                   <span className='font-medium'>{displayedResults.length}</span>{' '}
@@ -1292,32 +1335,84 @@ export default function SubmissionsPage() {
                 </p>
               </div>
 
-              <div className='flex items-center space-x-2'>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className='h-4 w-4' />
-                </Button>
-                <span className='text-sm'>
-                  Page {currentPage} of{' '}
-                  {Math.ceil(resultsPagination.total / resultsPerPage) || 1}
-                </span>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={
-                    currentPage >=
-                    Math.ceil(resultsPagination.total / resultsPerPage)
-                  }
-                >
-                  <ChevronRight className='h-4 w-4' />
-                </Button>
+              {/* Numbered pagination */}
+              <div className='flex justify-center mt-4 mb-2'>
+                <div className='flex flex-wrap justify-center gap-3 items-center'>
+                  <Button
+                    variant='outline'
+                    onClick={() => handlePageChange(displayCurrentPage - 1)}
+                    disabled={displayCurrentPage === 1}
+                    className='mb-2 sm:mb-0 h-10 w-auto px-4 border-input flex items-center justify-center'
+                  >
+                    <ChevronLeft className='h-4 w-4 mr-1' />
+                    Previous
+                  </Button>
+
+                  <div className='flex flex-wrap justify-center gap-2'>
+                    {(() => {
+                      const totalPages =
+                        Math.ceil(resultsPagination.total / resultsPerPage) || 1
+                      const MAX_VISIBLE_PAGES = Math.min(5, totalPages)
+                      const pagesToShow = Math.min(
+                        MAX_VISIBLE_PAGES,
+                        totalPages
+                      )
+
+                      let startPage = Math.max(
+                        1,
+                        displayCurrentPage - Math.floor(pagesToShow / 2)
+                      )
+                      const endPage = Math.min(
+                        totalPages,
+                        startPage + pagesToShow - 1
+                      )
+
+                      // Adjust startPage if endPage hits the limit
+                      if (endPage === totalPages) {
+                        startPage = Math.max(1, totalPages - pagesToShow + 1)
+                      }
+
+                      const pageNumbers = []
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageNumbers.push(i)
+                      }
+
+                      return pageNumbers.map((pageNumber) => (
+                        <Button
+                          key={pageNumber}
+                          variant={
+                            displayCurrentPage === pageNumber
+                              ? 'default'
+                              : 'outline'
+                          }
+                          onClick={() => handlePageChange(pageNumber)}
+                          className={
+                            displayCurrentPage === pageNumber
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10'
+                              : 'border-input hover:bg-accent hover:text-accent-foreground h-10 w-10'
+                          }
+                        >
+                          {pageNumber}
+                        </Button>
+                      ))
+                    })()}
+                  </div>
+
+                  <Button
+                    variant='outline'
+                    onClick={() => handlePageChange(displayCurrentPage + 1)}
+                    disabled={
+                      displayCurrentPage >=
+                      Math.ceil(resultsPagination.total / resultsPerPage)
+                    }
+                    className='mb-2 sm:mb-0 h-10 w-auto px-4 border-input flex items-center justify-center'
+                  >
+                    Next
+                    <ChevronRight className='h-4 w-4 ml-1' />
+                  </Button>
+                </div>
               </div>
-            </div>
+            </>
           )}
       </div>
     )
