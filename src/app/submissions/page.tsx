@@ -68,6 +68,7 @@ import {
   useSubmissionSearch,
 } from '@/hooks/use-cached-data'
 import { useUser } from '@clerk/nextjs'
+import { cn } from '@/lib/utils'
 
 // Define enhanced submission response types to match backend
 interface SubmissionItem {
@@ -252,40 +253,31 @@ export default function SubmissionsPage() {
     }
   }, [isLoaded, isSignedIn, user, isAdmin])
 
-  // Build submission list parameters with safe conversion for hooks
-  const submissionListParams =
-    isSignedIn && !isAdmin && submissionForm.user_email
+  // For regular users, create params that include currentPage
+  const hookListParams =
+    !isAdmin && submissionForm.user_email
       ? ({
           user_email: submissionForm.user_email,
-          page: currentPage,
           size: resultsPerPage,
+          page: currentPage, // Include current page in params
           sort_order: sortOrder,
           search_url: activeSearchQuery || undefined,
         } as SubmissionListParams)
       : null
 
-  // Only use hooks for non-admin mode
-  const hookListParams = !isAdmin ? submissionListParams : null
-
-  // Build submission search parameters
-  const submissionSearchParams =
-    isSignedIn &&
-    activeSearchQuery &&
-    !isAdmin && // Only build regular search params when not in admin mode
-    submissionForm.user_email
+  // For search params, include currentPage
+  const hookSearchParams =
+    !isAdmin && activeSearchQuery && submissionForm.user_email
       ? ({
           query: activeSearchQuery,
           user_email: submissionForm.user_email,
-          page: currentPage,
           size: resultsPerPage,
+          page: currentPage, // Include current page in params
           sort_order: sortOrder,
           document_type: documentTypeFilter,
           status: statusFilter,
         } as SubmissionSearchParams)
       : null
-
-  // Only use hooks for non-admin searches
-  const hookSearchParams = !isAdmin ? submissionSearchParams : null
 
   // Fetch submissions data
   const {
@@ -323,28 +315,8 @@ export default function SubmissionsPage() {
     mutate: () => void
   }
 
-  // Ensure data refresh when page changes
-  useEffect(() => {
-    if (!isAdmin) {
-      if (activeSearchQuery && hookSearchParams) {
-        mutateSearch()
-      } else if (hookListParams) {
-        mutateList()
-      }
-    }
-  }, [
-    currentPage,
-    resultsPerPage,
-    isAdmin,
-    activeSearchQuery,
-    hookSearchParams,
-    hookListParams,
-    mutateSearch,
-    mutateList,
-  ])
-
   // Handle admin search
-  const handleAdminSearch = async () => {
+  const handleAdminSearch = async (page?: number) => {
     if (!isAdmin) {
       console.log('Admin search aborted: isAdmin =', isAdmin)
       return
@@ -367,7 +339,7 @@ export default function SubmissionsPage() {
       // Ensure we're using the current page state, not the server-returned page
       const params: AdminSearchSubmissionsParams = {
         role: 'admin',
-        page: currentPage,
+        page: page || currentPage,
         size: resultsPerPage,
         sort_order: sortOrder,
       }
@@ -681,24 +653,22 @@ export default function SubmissionsPage() {
 
   // Handle pagination for admin search
   const handlePageChange = (newPage: number) => {
+    // Update page state immediately
     setCurrentPage(newPage)
 
     // For admins, perform a new search
     if (isAdmin) {
-      // Wait for state to update, then perform search
-      setTimeout(() => handleAdminSearch(), 0)
+      handleAdminSearch(newPage)
     }
     // For regular users, we need to ensure proper data revalidation
     else {
-      // Wait for state update to complete
-      setTimeout(() => {
-        // Force refresh data based on current mode
-        if (activeSearchQuery) {
-          mutateSearch()
-        } else {
-          mutateList()
-        }
-      }, 0)
+      // Force refresh data based on current mode
+      if (activeSearchQuery) {
+        // Just trigger a revalidation instead of passing arguments
+        mutateSearch()
+      } else {
+        mutateList()
+      }
     }
   }
 
@@ -816,15 +786,26 @@ export default function SubmissionsPage() {
     }
   }
 
-  // Update the currentPage state whenever the server page data changes
+  // Initialize the page only on first load, don't override manual selections
   useEffect(() => {
-    if (resultsPagination?.page) {
+    if (resultsPagination?.page && !activeSearchQuery && currentPage === 1) {
+      // Only update if we're on the initial page and not in search mode
       setCurrentPage(resultsPagination.page)
     }
-  }, [resultsPagination?.page])
+  }, [resultsPagination?.page, currentPage, activeSearchQuery])
 
-  // Ensure consistent usage of currentPage for display
+  // Use currentPage directly for display
   const displayCurrentPage = currentPage
+
+  // Reset page when search parameters change
+  useEffect(() => {
+    // Reset to page 1 when search parameters change
+    setCurrentPage(1)
+  }, [activeSearchQuery, documentTypeFilter, statusFilter, resultsPerPage])
+
+  // Calculate total pages
+  const totalPages =
+    Math.ceil((resultsPagination?.total || 0) / resultsPerPage) || 1
 
   // If not loaded yet, show loading state
   if (!isLoaded) {
@@ -1349,53 +1330,32 @@ export default function SubmissionsPage() {
                   </Button>
 
                   <div className='flex flex-wrap justify-center gap-2'>
-                    {(() => {
-                      const totalPages =
-                        Math.ceil(resultsPagination.total / resultsPerPage) || 1
-                      const MAX_VISIBLE_PAGES = Math.min(5, totalPages)
-                      const pagesToShow = Math.min(
-                        MAX_VISIBLE_PAGES,
-                        totalPages
-                      )
+                    {Array.from({ length: totalPages }).map((_, index) => {
+                      const pageNumber = index + 1
 
-                      let startPage = Math.max(
-                        1,
-                        displayCurrentPage - Math.floor(pagesToShow / 2)
-                      )
-                      const endPage = Math.min(
-                        totalPages,
-                        startPage + pagesToShow - 1
-                      )
-
-                      // Adjust startPage if endPage hits the limit
-                      if (endPage === totalPages) {
-                        startPage = Math.max(1, totalPages - pagesToShow + 1)
-                      }
-
-                      const pageNumbers = []
-                      for (let i = startPage; i <= endPage; i++) {
-                        pageNumbers.push(i)
-                      }
-
-                      return pageNumbers.map((pageNumber) => (
+                      return (
                         <Button
-                          key={pageNumber}
+                          key={index}
+                          onClick={() =>
+                            pageNumber !== displayCurrentPage &&
+                            handlePageChange(pageNumber)
+                          }
                           variant={
-                            displayCurrentPage === pageNumber
+                            pageNumber === displayCurrentPage
                               ? 'default'
                               : 'outline'
                           }
-                          onClick={() => handlePageChange(pageNumber)}
-                          className={
-                            displayCurrentPage === pageNumber
-                              ? 'bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10'
-                              : 'border-input hover:bg-accent hover:text-accent-foreground h-10 w-10'
-                          }
+                          className={cn(
+                            'h-9 w-9',
+                            pageNumber === displayCurrentPage
+                              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                              : ''
+                          )}
                         >
                           {pageNumber}
                         </Button>
-                      ))
-                    })()}
+                      )
+                    })}
                   </div>
 
                   <Button
