@@ -237,7 +237,7 @@ export default function SubmissionsPage() {
   // Ensure default results per page for admins
   useEffect(() => {
     if (isAdmin) {
-      setResultsPerPage(10)
+      setResultsPerPage(6)
     }
   }, [isAdmin])
 
@@ -908,21 +908,10 @@ export default function SubmissionsPage() {
                 <SelectValue placeholder='Results per page' />
               </SelectTrigger>
               <SelectContent>
-                {isAdmin ? (
-                  <>
-                    <SelectItem value='10'>10 / page</SelectItem>
-                    <SelectItem value='20'>20 / page</SelectItem>
-                    <SelectItem value='50'>50 / page</SelectItem>
-                    <SelectItem value='100'>100 / page</SelectItem>
-                  </>
-                ) : (
-                  <>
-                    <SelectItem value='6'>6 / page</SelectItem>
-                    <SelectItem value='9'>9 / page</SelectItem>
-                    <SelectItem value='12'>12 / page</SelectItem>
-                    <SelectItem value='15'>15 / page</SelectItem>
-                  </>
-                )}
+                <SelectItem value='6'>6 / page</SelectItem>
+                <SelectItem value='9'>9 / page</SelectItem>
+                <SelectItem value='12'>12 / page</SelectItem>
+                <SelectItem value='15'>15 / page</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -987,6 +976,7 @@ export default function SubmissionsPage() {
                 <TableHead>URL</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
+                {isAdmin && <TableHead>User</TableHead>}
                 <TableHead>Submitted</TableHead>
                 <TableHead className='text-right'>Actions</TableHead>
               </TableRow>
@@ -1004,6 +994,11 @@ export default function SubmissionsPage() {
                       <TableCell>
                         <Skeleton className='h-6 w-24' />
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <Skeleton className='h-6 w-32' />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <Skeleton className='h-6 w-32' />
                       </TableCell>
@@ -1028,9 +1023,7 @@ export default function SubmissionsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant='outline'>
-                          {submission.document_type === 'tos'
-                            ? 'Terms'
-                            : 'Privacy'}
+                          {submission.document_type === 'tos' ? 'ToS' : 'PP'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -1039,6 +1032,25 @@ export default function SubmissionsPage() {
                           submission.error_message
                         )}
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell className='max-w-[150px] truncate'>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className='flex items-center text-left'>
+                                <span className='truncate text-sm text-muted-foreground'>
+                                  {submission.user_email}
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className='text-xs'>
+                                  <span className='font-semibold'>Email:</span>{' '}
+                                  {submission.user_email}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                      )}
                       <TableCell>
                         <TooltipProvider>
                           <Tooltip>
@@ -1163,7 +1175,10 @@ export default function SubmissionsPage() {
                 : isEmpty &&
                   !hasError && (
                     <TableRow>
-                      <TableCell colSpan={5} className='text-center py-8'>
+                      <TableCell
+                        colSpan={isAdmin ? 6 : 5}
+                        className='text-center py-8'
+                      >
                         <div className='flex flex-col items-center justify-center text-muted-foreground'>
                           <FileText className='h-8 w-8 mb-2' />
                           <p>No submissions found</p>
@@ -1210,7 +1225,10 @@ export default function SubmissionsPage() {
                   )}
               {hasError && (
                 <TableRow>
-                  <TableCell colSpan={5} className='text-center py-8'>
+                  <TableCell
+                    colSpan={isAdmin ? 6 : 5}
+                    className='text-center py-8'
+                  >
                     <div className='flex flex-col items-center justify-center text-muted-foreground'>
                       <AlertCircle className='h-8 w-8 mb-2 text-red-500' />
                       <p className='text-red-500 font-medium'>
@@ -1332,6 +1350,16 @@ export default function SubmissionsPage() {
                 placeholder='example.com'
                 value={submissionForm.url}
                 onChange={handleInputChange}
+                readOnly={displayedResults.some(
+                  (s) => s.url === submissionForm.url && s.status === 'failed'
+                )}
+                className={
+                  displayedResults.some(
+                    (s) => s.url === submissionForm.url && s.status === 'failed'
+                  )
+                    ? 'bg-muted cursor-not-allowed'
+                    : ''
+                }
               />
               <p className='text-sm text-muted-foreground'>
                 Enter the website&apos;s main URL
@@ -1344,13 +1372,28 @@ export default function SubmissionsPage() {
                 name='document_type'
                 value={submissionForm.document_type}
                 onValueChange={(value) =>
+                  !displayedResults.some(
+                    (s) => s.url === submissionForm.url && s.status === 'failed'
+                  ) &&
                   setSubmissionForm((prev) => ({
                     ...prev,
                     document_type: value as 'tos' | 'pp',
                   }))
                 }
+                disabled={displayedResults.some(
+                  (s) => s.url === submissionForm.url && s.status === 'failed'
+                )}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  className={
+                    displayedResults.some(
+                      (s) =>
+                        s.url === submissionForm.url && s.status === 'failed'
+                    )
+                      ? 'bg-muted cursor-not-allowed'
+                      : ''
+                  }
+                >
                   <SelectValue placeholder='Select document type' />
                 </SelectTrigger>
                 <SelectContent>
