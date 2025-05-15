@@ -2,6 +2,41 @@
 
 A Next.js 13 (App Router) application that allows users to submit website URLs for analysis of Terms of Service (ToS) and Privacy Policy (PP) documents. It features user authentication, duplicate detection, pagination, filtering, admin panel, and integration with a backend API.
 
+## Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-username/tos-pp-crawler.git
+cd tos-pp-crawler
+
+# 2. Install dependencies
+npm install
+# or
+# yarn install
+
+# 3. Create .env.local in the project root and paste in:
+cat <<EOF > .env.local
+# API Configuration
+NEXT_PUBLIC_BACKEND_URL=https://crwlr-server-662250507742.us-east4.run.app
+NEXT_PUBLIC_API_KEY=6e878bf1-c92d-4ba1-99c9-50e3343efd5d
+
+# Clerk Configuration
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_cHJvZm91bmQtZWVsLTk5LmNsZXJrLmFjY291bnRzLmRldiQ
+CLERK_SECRET_KEY=sk_test_62QwySSMQJJYmt0dNTKYW7SXrMf8GdpSn492MqTFR0
+
+# Clerk Redirect URLs
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/login
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+EOF
+
+# 4. Start development server
+npm run dev
+# or
+# yarn dev
+```
+
 ## Features
 
 - User authentication with Clerk.

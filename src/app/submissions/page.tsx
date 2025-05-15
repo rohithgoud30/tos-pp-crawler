@@ -690,8 +690,10 @@ export default function SubmissionsPage() {
           // Store document ID for use in View button
           setSuccessfulRetryId(checkResult.documentId)
 
-          // Redirect to the existing document analysis page
-          router.push(`/analysis/${checkResult.documentId}`)
+          // Redirect to the existing document analysis page after a short delay
+          setTimeout(() => {
+            router.push(`/analysis/${checkResult.documentId}`)
+          }, 1500) // 1.5 second delay
           return
         }
       }
@@ -702,6 +704,9 @@ export default function SubmissionsPage() {
       }
 
       const result = await retrySubmission(submissionId, retryParams)
+
+      // Debug response
+      console.log('Retry submission response:', result)
 
       // Check if this is a duplicate document case
       if (
@@ -721,13 +726,24 @@ export default function SubmissionsPage() {
         // Set retry status to success
         setRetryStatus('success')
 
-        // Redirect to the existing document analysis page
-        router.push(`/analysis/${result.document_id}`)
+        // Redirect to the existing document analysis page after a short delay
+        setTimeout(() => {
+          router.push(`/analysis/${result.document_id}`)
+        }, 1500) // 1.5 second delay
         return
       }
 
       // Set success status
       setRetryStatus('success')
+
+      // Show success notification
+      toast({
+        title: 'Retry Successful',
+        description:
+          result.status === 'success' && result.document_id
+            ? 'Analysis complete. Redirecting to results.'
+            : `Status updated to: ${result.status}`,
+      })
 
       // Refresh the submissions list
       mutateSearch()
@@ -735,8 +751,10 @@ export default function SubmissionsPage() {
       // If successful and has document_id, store it for the View button
       if (result.status === 'success' && result.document_id) {
         setSuccessfulRetryId(result.document_id)
-        // Redirect to analysis page
-        router.push(`/analysis/${result.document_id}`)
+        // Redirect to analysis page after a short delay to show the status change
+        setTimeout(() => {
+          router.push(`/analysis/${result.document_id}`)
+        }, 1500) // 1.5 second delay
       }
     } catch (error) {
       console.error('Retry error:', error)
