@@ -1,12 +1,27 @@
 # tos-pp-crawler
 
-A Next.js 13 (App Router) application that allows users to submit website URLs for analysis of Terms of Service (ToS) and Privacy Policy (PP) documents. It features user authentication, duplicate detection, pagination, filtering, admin panel, and integration with a backend API.
+A Next.js 15 (App Router) application that allows users to submit website URLs for analysis of Terms of Service (ToS) and Privacy Policy (PP) documents. It features user authentication, duplicate detection, pagination, filtering, admin panel, and integration with a backend API.
+
+## Project Architecture
+
+![Project Architecture](resources/projectArchitecture.png)
+
+## Repositories
+
+- Frontend: https://github.com/rohithgoud30/tos-pp-crawler
+- Backend: https://github.com/rohithgoud30/crwlr-server
+- Crawler Engine: https://github.com/rohithgoud30/crawlr-engine
+
+## Live Links
+
+- Frontend (Production): https://tos-pp-crawler.vercel.app/
+- Backend API (Google Cloud Run): https://crwlr-server-662250507742.us-east4.run.app/
 
 ## Quick Start
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/tos-pp-crawler.git
+git clone https://github.com/rohithgoud30/tos-pp-crawler.git
 cd tos-pp-crawler
 
 # 2. Install dependencies
@@ -51,7 +66,7 @@ npm run dev
 
 ## Tech Stack
 
-- Next.js 13 (App Router)
+- Next.js 15 (App Router)
 - React & TypeScript
 - Tailwind CSS
 - Clerk for authentication
@@ -63,39 +78,6 @@ npm run dev
 
 - Node.js 16 or later
 - npm or Yarn package manager
-
-## Setup
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/your-username/tos-pp-crawler.git
-   cd tos-pp-crawler
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. Create `.env.local` in the project root and add:
-
-   ```bash
-   NEXT_PUBLIC_BACKEND_URL=https://your-backend-url.com
-   NEXT_PUBLIC_API_KEY=your_api_key_here
-   CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-   ```
-
-4. Start development server:
-
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
 
 ## Build & Production
 
