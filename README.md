@@ -124,11 +124,3 @@ This app is ready for deployment on [Vercel](https://vercel.com). You can also d
 ├── tsconfig.json     # TypeScript configuration
 └── README.md         # Project overview and setup instructions
 ```
-
-## Contributing
-
-Contributions are welcome! Please open issues or pull requests to improve the project.
-
-## License
-
-This project is MIT licensed.
