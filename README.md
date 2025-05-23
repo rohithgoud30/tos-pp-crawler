@@ -1,6 +1,6 @@
 # tos-pp-crawler
 
-A Next.js 15 (App Router) application that allows users to submit website URLs for analysis of Terms of Service (ToS) and Privacy Policy (PP) documents. It features user authentication, duplicate detection, pagination, filtering, admin panel, and integration with a backend API.
+A Next.js 15 (App Router) application that allows users to submit website URLs for analysis of Terms of Service (ToS) and Privacy Policy (PP) documents. It features user authentication, duplicate detection, pagination, filtering, admin panel, and integration with a backend API. It also features instant full-text search of ToS and PP documents powered by Typesense.
 
 ## Project Architecture
 
