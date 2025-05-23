@@ -33,11 +33,11 @@ npm install
 cat <<EOF > .env.local
 # API Configuration
 NEXT_PUBLIC_BACKEND_URL=https://crwlr-server-662250507742.us-east4.run.app
-NEXT_PUBLIC_API_KEY=6e878bf1-c92d-4ba1-99c9-50e3343efd5d
+NEXT_PUBLIC_API_KEY=your_api_key_here
 
 # Clerk Configuration
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_cHJvZm91bmQtZWVsLTk5LmNsZXJrLmFjY291bnRzLmRldiQ
-CLERK_SECRET_KEY=sk_test_62QwySSMQJJYmt0dNTKYW7SXrMf8GdpSn492MqTFR0
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+CLERK_SECRET_KEY=your_clerk_secret_key_here
 
 # Clerk Redirect URLs
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/login
